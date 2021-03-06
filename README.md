@@ -7,7 +7,7 @@ RunRecorder is a C library and a Web API to save results from experiments in a s
 
 ## License
 
-TryCatchC, a C implementation of the try/catch mechanism in C
+RunRecorder, a C library and a Web API to save results from experiments in a sqlite database.
 Copyright (C) 2021  Pascal Baillehache
 
 This program is free software: you can redistribute it and/or modify
