@@ -3,7 +3,8 @@ COMPILER=gcc-7
 
 # Sqlite version
 SQLITE_VERSION=3340100
-SQLITE_ZIP=https://sqlite.org/2021/sqlite-amalgamation-$(SQLITE_VERSION).zip
+# Sqlite url
+SQLITE_URL=https://sqlite.org/2021/sqlite-amalgamation-$(SQLITE_VERSION).zip
 
 # Build mode
 BUILD_MODE=0
@@ -26,25 +27,27 @@ endif
 
 all: main
 
-main: main.o runrecorder.o sqlite-amalgamation-$(SQLITE_VERSION)/sqlite3.o Makefile
-	$(COMPILER) main.o runrecorder.o sqlite-amalgamation-$(SQLITE_VERSION)/sqlite3.o $(LINK_ARG) -o main 
+main: main.o runrecorder.o sqlite3.o Makefile
+	$(COMPILER) main.o runrecorder.o sqlite3.o $(LINK_ARG) -o main 
 
-main.o: main.c runrecorder.h sqlite-amalgamation-$(SQLITE_VERSION)/sqlite3.h Makefile
+main.o: main.c runrecorder.h Makefile
 	$(COMPILER) $(BUILD_ARG) -c main.c 
 
-runrecorder.o: runrecorder.c runrecorder.h sqlite-amalgamation-$(SQLITE_VERSION)/sqlite3.h Makefile
+runrecorder.o: runrecorder.c runrecorder.h sqlite3.h Makefile
 	$(COMPILER) $(BUILD_ARG) -c runrecorder.c
 
-sqlite-amalgamation-$(SQLITE_VERSION)/sqlite3.o: sqlite-amalgamation-$(SQLITE_VERSION)/sqlite3.h
+sqlite3.o: sqlite3.h
 	cd sqlite-amalgamation-$(SQLITE_VERSION); \
 	$(COMPILER) -O3 -c sqlite3.c; \
+	cp sqlite3.o ../; \
 	cd -
 
-sqlite-amalgamation-$(SQLITE_VERSION)/sqlite3.h:
-	rm -rf sqlite-amalgamation-*; \
-	wget $(SQLITE_ZIP); \
+sqlite3.h:
+	rm -rf sqlite-amalgamation-$(SQLITE_VERSION); \
+	wget $(SQLITE_URL); \
 	unzip sqlite-amalgamation-$(SQLITE_VERSION).zip; \
-	rm -rf sqlite-amalgamation-*.zip
+	cp sqlite3.h ../; \
+	rm -f sqlite-amalgamation-$(SQLITE_VERSION).zip
 
 sqlite-amalgamation-$(SQLITE_VERSION)/sqlite3:
 	cd sqlite-amalgamation-$(SQLITE_VERSION); \

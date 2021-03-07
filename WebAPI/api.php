@@ -12,7 +12,7 @@ error_reporting(E_ALL);
 $pathDB = "./runrecorder.db";
 
 // Version of the database
-$versionDB = "1.0";
+$versionDB = "01.00.00";
 
 // Require https
 if (!isset($_SERVER['HTTPS'])) {
@@ -110,6 +110,32 @@ function GetVersion($db) {
 
 }
 
+// Upgrade the database to the 
+function UpgradeDB($db, $versionDB) {
+
+  // Get the version of the database
+  $rows = $db->query("SELECT Label FROM Version LIMIT 1");
+  if ($rows === false) {
+    throw new Exception("query() failed");
+  }
+  $version = ($rows->fetchArray())["Label"];
+
+  // If the database version is newer than the version of the API
+  if ($version > $versionDB) {
+
+    // The database can't be used
+    throw new Exception("Database version (" . $version .
+      ") newer than API version (" . $versionDB . ")");
+
+  // If the database version is older than the version of the API
+  } else if ($version < $versionDB) {
+
+    // Upgrade the database
+    // placeholder...
+
+  }
+}
+
 // Add a new project
 function AddProject($db, $label) {
 
@@ -118,8 +144,8 @@ function AddProject($db, $label) {
   try {
 
       // Add the project in the database
-      $success = $db->exec(
-        "INSERT INTO Project(Label) VALUES ('" . $label . "')");
+      $cmd = 'INSERT INTO Project(Label) VALUES ("' . $label . '")';
+      $success = $db->exec($cmd);
 
       if ($success == false) {
         throw new Exception("exec() failed for " . $cmd);
@@ -154,6 +180,9 @@ try {
     $db = CreateDatabase($pathDB, $versionDB);
 
   }
+
+  // Automatically upgrade the database if necessary
+  UpgradeDB($db, $versionDB);
 
   // If an action has been requested
   if (isset($_POST["action"])) {
