@@ -32,9 +32,27 @@ function CreateDatabase($path, $version) {
 
     // Create the database tables
     $cmds = [
-      "CREATE TABLE IF NOT EXISTS Version (" .
+      "CREATE TABLE Version (" .
       "  Ref INTEGER PRIMARY KEY," .
-      "  Label TEXT NOT NULL)"];
+      "  Label TEXT NOT NULL)",
+      "CREATE TABLE Project (" .
+      "  Ref INTEGER PRIMARY KEY," .
+      "  Label TEXT NOT NULL)",
+      "CREATE TABLE Measure (" .
+      "  Ref INTEGER PRIMARY KEY," .
+      "  RefProject INTEGER NOT NULL," .
+      "  DateMeasure DATETIME NOT NULL)",
+      "CREATE TABLE Value (" .
+      "  Ref INTEGER PRIMARY KEY," .
+      "  RefMeasure INTEGER NOT NULL," .
+      "  RefMetric INTEGER NOT NULL," .
+      "  Value TEXT NOT NULL)",
+      "CREATE TABLE Metric (" .
+      "  Ref INTEGER PRIMARY KEY," .
+      "  RefProject INTEGER NOT NULL," .
+      "  Label TEXT NOT NULL," .
+      "  DefaultValue TEXT NOT NULL," .
+      "  Unit TEXT NOT NULL)"];
     foreach ($cmds as $cmd) {
 
       $success = $db->exec($cmd);
@@ -66,6 +84,32 @@ function CreateDatabase($path, $version) {
 
 }
 
+// Get the version of the database
+function GetVersion($db) {
+
+  $res = array();
+
+  try {
+
+      $rows = $db->query("SELECT Label FROM Version LIMIT 1");
+      if ($rows === false) {
+        throw new Exception("query() failed");
+      }
+      
+      $res["version"] = ($rows->fetchArray())["Label"];
+      $res["ret"] = 0;
+
+  } catch (Exception $e) {
+
+      $res["ret"] = 1;
+      $res["errMsg"] = "line " . $e->getLine() . ": " . $e->getMessage();
+
+  }
+
+  return $res;
+
+}
+
 // Add a new project
 function AddProject($db, $label) {
 
@@ -73,6 +117,16 @@ function AddProject($db, $label) {
 
   try {
 
+      // Add the project in the database
+      $success = $db->exec(
+        "INSERT INTO Project(Label) VALUES ('" . $label . "')");
+
+      if ($success == false) {
+        throw new Exception("exec() failed for " . $cmd);
+      }
+
+      $res["refProject"] = $db->lastInsertRowID();
+      $res["ret"] = 0;
 
   } catch (Exception $e) {
 
@@ -104,10 +158,15 @@ try {
   // If an action has been requested
   if (isset($_POST["action"])) {
 
-    if ($_POST["action"] == "add_project" and isset($_POST["label"])) {
+    if ($_POST["action"] == "version") {
+
+      $res = GetVersion($db);
+      echo json_encode($res);
+
+    } else if ($_POST["action"] == "add_project" and 
+               isset($_POST["label"])) {
 
       $res = AddProject($db, $_POST["label"]);
-      $res["ret"] = 0;
       echo json_encode($res);
 
     } else {
