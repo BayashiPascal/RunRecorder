@@ -56,7 +56,7 @@ One can send commands to the Web API as follow (`<action>` and `<data>` are expl
 curl -d 'action=<action>&<data>' -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
 ```
 * using the provided shell script from the command line:
-For ease of use, a shell script is available: `Repos/RunRecorder/WebAPI/runrecorder.sh`. Replace in this script `https://localhost/RunRecorder/` with the URL to your copy of the Web API, ensure it's executable (for example, `chmod +x Repos/RunRecorder/WebAPI/runrecorder.sh`) and accessible (for example, add `export PATH=$PATH:Repos/RunRecorder/WebAPI/` in your `~/.profile`). Then you'll be able to send command to the Web API as follow: `runrecorder.sh <action> <data>`.
+For ease of use, a shell script is available: `Repos/RunRecorder/WebAPI/runrecorder.sh`. Replace in this script `https://localhost/RunRecorder/` with the URL to your copy of the Web API, ensure it's executable (for example, `chmod +x Repos/RunRecorder/WebAPI/runrecorder.sh`) and accessible (for example, add `export PATH=$PATH:Repos/RunRecorder/WebAPI/` in your `~/.profile`). Then you'll be able to send command to the Web API as follow: `runrecorder.sh <action> '<data>'`.
 * if you use C:
 You should consider using the RunRecorder C libray (see next section), but you can also do it as follow:
 ```
@@ -124,14 +124,14 @@ In RunRecorder, data are grouped by projects. To start recording data, the first
 
 ```
 <action>: add_project
-<data>: the project's name
+<data>: label=<the project's name>
 ```
 
-*The double quote `"` can't be used in the project's name.*
+*The double quote `"`, equal sign `=` and ampersand `&` can't be used in the project's name.*
 
 Example using the shell script:
 ```
-runrecorder.sh add_project "label"="Room temperature"
+runrecorder.sh add_project "label=Room temperature"
 ```
 
 Example using the C library:
@@ -150,9 +150,192 @@ On failure, an error message is returned.
 {"errMsg":"something went wrong","ret":0}
 ```
 
+#### Get the projects
+
+You can get the list of projects.
+
+```
+<action>: projects
+```
+
+Example using the shell script:
+```
+runrecorder.sh projects
+```
+
+Example using the C library:
+```
+TODO
+```
+
+On success, the API returns, for example:
+```
+{"ret":0,"1":"Room temperature"}
+```
+
+On failure, an error message is returned.
+```
+{"errMsg":"something went wrong","ret":0}
+```
+
 #### Add a metric to a project
 
+After adding a new project you'll probably want to add metrics that defines this project. In our example project there are two metrics: the date and time of the recording, and the recorded room temperature.
 
+```
+<action>: add_metric
+<data>: project=<reference of this metric's project>&label=<metric's name>&default=<default value of the metric>
+```
+
+*The label of the metric must contain only characters in a-zA-Z0-9. The label and default of the metric must be one character long at least. The double quote `"`, equal sign `=` and ampersand `&` can't be used in the default value. There cannot be two metrics with the same label for the same project. A metric label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).*
+
+Example using the shell script:
+```
+runrecorder.sh add_metric "project=1&label=Date&default=-"
+runrecorder.sh add_metric "project=1&label=Temperature&default=0.0"
+```
+
+Example using the C library:
+```
+TODO
+```
+
+On success, the API returns:
+```
+{"ret":0}
+```
+
+On failure, an error message is returned.
+```
+{"errMsg":"something went wrong","ret":0}
+```
+
+You can add metrics even after having recorded data. A measurement with no value for a given metric automatically get attributed the default value of this metric.
+
+#### Get the metrics of a project
+
+You can get the list of metrics for a project.
+
+```
+<action>: metrics
+<data>: project=<reference of the project>
+```
+
+Example using the shell script:
+```
+runrecorder.sh metrics "project=1"
+```
+
+Example using the C library:
+```
+TODO
+```
+
+On success, the API returns, for example:
+```
+{"1":"Date","2":"Temperature","ret":0}
+```
+
+On failure, an error message is returned.
+```
+{"errMsg":"something went wrong","ret":0}
+```
+
+#### Add a measurement to a project
+
+Now you're ready to add measurement to your project!
+
+```
+<action>: add_measure
+<data>: project=<reference of the project>&<metric 1>=<value metric 1>&<metric 2>=<value metric 2>...
+```
+
+*The double quote `"`, equal sign `=` and ampersand `&` can't be used in the  value. A value must be at least one character long. It is not mandatory to provide a value for all the metrics of the project (if missing, the default value is used instead).*
+
+Example using the shell script:
+```
+runrecorder.sh add_measure "project=1&Date=2021-03-08 15:45:00&Temperature=18.5"
+runrecorder.sh add_measure "project=1&Date=2021-03-08 16:19:00&Temperature=19.1"
+```
+
+Example using the C library:
+```
+TODO
+```
+
+On success, the API returns:
+```
+{"ret":0}
+```
+
+On failure, an error message is returned.
+```
+{"errMsg":"something went wrong","ret":0}
+```
+
+Unknown metrics are ignored.
+
+#### Retrieve measurements from a project
+
+Obviously after adding your measurements you'll want to use them. You can access directly the SQLite database with any compatible software, or you can retrieve them in CSV format using RunRecorder. 
+
+```
+<action>: measures
+<data>: project=<reference of the project>
+```
+
+Example using the shell script:
+```
+runrecorder.sh measures "project=1"
+```
+
+Example using the C library:
+```
+TODO
+```
+
+On success, the API returns, for example:
+```
+Date&Temperature
+2021-03-08 15:45:00&18.5
+2021-03-08 16:19:00&19.1
+```
+
+On failure, an error message is returned.
+```
+{"errMsg":"something went wrong","ret":0}
+```
+
+Metrics (columns) are ordered alphabetically, values (rows) are ordered by time of creation in the database. The delimiter is ampersand `&`, and the first line contains the label of metrics. All metrics of the project are present, and their default value is used in rows containing missing values.
+
+#### Delete a project
+
+Once you've finished collecting data for a project and want to free space in the database, you can delete the project and all the associated metrics and measurements. 
+
+```
+<action>: flush
+<data>: project=<reference of the project>
+```
+
+Example using the shell script:
+```
+runrecorder.sh flush "project=1"
+```
+
+Example using the C library:
+```
+TODO
+```
+
+On success, the API returns:
+```
+{"ret":0}
+```
+
+On failure, an error message is returned.
+```
+{"errMsg":"something went wrong","ret":0}
+```
 
 ## License
 
