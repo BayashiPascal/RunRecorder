@@ -217,7 +217,7 @@ function AddMetric($db, $project, $label, $default) {
       throw new Exception("The label is invalid.");
     }
     $rows = $db->query('SELECT COUNT(*) as nb FROM Metric WHERE Label = "' .
-                       $label . '"');
+                       $label . '" AND RefProject = ' . $project);
     if ($rows === false) {
       throw new Exception("query() failed");
     }
