@@ -27,7 +27,7 @@ endif
 
 all: main
 
-main: sqlite3/sqlite3.o main.o runrecorder.o trycatch.o Makefile
+main: sqlite3/sqlite3.o trycatch.o runrecorder.o main.o Makefile
 	$(COMPILER) main.o runrecorder.o trycatch.o sqlite3/sqlite3.o $(LINK_ARG) -o main 
 
 main.o: main.c runrecorder.h trycatch.h Makefile
@@ -36,7 +36,7 @@ main.o: main.c runrecorder.h trycatch.h Makefile
 trycatch.o: trycatch.c trycatch.h Makefile
 	$(COMPILER) -c trycatch.c
 
-runrecorder.o: runrecorder.c runrecorder.h trycatch.h sqlite3/sqlite3.h Makefile
+runrecorder.o: runrecorder.c runrecorder.h trycatch.h sqlite3/sqlite3.h curl/include/curl/curl.h Makefile
 	$(COMPILER) $(BUILD_ARG) -c runrecorder.c
 
 sqlite3/sqlite3.o: sqlite3/sqlite3.h
@@ -56,7 +56,7 @@ sqlite3/sqlite3:
 	$(COMPILER) shell.c sqlite3.c -lpthread -ldl -O3 -o sqlite3; \
 	cd -
 
-curl/curl.h:
+curl/include/curl/curl.h:
 	rm -rf curl*; \
 	wget $(CURL_URL); \
 	unzip curl-$(CURL_VERSION).zip; \
@@ -69,4 +69,4 @@ curl/curl.h:
 	cd -
 
 clean:
-	rm -rf *.o main sqlite*
+	rm -rf *.o main sqlite* curl*

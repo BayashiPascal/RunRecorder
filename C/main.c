@@ -8,21 +8,65 @@ int main() {
   // Path to the SQLite database local file or Web API
   char const* pathDb = "./runrecorder.db";
   //char const* pathApi = "https://localhost/RunRecorder/api.php";
+  char const* pathApi = "https://www.bayashiinjapan.net/RunRecorder/api.php";
 
   // Create the RunRecorder instance
-  // Give pathApi in argument if you want to use the Web API instead
-  // of a local file
-  struct RunRecorder recorder;
+  struct RunRecorder* recorder;
   Try {
 
-    recorder = RunRecorderCreate(pathDb);
-    //recorder = RunRecorderCreate(pathApi);
+    // Give pathApi in argument if you want to use the Web API instead
+    // of a local file
+    //recorder = RunRecorderCreate(pathDb);
+    recorder = RunRecorderCreate(pathApi);
 
-  } Catch(TryCatchException_CreateTable) {
+  } Catch(TryCatchException_CreateTableFailed) {
 
     fprintf(
       stderr,
-      "Failed to create the RunRecorder (%s).\n",
+      "Failed to create tables in the database.\n");
+    fprintf(
+      stderr,
+      "%s\n",
+      recorder->errMsg);
+    exit(EXIT_FAILURE);
+
+  } Catch(TryCatchException_OpenDbFailed) {
+
+    fprintf(
+      stderr,
+      "Failed to open the database.\n");
+    fprintf(
+      stderr,
+      "%s\n",
+      recorder->errMsg);
+    exit(EXIT_FAILURE);
+
+  } Catch(TryCatchException_CreateCurlFailed) {
+
+    fprintf(
+      stderr,
+      "Failed to create the Curl instance.\n");
+    exit(EXIT_FAILURE);
+
+  } Catch(TryCatchException_CurlSetOptFailed) {
+
+    fprintf(
+      stderr,
+      "Curl setopt failed.\n");
+    fprintf(
+      stderr,
+      "%s\n",
+      recorder->errMsg);
+    exit(EXIT_FAILURE);
+
+  } Catch(TryCatchException_SQLRequestFailed) {
+
+    fprintf(
+      stderr,
+      "SQL request failed.\n");
+    fprintf(
+      stderr,
+      "%s\n",
       recorder->errMsg);
     exit(EXIT_FAILURE);
 
@@ -31,17 +75,20 @@ int main() {
   // Get the version of the database
   Try {
 
-    char* version = RunRecorderGetVersion(&recorder);
+    char* version = RunRecorderGetVersion(recorder);
     printf(
       "%s\n",
       version);
     free(version);
 
-  } Catch(TryCatchException_) {
+  } Catch(TryCatchException_SQLRequestFailed) {
 
     fprintf(
       stderr,
-      "Failed (%s).\n",
+      "SQL request failed.\n");
+    fprintf(
+      stderr,
+      "%s\n",
       recorder->errMsg);
     exit(EXIT_FAILURE);
 
@@ -51,34 +98,34 @@ int main() {
   // Create a new project
   bool success =
     RunRecorderAddProject(
-      &recorder,
+      recorder,
       "Body weight");
   if (success == false) {
 
     fprintf(
       stderr,
       "%s\n",
-      recorder.errMsg);
+      recorder->errMsg);
 
   }
 
   // Get the list of projects
   success =
     RunRecorderGetProjects(
-      &recorder,
+      recorder,
       );
   if (success == false) {
 
     fprintf(
       stderr,
       "%s\n",
-      recorder.errMsg);
+      recorder->errMsg);
 
   }
   
-bodyrecorder.sh add_metric "project=1&label=Date&default=-"
-bodyrecorder.sh add_metric "project=1&label=Weight&default=0.0"
-bodyrecorder.sh metrics "project=1"
+bodyrecorder->sh add_metric "project=1&label=Date&default=-"
+bodyrecorder->sh add_metric "project=1&label=Weight&default=0.0"
+bodyrecorder->sh metrics "project=1"
 
 */
   // Free memory

@@ -21,7 +21,7 @@ Depending on how you plan to use RunRecorder you'll have to install the Web API,
 
 ### Web API
 
-Install the Web API to your local server or web server by copying or linking `Repos/RunRecorder` to an URL of your choice on the server. For example, if you're using [LAMP](https://en.wikipedia.org/wiki/LAMP_(software_bundle)) and want to access the API via `https://localhost/RunRecorder/api.php` it should look something like this:
+Install the Web API to your local server or web server by copying or linking `Repos/RunRecorder/WebAPI` to an URL of your choice on the server. For example, if you're using [LAMP](https://en.wikipedia.org/wiki/LAMP_(software_bundle)) and want to access the API via `https://localhost/RunRecorder/api.php` it should look something like this:
 ```
 sudo ln -s Repos/RunRecorder/WebAPI /var/www/html/RunRecorder
 ```
@@ -37,7 +37,7 @@ cd Repos/RunRecorder/C
 make all
 ```
 
-*The [SQLite](https://www.sqlite.org/) and [Curl](https://curl.se/) libraries will automatically be downloaded into `Repos/RunRecorder/C/` during installation. You'll asked for your password during installation.*
+*The [SQLite](https://www.sqlite.org/) and [Curl](https://curl.se/) libraries will automatically be downloaded into `Repos/RunRecorder/C/` during installation. You'll be asked for your password once during installation.*
 
 ## Usage
 
@@ -54,7 +54,7 @@ curl -d 'action=<action>&<data>' -H "Content-Type: application/x-www-form-urlenc
 * using the provided shell script from the command line:
 For ease of use, a shell script is available: `Repos/RunRecorder/WebAPI/runrecorder.sh`. Replace in this script `https://localhost/RunRecorder/` with the URL to your copy of the Web API, ensure it's executable (for example, `chmod +x Repos/RunRecorder/WebAPI/runrecorder.sh`) and accessible (for example, add `export PATH=$PATH:Repos/RunRecorder/WebAPI/` in your `~/.profile`). Then you'll be able to send command to the Web API as follow: `runrecorder.sh <action> '<data>'`.
 * if you use C:
-You should consider using the RunRecorder C libray (see next section), but you can also do it as follow:
+You should consider using the RunRecorder C library (see next section), but you can also do it as follow:
 ```
 #include <stdio.h>
 #include <curl/curl.h>

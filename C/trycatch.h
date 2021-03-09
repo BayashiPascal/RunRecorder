@@ -29,7 +29,13 @@
 // default exceptions according to the planned use of this trycatch module.
 enum TryCatchException {
 
-  TryCatchException_CreateTable = 1,
+  TryCatchException_Segv = 1,
+  TryCatchException_CreateTableFailed,
+  TryCatchException_OpenDbFailed,
+  TryCatchException_CreateCurlFailed,
+  TryCatchException_CurlRequestFailed,
+  TryCatchException_CurlSetOptFailed,
+  TryCatchException_SQLRequestFailed,
   TryCatchException_LastID
 
 };
