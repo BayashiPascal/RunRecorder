@@ -477,7 +477,8 @@ function FlushProject($db, $project) {
 
 }
 
-// Main block
+// -------------------------------- Main block --------------------------
+
 try {
 
   // Try to open the database without creating it

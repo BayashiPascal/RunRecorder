@@ -1,4 +1,265 @@
-// *************** RUNRECORDER.C ***************
+// ------------------ runrecorder.c ------------------
+
+// Include the header
+#include "runrecorder.h"
+
+// Last version of the database
+char const* const lastVersionDb = "01.00.00";
+
+// Return true if a struct RunRecorder uses the Web API, else false
+bool RunRecorderUsesAPI(
+  // The struct RunRecorder
+  struct RunRecorder* const that);
+
+// Get the version of the database
+// Return a new string containg the version
+char* RunRecorderGetVersion(
+  // The struct RunRecorder
+  struct RunRecorder const* const that);
+
+// Upgrade the database
+void RunRecorderUpgradeDb(
+  // The struct RunRecorder
+  struct RunRecorder* const that);
+
+// Create the database locally
+void RunRecorderCreateDb(
+  // The struct RunRecorder
+  struct RunRecorder* const that);
+
+// Create the database locally
+void RunRecorderCreateDbLocal(
+  // The struct RunRecorder
+  struct RunRecorder* const that);
+
+// Create the database through the Web API
+void RunRecorderCreateDbAPI(
+  // The struct RunRecorder
+  struct RunRecorder* const that);
+
+// Constructor for a struct RunRecorder
+struct RunRecorder RunRecorderCreate(
+  // Path to the SQLite database or Web API
+  char const* const url) {
+
+  // Declare the struct RunRecorder
+  struct RunRecorder that;
+
+  // Duplicate the url
+  that.url = strdup(url);
+
+  // Initialise the other properties
+  that.errMsg = NULL;
+  that.db = NULL;
+
+  // If the recorder doesn't use the API
+  if (RunRecorderUsesAPI(that) == false) {
+
+    // If the SQLite database local file doesn't exists
+    FILE* fp =
+      fopen(
+        url,
+        "r");
+    if (fp == NULL) {
+
+      // Create the database
+      RunRecorderCreateDb(that);
+
+    } else {
+
+      fclose(fp);
+
+    }
+
+    // Open the connection to the local database
+    int ret =
+      sqlite3_open(
+        url,
+        &(that.db));
+    if (ret) {
+
+      fprintf(
+        stderr,
+        "Can't open database: %s\n",
+        sqlite3_errmsg(that.db));
+      sqlite3_close(that.db);
+      return 1;
+
+    }
+
+  }
+
+  // If the version of the database is different from the last version
+  char* version = RunRecorderGetVersion(&that);
+  int cmpVersion =
+    strcmp(
+      version,
+      lastVersionDb);
+  free(version);
+  if (cmpVersion != 0) {
+
+    // Upgrade the database
+    RunRecorderUpgradeDb(&that);
+
+  }
+
+  // Return the struct RunRecorder
+  return that;
+
+}
+
+// Destructor for a struct RunRecorder
+void RunRecorderFree(
+  // The struct RunRecorder to be freed
+  struct RunRecorder* const that) {
+
+  // Free memory
+  free(that->url);
+  if (that->errMsg != NULL) {
+
+    free(that->errMsg);
+
+  }
+
+  // Close the connection to the local database if it was opened
+  if (that->db != NULL) {
+
+    sqlite3_close(that->db);
+
+  }
+
+}
+
+// Return true if a struct RunRecorder uses the Web API, else false
+bool RunRecorderUsesAPI(
+  // The struct RunRecorder
+  struct RunRecorder* const that) {
+
+  // If the url starts with http
+  char const* http =
+    strstr(
+      that->url,
+      "http");
+  if (http == that->url) {
+
+    return true;
+
+  // Else, the url doesn't start with http
+  } else {
+
+    return false;
+
+  }
+
+}
+
+// Create the database
+void RunRecorderCreateDb(
+  // The struct RunRecorder
+  struct RunRecorder* const that) {
+
+  // If the RunRecorder uses the Web API
+  if (RunRecorderUsesAPI(that) == true) {
+
+    RunRecorderCreateDbAPI(that);
+
+  // Else, the RunRecorder uses a local database
+  } else {
+
+    RunRecorderCreateDbLocal(that);
+
+  }
+
+}
+
+// Create the database locally
+void RunRecorderCreateDbLocal(
+  // The struct RunRecorder
+  struct RunRecorder* const that) {
+
+  #define RUNRECORDER_NB_TABLE 5
+  char* sqlCmd[RUNRECORDER_NB_TABLE] = {
+
+      "CREATE TABLE Version ("
+      "  Ref INTEGER PRIMARY KEY,"
+      "  Label TEXT NOT NULL)",
+      "CREATE TABLE Project ("
+      "  Ref INTEGER PRIMARY KEY,"
+      "  Label TEXT NOT NULL)",
+      "CREATE TABLE Measure ("
+      "  Ref INTEGER PRIMARY KEY,"
+      "  RefProject INTEGER NOT NULL,"
+      "  DateMeasure DATETIME NOT NULL)",
+      "CREATE TABLE Value ("
+      "  Ref INTEGER PRIMARY KEY,"
+      "  RefMeasure INTEGER NOT NULL,"
+      "  RefMetric INTEGER NOT NULL,"
+      "  Value TEXT NOT NULL)",
+      "CREATE TABLE Metric ("
+      "  Ref INTEGER PRIMARY KEY,"
+      "  RefProject INTEGER NOT NULL,"
+      "  Label TEXT NOT NULL,"
+      "  DefaultValue TEXT NOT NULL)",
+
+  };
+  for (
+    int iCmd = 0;
+    iCmd < RUNRECORDER_NB_TABLE;
+    ++iCmd) {
+
+    int retExec =
+      sqlite3_exec(
+        db,
+        sqlCmd[iCmd],
+        // No callback
+        NULL,
+        // No user data
+        NULL,
+        &(that->errMsg));
+    if (retExec != SQLITE_OK) {
+
+      Raise(TryCatchException_CreateTable);
+
+    }
+
+  }
+
+}
+
+// Create the database through the Web API
+void RunRecorderCreateDbAPI(
+  // The struct RunRecorder
+  struct RunRecorder* const that) {
+  // TODO
+}
+
+// Upgrade the database
+void RunRecorderUpgradeDb(
+  // The struct RunRecorder
+  struct RunRecorder* const that) {
+
+  // Placeholder
+  (void)that;
+
+}
+
+// Get the version of the database
+char const* RunRecorderGetVersion(
+  // The struct RunRecorder
+  struct RunRecorder const* const that) {
+
+  // Return the version of the database
+  return NULL; // TODO
+
+}
+
+// ------------------ runrecorder.c ------------------
+
+
+
+
+
+/*
 
 // Include the header
 #include "runrecorder.h"
@@ -233,3 +494,5 @@ int toto(
   sqlite3_close(db);
   return 0;
 }
+
+*/

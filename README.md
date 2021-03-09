@@ -2,6 +2,10 @@
 
 RunRecorder is a C library and a Web API to automate the recording of textual data in a SQLite database, locally or remotely.
 
+RunRecorder is based on [SQLite](https://www.sqlite.org/) and [Curl](https://curl.se/).
+
+It also uses the Try/Catch implementation in C described [here](https://github.com/BayashiPascal/TryCatchC).
+
 ## Installation
 
 Download this repository into a folder of your choice, in the examples below I'll call it `Repos`.
@@ -17,7 +21,7 @@ Depending on how you plan to use RunRecorder you'll have to install the Web API,
 
 ### Web API
 
-Install the Web API to your local server or web server by copying or linking `Repos/RunRecorder` to an URL of your choice on the server. For example, if you're using [Apache](https://en.wikipedia.org/wiki/Apache_HTTP_Server) and want to access the API via `https://localhost/RunRecorder/api.php` it should look something like this:
+Install the Web API to your local server or web server by copying or linking `Repos/RunRecorder` to an URL of your choice on the server. For example, if you're using [LAMP](https://en.wikipedia.org/wiki/LAMP_(software_bundle)) and want to access the API via `https://localhost/RunRecorder/api.php` it should look something like this:
 ```
 sudo ln -s Repos/RunRecorder/WebAPI /var/www/html/RunRecorder
 ```
@@ -26,22 +30,14 @@ sudo ln -s Repos/RunRecorder/WebAPI /var/www/html/RunRecorder
 
 ### C library
 
-You'll need the `gcc` compiler to be installed on your system ([gcc.gnu.org](https://gcc.gnu.org/)), and the [SQLite](https://www.sqlite.org/index.html) library will automatically be downloaded into `Repos/RunRecorder/C/`. Compile the RunRecorder C library as follow:
+Compile the RunRecorder C library as follow:
 
 ```
 cd Repos/RunRecorder/C
 make all
 ```
 
-Then you'll be able to compile your code (for example `main.c`) using the RunRecorder C library with the following Makefile:
-
-```
-main: main.o
-	gcc main.o Repos/RunRecorder/C/runrecorder.o Repos/RunRecorder/C/sqlite3.o -lm -lpthread -ldl -o main 
-
-main.o: main.c
-	gcc -IRepos/RunRecorder/C -c main.c 
-```
+*The [SQLite](https://www.sqlite.org/) and [Curl](https://curl.se/) libraries will automatically be downloaded into `Repos/RunRecorder/C/` during installation. You'll asked for your password during installation.*
 
 ## Usage
 
@@ -60,7 +56,25 @@ For ease of use, a shell script is available: `Repos/RunRecorder/WebAPI/runrecor
 * if you use C:
 You should consider using the RunRecorder C libray (see next section), but you can also do it as follow:
 ```
-TODO
+#include <stdio.h>
+#include <curl/curl.h>
+int main() {
+  CURL *curl;
+  CURLcode res;
+  curl_global_init(CURL_GLOBAL_ALL);
+  curl = curl_easy_init();
+  if(curl) {
+    curl_easy_setopt(curl, CURLOPT_URL, "https://localhost/RunRecorder/api.php");
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "action=<action>&<data>");
+    res = curl_easy_perform(curl);
+    if (res != CURLE_OK)
+      fprintf(stderr, "curl_easy_perform() failed: %s\n", 
+              curl_easy_strerror(res));
+    curl_easy_cleanup(curl);
+  }
+  curl_global_cleanup();
+  return 0;
+}
 ```
 * if you use [JavaScript](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/send):
 ```
@@ -87,6 +101,16 @@ print(str(r.text))
 ### Through the C library
 
 TODO
+
+You can compile code using the RunRecorder C library with the following Makefile:
+
+```
+main: main.o
+	gcc main.o Repos/RunRecorder/C/runrecorder.o Repos/RunRecorder/C/sqlite3.o -lm -lpthread -ldl -o main 
+
+main.o: main.c
+	gcc -IRepos/RunRecorder/C -c main.c 
+```
 
 ### Check the version of the database
 

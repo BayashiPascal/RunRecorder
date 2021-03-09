@@ -1,3 +1,5 @@
 C/*.o
 C/main
-C/sqlite-amalgamation-*
+C/runrecorder.db
+C/sqlite*
+C/curl*
