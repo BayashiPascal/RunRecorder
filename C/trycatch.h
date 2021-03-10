@@ -56,11 +56,13 @@ jmp_buf* TryCatchGetJmpBufOnStackTop(
   // No arguments
   void);
 
-// Function called when a raised RunRecorderException has not been catched
+// Function called when a raised TryCatchException has not been caught
 // by a Catch segment
 void TryCatchDefault(
-  // No arguments
-  void);
+  // File where the exception occured
+  char const* const filename,
+  // Line where the exception occured
+          int const line);
 
 // Function called at the end of a TryCatch block
 void TryCatchEnd(
@@ -135,7 +137,7 @@ void TryCatchEnd(
 #define EndTry \
       break; \
     default: \
-      TryCatchDefault(); \
+      TryCatchDefault(__FILE__, __LINE__); \
   } \
   TryCatchEnd()
 
