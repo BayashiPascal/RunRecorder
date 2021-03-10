@@ -277,6 +277,7 @@ void RunRecorderFree(
     // Free memory used by the properties
     free((*that)->url);
     free((*that)->errMsg);
+    free((*that)->curlReply);
 
     // Close the connection to the local database if it was opened
     if ((*that)->db != NULL) {
@@ -923,7 +924,7 @@ long RunRecorderAddProjectAPI(
 
 }
 
-// Add a new projet
+// Add a new project
 // Input:
 //   that: the struct RunRecorder
 //   name: the name of the new project, double quote `"`, equal sign `=` and
