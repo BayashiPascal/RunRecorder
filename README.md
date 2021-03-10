@@ -134,12 +134,12 @@ TODO
 
 On success, the API returns, for example:
 ```
-{"version":"01.00.00","ret":0}
+{"version":"01.00.00","ret":"0"}
 ```
 
 On failure, an error message is returned.
 ```
-{"errMsg":"something went wrong","ret":0}
+{"errMsg":"something went wrong","ret":"0"}
 ```
 
 ### Create a new project
@@ -165,13 +165,13 @@ TODO
 
 On success, the API returns, for example:
 ```
-{"refProject":1,"ret":0}
+{"refProject":1,"ret":"0"}
 ```
 Memorise the value of `refProject`, you will need it to record measure later.
 
 On failure, an error message is returned.
 ```
-{"errMsg":"something went wrong","ret":0}
+{"errMsg":"something went wrong","ret":"0"}
 ```
 
 #### Get the projects
@@ -194,12 +194,12 @@ TODO
 
 On success, the API returns, for example:
 ```
-{"ret":0,"1":"Room temperature"}
+{"ret":"0","1":"Room temperature"}
 ```
 
 On failure, an error message is returned.
 ```
-{"errMsg":"something went wrong","ret":0}
+{"errMsg":"something went wrong","ret":"0"}
 ```
 
 #### Add a metric to a project
@@ -226,12 +226,12 @@ TODO
 
 On success, the API returns:
 ```
-{"ret":0}
+{"ret":"0"}
 ```
 
 On failure, an error message is returned.
 ```
-{"errMsg":"something went wrong","ret":0}
+{"errMsg":"something went wrong","ret":"0"}
 ```
 
 You can add metrics even after having recorded data. A measurement with no value for a given metric automatically get attributed the default value of this metric.
@@ -257,12 +257,12 @@ TODO
 
 On success, the API returns, for example:
 ```
-{"1":"Date","2":"Temperature","ret":0}
+{"1":"Date","2":"Temperature","ret":"0"}
 ```
 
 On failure, an error message is returned.
 ```
-{"errMsg":"something went wrong","ret":0}
+{"errMsg":"something went wrong","ret":"0"}
 ```
 
 #### Add a measurement to a project
@@ -289,12 +289,12 @@ TODO
 
 On success, the API returns:
 ```
-{"ret":0}
+{"ret":"0"}
 ```
 
 On failure, an error message is returned.
 ```
-{"errMsg":"something went wrong","ret":0}
+{"errMsg":"something went wrong","ret":"0"}
 ```
 
 Unknown metrics are ignored.
@@ -327,7 +327,7 @@ Date&Temperature
 
 On failure, an error message is returned.
 ```
-{"errMsg":"something went wrong","ret":0}
+{"errMsg":"something went wrong","ret":"0"}
 ```
 
 Metrics (columns) are ordered alphabetically, values (rows) are ordered by time of creation in the database. The delimiter is ampersand `&`, and the first line contains the label of metrics. All metrics of the project are present, and their default value is used in rows containing missing values.
@@ -353,12 +353,12 @@ TODO
 
 On success, the API returns:
 ```
-{"ret":0}
+{"ret":"0"}
 ```
 
 On failure, an error message is returned.
 ```
-{"errMsg":"something went wrong","ret":0}
+{"errMsg":"something went wrong","ret":"0"}
 ```
 
 ## License

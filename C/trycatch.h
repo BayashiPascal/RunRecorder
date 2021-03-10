@@ -36,6 +36,8 @@ enum TryCatchException {
   TryCatchException_CurlRequestFailed,
   TryCatchException_CurlSetOptFailed,
   TryCatchException_SQLRequestFailed,
+  TryCatchException_ApiRequestFailed,
+  TryCatchException_MallocFailed,
   TryCatchException_LastID
 
 };

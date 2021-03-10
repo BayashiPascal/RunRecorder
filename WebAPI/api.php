@@ -96,11 +96,11 @@ function GetVersion($db) {
     }
     
     $res["version"] = ($rows->fetchArray())["Label"];
-    $res["ret"] = 0;
+    $res["ret"] = "0";
 
   } catch (Exception $e) {
 
-    $res["ret"] = 1;
+    $res["ret"] = "1";
     $res["errMsg"] = "line " . $e->getLine() . ": " . $e->getMessage();
 
   }
@@ -151,11 +151,11 @@ function AddProject($db, $label) {
     }
 
     $res["refProject"] = $db->lastInsertRowID();
-    $res["ret"] = 0;
+    $res["ret"] = "0";
 
   } catch (Exception $e) {
 
-    $res["ret"] = 1;
+    $res["ret"] = "1";
     $res["errMsg"] = "line " . $e->getLine() . ": " . $e->getMessage();
 
   }
@@ -182,11 +182,11 @@ function GetProjects($db) {
 
     }
 
-    $res["ret"] = 0;
+    $res["ret"] = "0";
 
   } catch (Exception $e) {
 
-    $res["ret"] = 1;
+    $res["ret"] = "1";
     $res["errMsg"] = "line " . $e->getLine() . ": " . $e->getMessage();
 
   }
@@ -241,11 +241,11 @@ function AddMetric($db, $project, $label, $default) {
       throw new Exception("exec() failed for " . $cmd);
     }
 
-    $res["ret"] = 0;
+    $res["ret"] = "0";
 
   } catch (Exception $e) {
 
-      $res["ret"] = 1;
+      $res["ret"] = "1";
       $res["errMsg"] = "line " . $e->getLine() . ": " . $e->getMessage();
 
   }
@@ -273,11 +273,11 @@ function GetMetrics($db, $project) {
 
     }
 
-    $res["ret"] = 0;
+    $res["ret"] = "0";
 
   } catch (Exception $e) {
 
-    $res["ret"] = 1;
+    $res["ret"] = "1";
     $res["errMsg"] = "line " . $e->getLine() . ": " . $e->getMessage();
 
   }
@@ -332,11 +332,11 @@ function AddMeasure($db, $project, $values) {
    
     }
 
-    $res["ret"] = 0;
+    $res["ret"] = "0";
 
   } catch (Exception $e) {
 
-    $res["ret"] = 1;
+    $res["ret"] = "1";
     $res["errMsg"] = "line " . $e->getLine() . ": " . $e->getMessage();
 
   }
@@ -419,7 +419,7 @@ function GetMeasures($db, $project) {
 
   } catch (Exception $e) {
 
-    $res["ret"] = 1;
+    $res["ret"] = "1";
     $res["errMsg"] = "line " . $e->getLine() . ": " . $e->getMessage();
     $res = json_encode($res);
 
@@ -464,11 +464,11 @@ function FlushProject($db, $project) {
       throw new Exception("exec() failed for " . $cmd);
     }
 
-    $res["ret"] = 0;
+    $res["ret"] = "0";
 
   } catch (Exception $e) {
 
-    $res["ret"] = 1;
+    $res["ret"] = "1";
     $res["errMsg"] = "line " . $e->getLine() . ": " . $e->getMessage();
 
   }
@@ -566,7 +566,7 @@ try {
 
 } catch (Exception $e) {
 
-    $res["ret"] = 1;
+    $res["ret"] = "1";
     $res["errMsg"] = "line " . $e->getLine() . ": " . $e->getMessage();
 
 }

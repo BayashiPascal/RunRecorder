@@ -16,8 +16,8 @@ int main() {
 
     // Give pathApi in argument if you want to use the Web API instead
     // of a local file
-    //recorder = RunRecorderCreate(pathDb);
-    recorder = RunRecorderCreate(pathApi);
+    recorder = RunRecorderCreate(pathDb);
+    //recorder = RunRecorderCreate(pathApi);
 
   } Catch(TryCatchException_CreateTableFailed) {
 
@@ -68,6 +68,24 @@ int main() {
       stderr,
       "%s\n",
       recorder->errMsg);
+    exit(EXIT_FAILURE);
+
+  } Catch(TryCatchException_ApiRequestFailed) {
+
+    fprintf(
+      stderr,
+      "API request failed.\n");
+    fprintf(
+      stderr,
+      "%s\n",
+      recorder->errMsg);
+    exit(EXIT_FAILURE);
+
+  } Catch(TryCatchException_MallocFailed) {
+
+    fprintf(
+      stderr,
+      "malloc failed.\n");
     exit(EXIT_FAILURE);
 
   } EndTry;

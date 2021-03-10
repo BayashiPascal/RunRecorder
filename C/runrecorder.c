@@ -3,8 +3,15 @@
 // Include the header
 #include "runrecorder.h"
 
+// ================== Macros =========================
+
 // Last version of the database
 #define RUNRECORDER_VERSION_DB "01.00.00"
+
+// Number of tables in the database
+#define RUNRECORDER_NB_TABLE 5
+
+// ================== Functions declaration =========================
 
 // Return true if a struct RunRecorder uses the Web API, else false
 bool RunRecorderUsesAPI(
@@ -13,6 +20,13 @@ bool RunRecorderUsesAPI(
 
 // Upgrade the database
 void RunRecorderUpgradeDb(
+  // The struct RunRecorder
+  struct RunRecorder* const that);
+
+// Reset the curl reply, to be called before sending a new curl request
+// or the result of the new request will be appended to the eventual
+// one of the previous request
+void RunRecorderResetCurlReply(
   // The struct RunRecorder
   struct RunRecorder* const that);
 
@@ -48,18 +62,36 @@ char* RunRecorderGetVersionLocal(
 
 // Get the version of the database via the Web API
 // Return a new string
+// Raise: TryCatchException_CurlSetOptFailed,
+// TryCatchException_CurlRequestFailed,
+// TryCatchException_ApiRequestFailed
 char* RunRecorderGetVersionAPI(
   // The struct RunRecorder
   struct RunRecorder* const that);
 
+// Callback for RunRecorderGetVersionLocal
+size_t RunRecorderGetReplyAPI(
+  char* data,
+  size_t size,
+  size_t nmemb,
+  void* reply);
+
+// ================== Functions definition =========================
+
 // Constructor for a struct RunRecorder
-// Raise: TryCatchException_CreateTableFailed,
-// TryCatchException_OpenDbFailed,
-// TryCatchException_CreateCurlFailed,
-// TryCatchException_CurlSetOptFailed,
-// TryCatchException_SQLRequestFailed
+// Input:
+//   url: Path to the SQLite database or Web API
+// Output:
+//  Return a new struct RunRecorder
+// Raise: 
+//   TryCatchException_CreateTableFailed
+//   TryCatchException_OpenDbFailed
+//   TryCatchException_CreateCurlFailed
+//   TryCatchException_CurlSetOptFailed
+//   TryCatchException_SQLRequestFailed
+//   TryCatchException_ApiRequestFailed
+//   TryCatchException_MallocFailed
 struct RunRecorder* RunRecorderCreate(
-  // Path to the SQLite database or Web API
   char const* const url) {
 
   // Declare the struct RunRecorder
@@ -71,6 +103,7 @@ struct RunRecorder* RunRecorderCreate(
   // Initialise the other properties
   that->errMsg = NULL;
   that->db = NULL;
+  that->curlReply = NULL;
 
   // If the recorder doesn't use the API
   if (RunRecorderUsesAPI(that) == false) {
@@ -88,6 +121,7 @@ struct RunRecorder* RunRecorderCreate(
         &(that->db));
     if (ret != 0) {
 
+      (fp != NULL ? fclose(fp) : 0);
       that->errMsg = strdup(sqlite3_errmsg(that->db));
       Raise(TryCatchException_OpenDbFailed);
 
@@ -111,19 +145,49 @@ struct RunRecorder* RunRecorderCreate(
     // Create the curl instance
     curl_global_init(CURL_GLOBAL_ALL);
     that->curl = curl_easy_init();
-    if (that->curl != NULL) {
+    if (that->curl == NULL) {
 
-      CURLcode res = curl_easy_setopt(that->curl, CURLOPT_URL, url);
-      if (res != CURLE_OK) {
-
-        that->errMsg = strdup(curl_easy_strerror(res));
-        Raise(TryCatchException_CurlSetOptFailed);
-
-      }
-
-    } else {
-
+      curl_global_cleanup();
       Raise(TryCatchException_CreateCurlFailed);
+
+    }
+
+    // Set the url of the Web API
+    CURLcode res = curl_easy_setopt(that->curl, CURLOPT_URL, url);
+    if (res != CURLE_OK) {
+
+      curl_easy_cleanup(that->curl);
+      curl_global_cleanup();
+      that->errMsg = strdup(curl_easy_strerror(res));
+      Raise(TryCatchException_CurlSetOptFailed);
+
+    }
+
+    // Set the callback to receive data
+    res =
+      curl_easy_setopt(
+        that->curl,
+        CURLOPT_WRITEDATA,
+        &(that->curlReply));
+    if (res != CURLE_OK) {
+
+      curl_easy_cleanup(that->curl);
+      curl_global_cleanup();
+      that->errMsg = strdup(curl_easy_strerror(res));
+      Raise(TryCatchException_CurlSetOptFailed);
+
+    }
+    res =
+      curl_easy_setopt(
+        that->curl,
+        CURLOPT_WRITEFUNCTION,
+        RunRecorderGetReplyAPI);
+    if (res != CURLE_OK) {
+
+      curl_easy_cleanup(that->curl);
+      curl_global_cleanup();
+      that->errMsg = strdup(curl_easy_strerror(res));
+      Raise(TryCatchException_CurlSetOptFailed);
 
     }
 
@@ -149,67 +213,79 @@ struct RunRecorder* RunRecorderCreate(
 }
 
 // Destructor for a struct RunRecorder
+// Input:
+//   that: The struct RunRecorder to be freed
 void RunRecorderFree(
-  // The struct RunRecorder to be freed
   struct RunRecorder** const that) {
 
-  // Free memory used by the properties
-  free((*that)->url);
-  if ((*that)->errMsg != NULL) {
+  // If the struct RunRecorder is not already freed
+  if (*that != NULL) {
 
+    // Free memory used by the properties
+    free((*that)->url);
     free((*that)->errMsg);
 
+    // Close the connection to the local database if it was opened
+    if ((*that)->db != NULL) {
+
+      sqlite3_close((*that)->db);
+
+    }
+
+    // Clean up the curl instance if it was created
+    if ((*that)->curl != NULL) {
+
+      curl_easy_cleanup((*that)->curl);
+      curl_global_cleanup();
+
+    }
+
+    // Free memory used by the RunRecorder
+    free(*that);
+    *that = NULL;
+
   }
-
-  // Close the connection to the local database if it was opened
-  if ((*that)->db != NULL) {
-
-    sqlite3_close((*that)->db);
-
-  }
-
-  // Clean up the curl instance if it was created
-  if ((*that)->curl != NULL) {
-
-    curl_easy_cleanup((*that)->curl);
-    curl_global_cleanup();
-
-  }
-
-  // Free memory used by the RunRecorder
-  free(*that);
-  *that = NULL;
 
 }
 
-// Return true if a struct RunRecorder uses the Web API, else false
+// Check if a struct RunRecorder uses a local SQLite database or the 
+// Web API
+// Input:
+//   that: The struct RunRecorder
+// Return:
+//   Return true if the struct RunRecorder uses the Web API, else false
 bool RunRecorderUsesAPI(
-  // The struct RunRecorder
   struct RunRecorder const* const that) {
 
-  // If the url starts with http
+  // If the url starts with http the struct RunRecorder uses the Web API
   char const* http =
     strstr(
       that->url,
       "http");
-  if (http == that->url) {
+  return (http == that->url);
 
-    return true;
+}
 
-  // Else, the url doesn't start with http
-  } else {
+// Reset the curl reply, to be called before sending a new curl request
+// or the result of the new request will be appended to the eventual
+// one of the previous request
+// Input:
+//   The struct RunRecorder
+void RunRecorderResetCurlReply(
+  struct RunRecorder* const that) {
 
-    return false;
-
-  }
+  free(that->curlReply);
+  that->curlReply = NULL;
 
 }
 
 // Create the database
-// Raise: TryCatchException_CreateTableFailed,
-// TryCatchException_CurlRequestFailed
+// Input:
+//   that: The struct RunRecorder
+// Raise:
+//   TryCatchException_CreateTableFailed,
+//   TryCatchException_CurlRequestFailed
 void RunRecorderCreateDb(
-  // The struct RunRecorder
   struct RunRecorder* const that) {
 
   // If the RunRecorder uses a local database
@@ -225,14 +301,15 @@ void RunRecorderCreateDb(
 }
 
 // Create the database locally
-// Raise: TryCatchException_CreateTableFailed
+// Input:
+//   that: The struct RunRecorder
+// Raise:
+//   TryCatchException_CreateTableFailed
 void RunRecorderCreateDbLocal(
-  // The struct RunRecorder
   struct RunRecorder* const that) {
 
   // List of commands to create the table
-  #define RUNRECORDER_NB_TABLE 6
-  char* sqlCmd[RUNRECORDER_NB_TABLE] = {
+  char* sqlCmd[RUNRECORDER_NB_TABLE + 1] = {
 
     "CREATE TABLE Version ("
     "  Ref INTEGER PRIMARY KEY,"
@@ -262,15 +339,11 @@ void RunRecorderCreateDbLocal(
   // Loop on the commands
   for (
     int iCmd = 0;
-    iCmd < RUNRECORDER_NB_TABLE;
+    iCmd < RUNRECORDER_NB_TABLE + 1;
     ++iCmd) {
 
     // Ensure errMsg is freed
-    if (that->errMsg != NULL) {
-
-      free(that->errMsg);
-
-    }
+    free(that->errMsg);
 
     // Execute the command to create the table
     int retExec =
@@ -293,8 +366,9 @@ void RunRecorderCreateDbLocal(
 }
 
 // Upgrade the database
+// Input:
+//   that: The struct RunRecorder
 void RunRecorderUpgradeDb(
-  // The struct RunRecorder
   struct RunRecorder* const that) {
 
   // Placeholder
@@ -303,9 +377,11 @@ void RunRecorderUpgradeDb(
 }
 
 // Get the version of the database
-// Return a new string
+// Input:
+//   The struct RunRecorder
+// Output:
+//   Return a new string
 char* RunRecorderGetVersion(
-  // The struct RunRecorder
   struct RunRecorder* const that) {
 
   // If the RunRecorder uses a local database
@@ -323,14 +399,17 @@ char* RunRecorderGetVersion(
 }
 
 // Callback for RunRecorderGetVersionLocal
+// Input:
+//   ptrVersion: char** to memorise the version
+//        nbCol: Number of columns in the returned rows
+//       colVal: Rows values
+//      colName: Columns name
+// Output:
+//   Return 0 if successfull, else 1
 static int RunRecorderGetVersionLocalCb(
-  // char** to memorise the version
    void* ptrVersion,
-  // Number of columns in the returned rows
      int nbCol,
-  // Rows values
   char** colVal,
-  // Columns name
   char** colName) {
 
   // Unused argument
@@ -353,18 +432,17 @@ static int RunRecorderGetVersionLocalCb(
 }
 
 // Get the version of the local database
-// Return a new string
-// Raise: TryCatchException_SQLRequestFailed
+// Input:
+//   that: The struct RunRecorder
+// Raise:
+//   TryCatchException_SQLRequestFailed
+// Output:
+//   Return a new string
 char* RunRecorderGetVersionLocal(
-  // The struct RunRecorder
   struct RunRecorder* const that) {
 
   // Ensure errMsg is freed
-  if (that->errMsg != NULL) {
-
-    free(that->errMsg);
-
-  }
+  free(that->errMsg);
 
   // Declare a variable to memeorise the version
   char* version = NULL;
@@ -390,54 +468,177 @@ char* RunRecorderGetVersionLocal(
 }
 
 // Callback for RunRecorderGetVersionLocal
-size_t RunRecorderGetVersionAPICb(
-  char* data,
+// Input:
+//   data: incoming data
+//   size: always 1
+//   nmemb: number of incoming byte
+//   reply: pointer to memory where to store the incoming data
+// Output:
+//   Return the number of received byte
+// Raise:
+//   TryCatchException_MallocFailed
+size_t RunRecorderGetReplyAPI(
+   char* data,
   size_t size,
   size_t nmemb,
-  void* version) {
+   void* reply) {
 
   // Get the size in byte of the received data
   size_t dataSize = size * nmemb;
 
-  // Ensure version is freed
-  if (*(char**)version != NULL) {
+  // If there is received data
+  if (dataSize != 0) {
 
-    free(*(char**)version);
+    // Variable to memorise the current length of the buffer for the reply
+    size_t replyLength = 0;
+
+    // If the current buffer for the reply is not empty
+    if (*(char**)reply != NULL) {
+
+      // Get the current length of the reply
+      replyLength = strlen(*(char**)reply);
+
+    }
+
+    // Allocate memory for current data, the incoming data and the
+    // terminating '\0'
+    *(char**)reply =
+      realloc(
+        *(char**)reply,
+        replyLength + dataSize + 1);
+
+    // If the allocation failed
+    if (reply == NULL) {
+
+      Raise(TryCatchException_MallocFailed);
+
+    }
+
+    // Copy the incoming data and the end of the current buffer
+    memcpy(
+      *(char**)reply + replyLength,
+      data,
+      dataSize);
+    (*(char**)reply)[replyLength + dataSize] = '\0';
 
   }
-
-  // Allocate memory to copy the incoming data and the terminating '\0'
-  *(char**)version = malloc(dataSize + 1);
-
-  // Copy the incoming data
-  memcpy(
-    *(char**)version,
-    data,
-    dataSize);
-  (*(char**)version)[dataSize] = '\0';
 
   // Return the number of byte received;
   return dataSize;
 
 }
 
-// Get the version of the database via the Web API
-// Return a new string
-// Raise: TryCatchException_CurlSetOptFailed,
-// TryCatchException_CurlRequestFailed
-char* RunRecorderGetVersionAPI(
-  // The struct RunRecorder
-  struct RunRecorder* const that) {
+// Get the value of a key in a JSON encoded string
+// Input:
+//   json: the json encoded string
+//    key: the key
+// Output:
+//   Return a new string, or NULL if the key doesn't exist
+// Raise:
+//   TryCatchException_MallocFailed
+char* RunRecoderGetJSONValOfKey(
+  char const* const json,
+  char const* const key) {
 
-  // Ensure errMsg is freed
-  if (that->errMsg != NULL) {
+  // If the json or key is null or empty
+  if (json == NULL || key == NULL || *json == '\0' || *key == '\0') {
 
-    free(that->errMsg);
+    // Nothing to do
+    return NULL;
 
   }
 
-  // Declare a variable to memeorise the version
-  char* version = NULL;
+  // Variable to memorise the value
+  char* val = NULL;
+
+  // Get the length of the key
+  size_t lenKey = strlen(key);
+
+  // Create the key decorated with it's syntax
+  char* keyDecorated = malloc(lenKey + 5);
+  sprintf(
+    keyDecorated,
+    "\"%s\":\"",
+    key);
+  if (keyDecorated == NULL) {
+
+    Raise(TryCatchException_MallocFailed);
+
+  }
+
+  // Search the key in the JSON encoded string
+  char const* ptrKey =
+    strstr(
+      json,
+      keyDecorated);
+  if (ptrKey != NULL) {
+
+    // Variable to memorise the start of the value
+    char const* ptrVal = ptrKey + strlen(keyDecorated);
+    // Loop on the characters of the value until the next double quote
+    char const* ptr = ptrVal;
+    while (ptr != NULL && *ptr != '"') {
+
+      ++ptr;
+
+      // Skip the escaped character
+      if (ptr != NULL && *ptr == '\\') {
+
+        ++ptr;
+
+      }
+
+    }
+
+    // If we have found the closing double quote
+    if (ptr != NULL) {
+
+      // Get the length of the value
+      size_t lenVal = ptr - ptrVal;
+
+      // Allocate memory for the value
+      val = malloc(lenVal + 1);
+      if (val == NULL) {
+
+        free(keyDecorated);
+        Raise(TryCatchException_MallocFailed);
+
+      }
+
+      // Copy the value
+      memcpy(
+        val,
+        ptrVal,
+        lenVal);
+      val[lenVal] = '\0';
+
+    }
+
+  }
+
+  // Free memory
+  free(keyDecorated);
+
+  // Return the value
+  return val;
+
+}
+
+// Get the version of the database via the Web API
+// Input:
+//   The struct RunRecorder
+// Output:
+//   Return a new string
+// Raise:
+//   TryCatchException_CurlSetOptFailed,
+//   TryCatchException_CurlRequestFailed,
+//   TryCatchException_ApiRequestFailed
+//   TryCatchException_MallocFailed
+char* RunRecorderGetVersionAPI(
+  struct RunRecorder* const that) {
+
+  // Ensure errMsg is freed
+  free(that->errMsg);
 
   // Create the request to the Web API
   CURLcode res =
@@ -452,31 +653,8 @@ char* RunRecorderGetVersionAPI(
 
   }
 
-  // Set the callback
-  res =
-    curl_easy_setopt(
-      that->curl,
-      CURLOPT_WRITEDATA,
-      &version);
-  if (res != CURLE_OK) {
-
-    that->errMsg = strdup(curl_easy_strerror(res));
-    Raise(TryCatchException_CurlSetOptFailed);
-
-  }
-  res =
-    curl_easy_setopt(
-      that->curl,
-      CURLOPT_WRITEFUNCTION,
-      RunRecorderGetVersionAPICb);
-  if (res != CURLE_OK) {
-
-    that->errMsg = strdup(curl_easy_strerror(res));
-    Raise(TryCatchException_CurlSetOptFailed);
-
-  }
-
   // Send the request to the API
+  RunRecorderResetCurlReply(that);
   res = curl_easy_perform(that->curl);
   if (res != CURLE_OK) {
 
@@ -485,11 +663,44 @@ char* RunRecorderGetVersionAPI(
 
   }
 
+  // Extract the return code from the JSON reply
+  char* retCode =
+    RunRecoderGetJSONValOfKey(
+      that->curlReply,
+      "ret");
+  if (retCode == NULL) {
+
+    that->errMsg = strdup("'err' missing in API reply");
+    Raise(TryCatchException_ApiRequestFailed);
+
+  }
+
+  // If the request failed
+  int cmpRet =
+    strcmp(
+      retCode,
+      "0");
+  if (cmpRet != 0) {
+
+    that->errMsg =
+      RunRecoderGetJSONValOfKey(
+        that->curlReply,
+        "errMsg");
+    Raise(TryCatchException_ApiRequestFailed);
+
+  }
+
+  free(retCode);
+
   // Extract the version number from the JSON reply
-  // TODO
+  char* version =
+    RunRecoderGetJSONValOfKey(
+      that->curlReply,
+      "version");
 
   // Return the version
   return version;
+
 }
 
 // ------------------ runrecorder.c ------------------

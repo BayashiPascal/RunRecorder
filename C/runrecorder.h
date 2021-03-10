@@ -34,6 +34,9 @@ struct RunRecorder {
   // Curl instance if we use the Web API
   CURL* curl;
 
+  // String to memorise the reply from Curl requests
+  char* curlReply;
+
 };
 
 // Constructor for a struct RunRecorder
@@ -42,7 +45,8 @@ struct RunRecorder {
 // TryCatchException_CreateCurlFailed,
 // TryCatchException_CurlRequestFailed,
 // TryCatchException_CurlSetOptFailed,
-// TryCatchException_SQLRequestFailed
+// TryCatchException_SQLRequestFailed,
+// TryCatchException_ApiRequestFailed
 struct RunRecorder* RunRecorderCreate(
   // Path to the SQLite database or Web API
   char const* const url);
