@@ -150,7 +150,7 @@ function AddProject($db, $label) {
       throw new Exception("exec() failed for " . $cmd);
     }
 
-    $res["refProject"] = $db->lastInsertRowID();
+    $res["refProject"] = "" . $db->lastInsertRowID();
     $res["ret"] = "0";
 
   } catch (Exception $e) {

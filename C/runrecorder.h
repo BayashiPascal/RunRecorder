@@ -12,6 +12,7 @@
 #include <math.h>
 #include <sqlite3/sqlite3.h>
 #include <curl/curl.h>
+#include <errno.h>
 
 // Include own mdules header
 #include "trycatch.h"
@@ -40,35 +41,58 @@ struct RunRecorder {
 };
 
 // Constructor for a struct RunRecorder
-// Raise: TryCatchException_CreateTableFailed,
-// TryCatchException_OpenDbFailed,
-// TryCatchException_CreateCurlFailed,
-// TryCatchException_CurlRequestFailed,
-// TryCatchException_CurlSetOptFailed,
-// TryCatchException_SQLRequestFailed,
-// TryCatchException_ApiRequestFailed
+// Input:
+//   url: Path to the SQLite database or Web API
+// Output:
+//  Return a new struct RunRecorder
+// Raise: 
+//   TryCatchException_CreateTableFailed
+//   TryCatchException_OpenDbFailed
+//   TryCatchException_CreateCurlFailed
+//   TryCatchException_CurlSetOptFailed
+//   TryCatchException_SQLRequestFailed
+//   TryCatchException_ApiRequestFailed
+//   TryCatchException_MallocFailed
 struct RunRecorder* RunRecorderCreate(
-  // Path to the SQLite database or Web API
   char const* const url);
 
 // Destructor for a struct RunRecorder
+// Input:
+//   that: The struct RunRecorder to be freed
 void RunRecorderFree(
-  // The struct RunRecorder to be freed
   struct RunRecorder** that);
 
 // Get the version of the database
-// Return a new string
+// Input:
+//   that: the struct RunRecorder
+// Output:
+//   Return a new string
+// Raise:
+//   TryCatchException_SQLRequestFailed
+//   TryCatchException_CurlSetOptFailed
+//   TryCatchException_CurlRequestFailed
+//   TryCatchException_ApiRequestFailed
+//   TryCatchException_MallocFailed
 char* RunRecorderGetVersion(
-  // The struct RunRecorder
   struct RunRecorder* const that);
 
-// Create a new project
-// Return true on success, else return false and set that->errMsg
-bool RunRecorderAddProject(
-  // The struct RunRecorder
+// Add a new projet
+// Input:
+//   that: the struct RunRecorder
+//   name: the name of the new project, double quote `"`, equal sign `=` and
+//         ampersand `&` can't be used in the project's name
+// Output:
+//   Return the reference of the new project
+// Raise:
+//   TryCatchException_SQLRequestFailed
+//   TryCatchException_CurlSetOptFailed
+//   TryCatchException_CurlRequestFailed
+//   TryCatchException_ApiRequestFailed
+//   TryCatchException_MallocFailed
+//   TryCatchException_InvalidProjectName
+//   TryCatchException_AddProjectFailed
+long RunRecorderAddProject(
   struct RunRecorder* const that,
-  // The project's name. The double quote `"`, equal sign `=` and
-  // ampersand `&` can't be used in the project's name.
   char const* const name);
 
 // End of the guard against multiple inclusion

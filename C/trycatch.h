@@ -38,6 +38,8 @@ enum TryCatchException {
   TryCatchException_SQLRequestFailed,
   TryCatchException_ApiRequestFailed,
   TryCatchException_MallocFailed,
+  TryCatchException_InvalidProjectName,
+  TryCatchException_AddProjectFailed,
   TryCatchException_LastID
 
 };

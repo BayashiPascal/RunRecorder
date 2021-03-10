@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdbool.h>
 #include "runrecorder.h"
 
 // Main function
@@ -16,8 +15,8 @@ int main() {
 
     // Give pathApi in argument if you want to use the Web API instead
     // of a local file
-    recorder = RunRecorderCreate(pathDb);
-    //recorder = RunRecorderCreate(pathApi);
+    //recorder = RunRecorderCreate(pathDb);
+    recorder = RunRecorderCreate(pathApi);
 
   } Catch(TryCatchException_CreateTableFailed) {
 
@@ -28,6 +27,7 @@ int main() {
       stderr,
       "%s\n",
       recorder->errMsg);
+    RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
   } Catch(TryCatchException_OpenDbFailed) {
@@ -39,6 +39,7 @@ int main() {
       stderr,
       "%s\n",
       recorder->errMsg);
+    RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
   } Catch(TryCatchException_CreateCurlFailed) {
@@ -46,6 +47,7 @@ int main() {
     fprintf(
       stderr,
       "Failed to create the Curl instance.\n");
+    RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
   } Catch(TryCatchException_CurlSetOptFailed) {
@@ -57,6 +59,7 @@ int main() {
       stderr,
       "%s\n",
       recorder->errMsg);
+    RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
   } Catch(TryCatchException_SQLRequestFailed) {
@@ -68,6 +71,7 @@ int main() {
       stderr,
       "%s\n",
       recorder->errMsg);
+    RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
   } Catch(TryCatchException_ApiRequestFailed) {
@@ -79,6 +83,7 @@ int main() {
       stderr,
       "%s\n",
       recorder->errMsg);
+    RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
   } Catch(TryCatchException_MallocFailed) {
@@ -86,6 +91,7 @@ int main() {
     fprintf(
       stderr,
       "malloc failed.\n");
+    RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
   } EndTry;
@@ -95,7 +101,7 @@ int main() {
 
     char* version = RunRecorderGetVersion(recorder);
     printf(
-      "%s\n",
+      "version: %s\n",
       version);
     free(version);
 
@@ -108,6 +114,7 @@ int main() {
       stderr,
       "%s\n",
       recorder->errMsg);
+    RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
   } Catch(TryCatchException_CurlSetOptFailed) {
@@ -119,6 +126,7 @@ int main() {
       stderr,
       "%s\n",
       recorder->errMsg);
+    RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
   } Catch(TryCatchException_CurlRequestFailed) {
@@ -130,6 +138,7 @@ int main() {
       stderr,
       "%s\n",
       recorder->errMsg);
+    RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
   } Catch(TryCatchException_ApiRequestFailed) {
@@ -141,6 +150,7 @@ int main() {
       stderr,
       "%s\n",
       recorder->errMsg);
+    RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
   } Catch(TryCatchException_MallocFailed) {
@@ -148,25 +158,82 @@ int main() {
     fprintf(
       stderr,
       "malloc failed.\n");
+    RunRecorderFree(&recorder);
+    exit(EXIT_FAILURE);
+
+  } EndTry;
+
+  // Create a new project
+  long refProject = 0;
+  Try {
+
+    refProject =
+      RunRecorderAddProject(
+        recorder,
+        "Body weight");
+    printf(
+      "refProject: %ld\n",
+      refProject);
+
+  } Catch(TryCatchException_SQLRequestFailed) {
+
+    fprintf(
+      stderr,
+      "SQL request failed.\n");
+    RunRecorderFree(&recorder);
+    exit(EXIT_FAILURE);
+
+  } Catch(TryCatchException_CurlSetOptFailed) {
+
+    fprintf(
+      stderr,
+      "Curl setopt failed.\n");
+    RunRecorderFree(&recorder);
+    exit(EXIT_FAILURE);
+
+  } Catch(TryCatchException_CurlRequestFailed) {
+
+    fprintf(
+      stderr,
+      "curl request failed.\n");
+    RunRecorderFree(&recorder);
+    exit(EXIT_FAILURE);
+
+  } Catch(TryCatchException_ApiRequestFailed) {
+
+    fprintf(
+      stderr,
+      "API request failed.\n");
+    RunRecorderFree(&recorder);
+    exit(EXIT_FAILURE);
+
+  } Catch(TryCatchException_InvalidProjectName) {
+
+    fprintf(
+      stderr,
+      "invalid project name.\n");
+    RunRecorderFree(&recorder);
+    exit(EXIT_FAILURE);
+
+  } Catch(TryCatchException_AddProjectFailed) {
+
+    fprintf(
+      stderr,
+      "add project failed.\n");
+    RunRecorderFree(&recorder);
+    exit(EXIT_FAILURE);
+
+  } Catch(TryCatchException_MallocFailed) {
+
+    fprintf(
+      stderr,
+      "malloc failed.\n");
+    RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
   } EndTry;
 
 /*
-  // Create a new project
-  bool success =
-    RunRecorderAddProject(
-      recorder,
-      "Body weight");
-  if (success == false) {
-
-    fprintf(
-      stderr,
-      "%s\n",
-      recorder->errMsg);
-
-  }
-
   // Get the list of projects
   success =
     RunRecorderGetProjects(

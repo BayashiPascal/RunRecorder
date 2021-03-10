@@ -220,7 +220,37 @@ runrecorder.sh add_project "label=Room temperature"
 
 Example using the C library:
 ```
-TODO
+#include <stdio.h>
+#include "runrecorder.h"
+
+int main() {
+
+  char const* pathDb = "./runrecorder.db";
+  char const* pathApi = "https://localhost/RunRecorder/api.php";
+
+  // Create the RunRecorder instance
+  struct RunRecorder* recorder;
+  // Give pathApi in argument if you want to use the Web API instead
+  // of a local file
+  recorder = RunRecorderCreate(pathDb);
+
+  // Create a new project
+  long refProject =
+    RunRecorderAddProject(
+      recorder,
+      "Body weight");
+  printf(
+    "%ld\n",
+    refProject);
+
+  // Free memory
+  RunRecorderFree(&recorder);
+  return EXIT_SUCCESS;
+
+}
+
+// Result:
+// 1
 ```
 
 Memorise the value of `refProject`, you will need it to record measure later.

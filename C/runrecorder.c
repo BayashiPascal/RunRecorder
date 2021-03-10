@@ -382,11 +382,7 @@ void RunRecorderCreateDbLocal(
         // No user data
         NULL,
         &(that->errMsg));
-    if (retExec != SQLITE_OK) {
-
-      Raise(TryCatchException_CreateTableFailed);
-
-    }
+    (retExec != SQLITE_OK ? Raise(TryCatchException_CreateTableFailed) : 0);
 
   }
 
@@ -405,7 +401,7 @@ void RunRecorderUpgradeDb(
 
 // Get the version of the database
 // Input:
-//   The struct RunRecorder
+//   that: the struct RunRecorder
 // Output:
 //   Return a new string
 // Raise:
@@ -778,6 +774,186 @@ char* RunRecorderGetVersionAPI(
 
   // Return the version
   return version;
+
+}
+
+// Add a new projet in a local database
+// Input:
+//   that: the struct RunRecorder
+//   name: the name of the new project, double quote `"`, equal sign `=` and
+//         ampersand `&` can't be used in the project's name
+// Output:
+//   Return the reference of the new project
+// Raise:
+//   TryCatchException_SQLRequestFailed
+//   TryCatchException_MallocFailed
+long RunRecorderAddProjectLocal(
+  struct RunRecorder* const that,
+  char const* const name) {
+
+  // Ensure errMsg is freed
+  free(that->errMsg);
+
+  // Create the SQL command
+  char* cmdBase = "INSERT INTO Project (Ref, Label) VALUES (NULL, \"%s\")";
+  char* cmd = malloc(strlen(cmdBase) + strlen(name) - 1);
+  (cmd == NULL ? Raise(TryCatchException_MallocFailed) : 0);
+  sprintf(
+    cmd,
+    cmdBase,
+    name);
+
+  // Execute the command to create the table
+  int retExec =
+    sqlite3_exec(
+      that->db,
+      cmd,
+      // No callback
+      NULL,
+      // No user data
+      NULL,
+      &(that->errMsg));
+  free(cmd);
+  (retExec != SQLITE_OK ? Raise(TryCatchException_AddProjectFailed) : 0);
+
+  // Get the reference of the new project
+  long refProject = sqlite3_last_insert_rowid(that->db);
+
+  // Return the reference
+  return refProject;
+
+}
+
+// Add a new projet in a remote database
+// Input:
+//   that: the struct RunRecorder
+//   name: the name of the new project, double quote `"`, equal sign `=` and
+//         ampersand `&` can't be used in the project's name
+// Output:
+//   Return the reference of the new project
+// Raise:
+//   TryCatchException_SQLRequestFailed
+//   TryCatchException_CurlSetOptFailed
+//   TryCatchException_CurlRequestFailed
+//   TryCatchException_ApiRequestFailed
+//   TryCatchException_MallocFailed
+//   TryCatchException_AddProjectFailed
+long RunRecorderAddProjectAPI(
+  struct RunRecorder* const that,
+  char const* const name) {
+
+  // Ensure errMsg is freed
+  free(that->errMsg);
+
+  // Create the request to the Web API
+  char* cmdBase = "action=add_project&label=";
+  char* cmd = malloc(strlen(cmdBase) + strlen(name) + 1);
+  (cmd == NULL ? Raise(TryCatchException_MallocFailed) : 0);
+  sprintf(
+    cmd,
+    "%s%s",
+    cmdBase,
+    name);
+  Try {
+
+    RunRecorderSetAPIReqPostVal(
+      that,
+      cmd);
+
+  } Catch(TryCatchException_CurlSetOptFailed) {
+
+    free(cmd);
+    Raise(TryCatchException_CurlSetOptFailed);
+
+  } EndTry;
+
+  // Send the request to the API
+  RunRecorderSendAPIReq(that);
+  free(cmd);
+
+  // Extract the reference of the project from the JSON reply
+  char* refProjectStr =
+    RunRecoderGetJSONValOfKey(
+      that->curlReply,
+      "refProject");
+  if (refProjectStr == NULL) {
+
+    that->errMsg = strdup(that->curlReply);
+    Raise(TryCatchException_ApiRequestFailed);
+
+  }
+
+  // Convert from string to long
+  long refProject =
+    strtol(
+      refProjectStr,
+      NULL,
+      10);
+  free(refProjectStr);
+  (errno != 0 ? Raise(TryCatchException_AddProjectFailed) : 0);
+
+  // Return the version
+  return refProject;
+
+}
+
+// Add a new projet
+// Input:
+//   that: the struct RunRecorder
+//   name: the name of the new project, double quote `"`, equal sign `=` and
+//         ampersand `&` can't be used in the project's name
+// Output:
+//   Return the reference of the new project
+// Raise:
+//   TryCatchException_SQLRequestFailed
+//   TryCatchException_CurlSetOptFailed,
+//   TryCatchException_CurlRequestFailed
+//   TryCatchException_ApiRequestFailed
+//   TryCatchException_MallocFailed
+//   TryCatchException_InvalidProjectName
+//   TryCatchException_AddProjectFailed
+long RunRecorderAddProject(
+  struct RunRecorder* const that,
+  char const* const name) {
+
+  // Check the label
+  char const* ptrDoubleQuote =
+    strchr(
+      name,
+      '"');
+  char const* ptrEqual =
+    strchr(
+      name,
+      '=');
+  char const* ptrAmpersand =
+    strchr(
+      name,
+      '&');
+  if (ptrDoubleQuote != NULL ||
+      ptrEqual != NULL || 
+      ptrAmpersand != NULL) {
+
+    Raise(TryCatchException_InvalidProjectName);
+
+  }
+
+  // If the RunRecorder uses a local database
+  if (RunRecorderUsesAPI(that) == false) {
+
+    return
+      RunRecorderAddProjectLocal(
+        that,
+        name);
+
+  // Else, the RunRecorder uses the Web API
+  } else {
+
+    return
+      RunRecorderAddProjectAPI(
+        that,
+        name);
+
+  }
 
 }
 
