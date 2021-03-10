@@ -22,6 +22,7 @@ int main() {
     CatchAlso(RunRecorderExc_OpenDbFailed)
     CatchAlso(RunRecorderExc_CreateCurlFailed)
     CatchAlso(RunRecorderExc_CurlSetOptFailed)
+    CatchAlso(RunRecorderExc_CurlRequestFailed)
     CatchAlso(RunRecorderExc_SQLRequestFailed)
     CatchAlso(RunRecorderExc_ApiRequestFailed)
     CatchAlso(RunRecorderExc_MallocFailed) {
