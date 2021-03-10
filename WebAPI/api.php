@@ -14,14 +14,6 @@ $pathDB = "./runrecorder.db";
 // Version of the database
 $versionDB = "01.00.00";
 
-// Require https
-if (!isset($_SERVER['HTTPS'])) {
-
-  echo '{"ret":"0"}';
-  exit;
-
-}
-
 // Create the database
 function CreateDatabase($path, $version) {
 
