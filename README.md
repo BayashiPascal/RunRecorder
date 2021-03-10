@@ -98,9 +98,49 @@ r = requests.post(url, data=payload, headers=headers)
 print(str(r.text))
 ```
 
+
+The API returns, when the request was successfull:
+```
+{"ret":"0", ...}
+```
+when the success failed:
+```
+{"errMsg":"something went wrong","ret":"1"}
+```
+
 ### Through the C library
 
-TODO
+```
+#include "runrecorder.h"
+
+int main() {
+
+  char const* pathDb = "./runrecorder.db";
+  char const* pathApi = "https://localhost/RunRecorder/api.php";
+
+  // Create the RunRecorder instance
+  struct RunRecorder* recorder;
+
+  Try {
+    // Give pathApi in argument if you want to use the Web API instead
+    // of a local file
+    recorder = RunRecorderCreate(pathDb);
+  } Catch(TryCatchException_CreateTableFailed) {
+    exit(EXIT_FAILURE);
+  // Other Catch omitted...
+  } EndTry;
+
+  // Your code using RunRecorder here (see below for details)
+  // ...
+
+  // Free memory
+  RunRecorderFree(&recorder);
+  return EXIT_SUCCESS;
+
+}
+```
+
+In examples below the Try/Catch blocks are omitted. Refer to `Repos/RunRecorder/C/main.c` or the comments in the code for detailed information.
 
 You can compile code using the RunRecorder C library with the following Makefile:
 
@@ -124,22 +164,41 @@ A first simple test to check if everything is working fine is to request the ver
 
 Example using the shell script:
 ```
-runrecorder.sh version
+> runrecorder.sh version
+{"version":"01.00.00","ret":"0"}
 ```
 
 Example using the C library:
 ```
-TODO
-```
+#include <stdio.h>
+#include "runrecorder.h"
 
-On success, the API returns, for example:
-```
-{"version":"01.00.00","ret":"0"}
-```
+int main() {
 
-On failure, an error message is returned.
-```
-{"errMsg":"something went wrong","ret":"0"}
+  char const* pathDb = "./runrecorder.db";
+  char const* pathApi = "https://localhost/RunRecorder/api.php";
+
+  // Create the RunRecorder instance
+  struct RunRecorder* recorder;
+  // Give pathApi in argument if you want to use the Web API instead
+  // of a local file
+  recorder = RunRecorderCreate(pathDb);
+
+  // Get the version of the database
+  char* version = RunRecorderGetVersion(recorder);
+  printf(
+    "%s\n",
+    version);
+  free(version);
+
+  // Free memory
+  RunRecorderFree(&recorder);
+  return EXIT_SUCCESS;
+
+}
+
+// Result:
+// 01.00.00
 ```
 
 ### Create a new project
@@ -156,6 +215,7 @@ In RunRecorder, data are grouped by projects. To start recording data, the first
 Example using the shell script:
 ```
 runrecorder.sh add_project "label=Room temperature"
+{"refProject":1,"ret":"0"}
 ```
 
 Example using the C library:
@@ -163,16 +223,7 @@ Example using the C library:
 TODO
 ```
 
-On success, the API returns, for example:
-```
-{"refProject":1,"ret":"0"}
-```
 Memorise the value of `refProject`, you will need it to record measure later.
-
-On failure, an error message is returned.
-```
-{"errMsg":"something went wrong","ret":"0"}
-```
 
 #### Get the projects
 
