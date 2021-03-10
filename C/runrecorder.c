@@ -11,6 +11,21 @@
 // Number of tables in the database
 #define RUNRECORDER_NB_TABLE 5
 
+// Label for the exceptions
+char* RunRecorderExceptionStr[RunRecorderExc_LastID] = {
+  "RunRecorderExc_Segv",
+  "RunRecorderExc_CreateTableFailed",
+  "RunRecorderExc_OpenDbFailed",
+  "RunRecorderExc_CreateCurlFailed",
+  "RunRecorderExc_CurlRequestFailed",
+  "RunRecorderExc_CurlSetOptFailed",
+  "RunRecorderExc_SQLRequestFailed",
+  "RunRecorderExc_ApiRequestFailed",
+  "RunRecorderExc_MallocFailed",
+  "RunRecorderExc_InvalidProjectName",
+  "RunRecorderExc_AddProjectFailed",
+};
+
 // ================== Functions declaration =========================
 
 // Return true if a struct RunRecorder uses the Web API, else false

@@ -30,8 +30,8 @@ int main() {
 
     fprintf(
       stderr,
-      "Caught exception %d.\n",
-      TryCatchGetLastExc());
+      "Caught exception %s.\n",
+      RunRecorderExceptionStr[TryCatchGetLastExc()]);
     if (recorder->errMsg != NULL) {
 
       fprintf(
@@ -63,8 +63,8 @@ int main() {
 
     fprintf(
       stderr,
-      "Caught exception %d.\n",
-      TryCatchGetLastExc());
+      "Caught exception %s.\n",
+      RunRecorderExceptionStr[TryCatchGetLastExc()]);
     if (recorder->errMsg != NULL) {
 
       fprintf(
@@ -101,8 +101,8 @@ int main() {
 
     fprintf(
       stderr,
-      "Caught exception %d.\n",
-      TryCatchGetLastExc());
+      "Caught exception %s.\n",
+      RunRecorderExceptionStr[TryCatchGetLastExc()]);
     if (recorder->errMsg != NULL) {
 
       fprintf(

@@ -17,6 +17,9 @@
 // Include own mdules header
 #include "trycatch.h"
 
+// Labels for the exception
+char* RunRecorderExceptionStr[RunRecorderExc_LastID];
+
 // Structure 
 struct RunRecorder {
 
