@@ -78,6 +78,107 @@ size_t RunRecorderGetReplyAPI(
 
 // ================== Functions definition =========================
 
+// Init a struct RunRecorder using a local SQLite database
+// Input:
+//   that: the struct RunRecorder
+// Raise:
+//   TryCatchException_OpenDbFailed
+void RunRecorderInitLocal(
+  struct RunRecorder* const that) {
+
+  // Try to open the file in reading mode to check if it exists
+  FILE* fp =
+    fopen(
+      that->url,
+      "r");
+
+  // Open the connection to the local database
+  int ret =
+    sqlite3_open(
+      that->url,
+      &(that->db));
+  if (ret != 0) {
+
+    (fp != NULL ? fclose(fp) : 0);
+    that->errMsg = strdup(sqlite3_errmsg(that->db));
+    Raise(TryCatchException_OpenDbFailed);
+
+  }
+
+  // If the SQLite database local file doesn't exists
+  if (fp == NULL) {
+
+    // Create the database
+    RunRecorderCreateDb(that);
+
+  } else {
+
+    fclose(fp);
+
+  }
+
+}
+
+// Init a struct RunRecorder using the Web API
+// Input:
+//   that: the struct RunRecorder
+// Raise:
+//   TryCatchException_CreateCurlFailed
+//   TryCatchException_CurlSetOptFailed
+void RunRecorderInitWebAPI(
+  struct RunRecorder* const that) {
+
+  // Create the curl instance
+  curl_global_init(CURL_GLOBAL_ALL);
+  that->curl = curl_easy_init();
+  if (that->curl == NULL) {
+
+    curl_global_cleanup();
+    Raise(TryCatchException_CreateCurlFailed);
+
+  }
+
+  // Set the url of the Web API
+  CURLcode res = curl_easy_setopt(that->curl, CURLOPT_URL, that->url);
+  if (res != CURLE_OK) {
+
+    curl_easy_cleanup(that->curl);
+    curl_global_cleanup();
+    that->errMsg = strdup(curl_easy_strerror(res));
+    Raise(TryCatchException_CurlSetOptFailed);
+
+  }
+
+  // Set the callback to receive data
+  res =
+    curl_easy_setopt(
+      that->curl,
+      CURLOPT_WRITEDATA,
+      &(that->curlReply));
+  if (res != CURLE_OK) {
+
+    curl_easy_cleanup(that->curl);
+    curl_global_cleanup();
+    that->errMsg = strdup(curl_easy_strerror(res));
+    Raise(TryCatchException_CurlSetOptFailed);
+
+  }
+  res =
+    curl_easy_setopt(
+      that->curl,
+      CURLOPT_WRITEFUNCTION,
+      RunRecorderGetReplyAPI);
+  if (res != CURLE_OK) {
+
+    curl_easy_cleanup(that->curl);
+    curl_global_cleanup();
+    that->errMsg = strdup(curl_easy_strerror(res));
+    Raise(TryCatchException_CurlSetOptFailed);
+
+  }
+
+}
+
 // Constructor for a struct RunRecorder
 // Input:
 //   url: Path to the SQLite database or Web API
@@ -108,88 +209,14 @@ struct RunRecorder* RunRecorderCreate(
   // If the recorder doesn't use the API
   if (RunRecorderUsesAPI(that) == false) {
 
-    // Try to open the file in reading mode to check if it exists
-    FILE* fp =
-      fopen(
-        url,
-        "r");
-
-    // Open the connection to the local database
-    int ret =
-      sqlite3_open(
-        url,
-        &(that->db));
-    if (ret != 0) {
-
-      (fp != NULL ? fclose(fp) : 0);
-      that->errMsg = strdup(sqlite3_errmsg(that->db));
-      Raise(TryCatchException_OpenDbFailed);
-
-    }
-
-    // If the SQLite database local file doesn't exists
-    if (fp == NULL) {
-
-      // Create the database
-      RunRecorderCreateDb(that);
-
-    } else {
-
-      fclose(fp);
-
-    }
+    // Init the local connection to the database
+    RunRecorderInitLocal(that);
 
   // Else, the recorder uses the API
   } else {
 
-    // Create the curl instance
-    curl_global_init(CURL_GLOBAL_ALL);
-    that->curl = curl_easy_init();
-    if (that->curl == NULL) {
-
-      curl_global_cleanup();
-      Raise(TryCatchException_CreateCurlFailed);
-
-    }
-
-    // Set the url of the Web API
-    CURLcode res = curl_easy_setopt(that->curl, CURLOPT_URL, url);
-    if (res != CURLE_OK) {
-
-      curl_easy_cleanup(that->curl);
-      curl_global_cleanup();
-      that->errMsg = strdup(curl_easy_strerror(res));
-      Raise(TryCatchException_CurlSetOptFailed);
-
-    }
-
-    // Set the callback to receive data
-    res =
-      curl_easy_setopt(
-        that->curl,
-        CURLOPT_WRITEDATA,
-        &(that->curlReply));
-    if (res != CURLE_OK) {
-
-      curl_easy_cleanup(that->curl);
-      curl_global_cleanup();
-      that->errMsg = strdup(curl_easy_strerror(res));
-      Raise(TryCatchException_CurlSetOptFailed);
-
-    }
-    res =
-      curl_easy_setopt(
-        that->curl,
-        CURLOPT_WRITEFUNCTION,
-        RunRecorderGetReplyAPI);
-    if (res != CURLE_OK) {
-
-      curl_easy_cleanup(that->curl);
-      curl_global_cleanup();
-      that->errMsg = strdup(curl_easy_strerror(res));
-      Raise(TryCatchException_CurlSetOptFailed);
-
-    }
+    // Init the Web API
+    RunRecorderInitWebAPI(that);
 
   }
 
@@ -381,6 +408,12 @@ void RunRecorderUpgradeDb(
 //   The struct RunRecorder
 // Output:
 //   Return a new string
+// Raise:
+//   TryCatchException_SQLRequestFailed
+//   TryCatchException_CurlSetOptFailed,
+//   TryCatchException_CurlRequestFailed,
+//   TryCatchException_ApiRequestFailed
+//   TryCatchException_MallocFailed
 char* RunRecorderGetVersion(
   struct RunRecorder* const that) {
 
@@ -434,10 +467,10 @@ static int RunRecorderGetVersionLocalCb(
 // Get the version of the local database
 // Input:
 //   that: The struct RunRecorder
-// Raise:
-//   TryCatchException_SQLRequestFailed
 // Output:
 //   Return a new string
+// Raise:
+//   TryCatchException_SQLRequestFailed
 char* RunRecorderGetVersionLocal(
   struct RunRecorder* const that) {
 
@@ -467,7 +500,7 @@ char* RunRecorderGetVersionLocal(
 
 }
 
-// Callback for RunRecorderGetVersionLocal
+// Callback to memorise the incoming data from the Web API
 // Input:
 //   data: incoming data
 //   size: always 1
@@ -624,6 +657,95 @@ char* RunRecoderGetJSONValOfKey(
 
 }
 
+// Set the POST data in the Web API request of a struct RunRecorder
+// Input:
+//   that: the struct RunRecorder
+//   data: the POST data
+// Raise:
+//   TryCatchException_CurlSetOptFailed
+void RunRecorderSetAPIReqPostVal(
+  struct RunRecorder* const that,
+  char const* const data) {
+
+  // Set the data in the Curl fields
+  CURLcode res =
+    curl_easy_setopt(
+      that->curl,
+      CURLOPT_POSTFIELDS,
+      data);
+  if (res != CURLE_OK) {
+
+    that->errMsg = strdup(curl_easy_strerror(res));
+    Raise(TryCatchException_CurlSetOptFailed);
+
+  }
+
+}
+
+// Get the ret code in the current JSON reply of a struct RunRecorder
+// Input:
+//   that: the struct RunRecorder
+// Output:
+//   Return a new string
+// Raise:
+//   TryCatchException_ApiRequestFailed
+char* RunRecorderGetAPIRetCode(
+  struct RunRecorder* const that) {
+
+  // Extract the return code from the JSON reply
+  char* retCode =
+    RunRecoderGetJSONValOfKey(
+      that->curlReply,
+      "ret");
+  if (retCode == NULL) {
+
+    that->errMsg = strdup("'err' key missing in API reply");
+    Raise(TryCatchException_ApiRequestFailed);
+
+  }
+
+  // Return the code
+  return retCode;
+
+}
+
+// Send the current request of a struct RunRecorder
+// Input:
+//   that: the struct RunRecorder
+// Raise:
+//   TryCatchException_CurlRequestFailed
+void RunRecorderSendAPIReq(
+  struct RunRecorder* const that) {
+
+  // Send the request
+  RunRecorderResetCurlReply(that);
+  CURLcode res = curl_easy_perform(that->curl);
+  if (res != CURLE_OK) {
+
+    that->errMsg = strdup(curl_easy_strerror(res));
+    Raise(TryCatchException_CurlRequestFailed);
+
+  }
+
+  // Check the return code from the JSON reply
+  char* retCode = RunRecorderGetAPIRetCode(that);
+  int cmpRet =
+    strcmp(
+      retCode,
+      "0");
+  free(retCode);
+  if (cmpRet != 0) {
+
+    that->errMsg =
+      RunRecoderGetJSONValOfKey(
+        that->curlReply,
+        "errMsg");
+    Raise(TryCatchException_ApiRequestFailed);
+
+  }
+
+}
+
 // Get the version of the database via the Web API
 // Input:
 //   The struct RunRecorder
@@ -641,56 +763,12 @@ char* RunRecorderGetVersionAPI(
   free(that->errMsg);
 
   // Create the request to the Web API
-  CURLcode res =
-    curl_easy_setopt(
-      that->curl,
-      CURLOPT_POSTFIELDS,
-      " action=version");
-  if (res != CURLE_OK) {
-
-    that->errMsg = strdup(curl_easy_strerror(res));
-    Raise(TryCatchException_CurlSetOptFailed);
-
-  }
+  RunRecorderSetAPIReqPostVal(
+    that,
+    "action=version");
 
   // Send the request to the API
-  RunRecorderResetCurlReply(that);
-  res = curl_easy_perform(that->curl);
-  if (res != CURLE_OK) {
-
-    that->errMsg = strdup(curl_easy_strerror(res));
-    Raise(TryCatchException_CurlRequestFailed);
-
-  }
-
-  // Extract the return code from the JSON reply
-  char* retCode =
-    RunRecoderGetJSONValOfKey(
-      that->curlReply,
-      "ret");
-  if (retCode == NULL) {
-
-    that->errMsg = strdup("'err' missing in API reply");
-    Raise(TryCatchException_ApiRequestFailed);
-
-  }
-
-  // If the request failed
-  int cmpRet =
-    strcmp(
-      retCode,
-      "0");
-  if (cmpRet != 0) {
-
-    that->errMsg =
-      RunRecoderGetJSONValOfKey(
-        that->curlReply,
-        "errMsg");
-    Raise(TryCatchException_ApiRequestFailed);
-
-  }
-
-  free(retCode);
+  RunRecorderSendAPIReq(that);
 
   // Extract the version number from the JSON reply
   char* version =

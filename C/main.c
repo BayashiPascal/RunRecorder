@@ -110,6 +110,46 @@ int main() {
       recorder->errMsg);
     exit(EXIT_FAILURE);
 
+  } Catch(TryCatchException_CurlSetOptFailed) {
+
+    fprintf(
+      stderr,
+      "Curl setopt failed.\n");
+    fprintf(
+      stderr,
+      "%s\n",
+      recorder->errMsg);
+    exit(EXIT_FAILURE);
+
+  } Catch(TryCatchException_CurlRequestFailed) {
+
+    fprintf(
+      stderr,
+      "Curl request failed.\n");
+    fprintf(
+      stderr,
+      "%s\n",
+      recorder->errMsg);
+    exit(EXIT_FAILURE);
+
+  } Catch(TryCatchException_ApiRequestFailed) {
+
+    fprintf(
+      stderr,
+      "API request failed.\n");
+    fprintf(
+      stderr,
+      "%s\n",
+      recorder->errMsg);
+    exit(EXIT_FAILURE);
+
+  } Catch(TryCatchException_MallocFailed) {
+
+    fprintf(
+      stderr,
+      "malloc failed.\n");
+    exit(EXIT_FAILURE);
+
   } EndTry;
 
 /*
