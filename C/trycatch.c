@@ -22,9 +22,9 @@ int tryCatchExcLvl = 0;
 // ID of the last raised exception
 // To avoid exposing this variable to the user, implement any code using
 // it as functions here instead of in the #define-s of trycatch.h
-// Do not use the type enum TryCatchException to allow the user to extend
+// Do not use the type enum RunRecorderException to allow the user to extend
 // the list of exceptions with user-defined exceptions outside of enum
-// TryCatchException.
+// RunRecorderException.
 int tryCatchExc = 0;
 
 // Function called at the beginning of a TryCatch block to guard against
@@ -69,11 +69,11 @@ jmp_buf* TryCatchGetJmpBufOnStackTop(
 
 }
 
-// Function called to raise the TryCatchException 'exc'
+// Function called to raise the RunRecorderException 'exc'
 void Raise(
-  // The TryCatchException to raise. Do not use the type enum
-  // TryCatchException to allow the user to extend the list of exceptions
-  // with user-defined exception outside of enum TryCatchException.
+  // The RunRecorderException to raise. Do not use the type enum
+  // RunRecorderException to allow the user to extend the list of exceptions
+  // with user-defined exception outside of enum RunRecorderException.
   int exc) {
 
   // If we are in a TryCatch block
@@ -88,7 +88,7 @@ void Raise(
     tryCatchExcLvl--;
 
     // Call longjmp with the appropriate jmp_buf in the stack and the
-    // raised TryCatchException.
+    // raised RunRecorderException.
     longjmp(
       tryCatchExcJmp[tryCatchExcLvl],
       exc);
@@ -107,7 +107,7 @@ void Raise(
 
 }
 
-// Function called when a raised TryCatchException has not been catched
+// Function called when a raised RunRecorderException has not been catched
 // by a Catch segment
 void TryCatchDefault(
   // No arguments
@@ -150,7 +150,7 @@ void TryCatchEnd(
 // ANSI C, guard against this.
 #ifndef __STRICT_ANSI__
 
-// Handler function to raise the exception TryCatchException_Segv when
+// Handler function to raise the exception RunRecorderExc_Segv when
 // receiving the signal SIGSEV.
 void TryCatchSigSegvHandler(
   // Received signal, will always be SIGSEV, unused
@@ -161,13 +161,13 @@ void TryCatchSigSegvHandler(
   void *arg) {
 
   // Raise the exception
-  Raise(TryCatchException_Segv);
+  Raise(RunRecorderExc_Segv);
 
 }
 
 // Function to set the handler function of the signal SIGSEV and raise
-// TryCatchException_Segv upon reception of this signal. Must have been
-// called before using Catch(TryCatchException_Segv)
+// RunRecorderExc_Segv upon reception of this signal. Must have been
+// called before using Catch(RunRecorderExc_Segv)
 void TryCatchInitHandlerSigSegv(
   // No arugments
   void) {
@@ -187,6 +187,16 @@ void TryCatchInitHandlerSigSegv(
     SIGSEGV,
     &sigActionSegv,
     NULL);
+
+}
+
+// Function to get the ID of the last raised exception
+int TryCatchGetLastExc(
+  // No parameters
+  void) {
+
+  // Return the ID
+  return tryCatchExc;
 
 }
 

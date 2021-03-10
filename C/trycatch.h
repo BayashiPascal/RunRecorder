@@ -17,30 +17,30 @@
 // as follows:
 // enum UserDefinedExceptions {
 //
-//   myUserExceptionA = TryCatchException_LastID,
+//   myUserExceptionA = RunRecorderExc_LastID,
 //   myUserExceptionB,
 //   myUserExceptionC
 //
 // };
-// TryCatchException_LastID is not an exception but a convenience to
+// RunRecorderExc_LastID is not an exception but a convenience to
 // create new exceptions (as in the example above) while ensuring
-// their ID doesn't collide with the ID of exceptions in TryCatchException.
+// their ID doesn't collide with the ID of exceptions in RunRecorderException.
 // Exception defined here are only examples, one should create a list of
 // default exceptions according to the planned use of this trycatch module.
-enum TryCatchException {
+enum RunRecorderException {
 
-  TryCatchException_Segv = 1,
-  TryCatchException_CreateTableFailed,
-  TryCatchException_OpenDbFailed,
-  TryCatchException_CreateCurlFailed,
-  TryCatchException_CurlRequestFailed,
-  TryCatchException_CurlSetOptFailed,
-  TryCatchException_SQLRequestFailed,
-  TryCatchException_ApiRequestFailed,
-  TryCatchException_MallocFailed,
-  TryCatchException_InvalidProjectName,
-  TryCatchException_AddProjectFailed,
-  TryCatchException_LastID
+  RunRecorderExc_Segv = 1,
+  RunRecorderExc_CreateTableFailed,
+  RunRecorderExc_OpenDbFailed,
+  RunRecorderExc_CreateCurlFailed,
+  RunRecorderExc_CurlRequestFailed,
+  RunRecorderExc_CurlSetOptFailed,
+  RunRecorderExc_SQLRequestFailed,
+  RunRecorderExc_ApiRequestFailed,
+  RunRecorderExc_MallocFailed,
+  RunRecorderExc_InvalidProjectName,
+  RunRecorderExc_AddProjectFailed,
+  RunRecorderExc_LastID
 
 };
 
@@ -56,7 +56,7 @@ jmp_buf* TryCatchGetJmpBufOnStackTop(
   // No arguments
   void);
 
-// Function called when a raised TryCatchException has not been catched
+// Function called when a raised RunRecorderException has not been catched
 // by a Catch segment
 void TryCatchDefault(
   // No arguments
@@ -86,7 +86,7 @@ void TryCatchEnd(
 
 // Catch segment in the TryCatch block, to be used as
 //
-// Catch (/*... one of TryCatchException or user-defined exception ...*/) {
+// Catch (/*... one of RunRecorderException or user-defined exception ...*/) {
 //   /*... code executed if the exception has been raised in the
 //     TryCatch block ...*/
 //
@@ -98,6 +98,23 @@ void TryCatchEnd(
 #define Catch(e) \
       break;\
       case e:
+
+// Macro to assign several exceptions to one Catch segment in the TryCatch
+// block, to be used as
+//
+// Catch (/*... one of RunRecorderException or user-defined exception ...*/)
+// CatchAlso (/*... another one ...*/) {
+// /*... as many CatchAlso statement as your need ...*/
+//   /*... code executed if one of the exception has been raised in the
+//     TryCatch block ...
+//     (Use TryCatchGetLastExc() if you need to know which excption as
+//     been raised) */
+//
+// Comments on the macro:
+//    // case of the raised exception
+//    case e:
+#define CatchAlso(e) \
+    case e:
 
 // Tail of the TryCatch block, to be used as
 //
@@ -122,11 +139,11 @@ void TryCatchEnd(
   } \
   TryCatchEnd()
 
-// Function called to raise the TryCatchException 'exc'
+// Function called to raise the RunRecorderException 'exc'
 void Raise(
-  // The TryCatchException to raise. Do not use the type enum
-  // TryCatchException to allow the user to extend the list of exceptions
-  // with user-defined exception outside of enum TryCatchException.
+  // The RunRecorderException to raise. Do not use the type enum
+  // RunRecorderException to allow the user to extend the list of exceptions
+  // with user-defined exception outside of enum RunRecorderException.
   int exc);
 
 // The struct siginfo_t used to handle the SIGSEV is not defined in
@@ -134,13 +151,18 @@ void Raise(
 #ifndef __STRICT_ANSI__
 
 // Function to set the handler function of the signal SIGSEV and raise
-// TryCatchException_Segv upon reception of this signal. Must have been
-// called before using Catch(TryCatchException_Segv)
+// RunRecorderExc_Segv upon reception of this signal. Must have been
+// called before using Catch(RunRecorderExc_Segv)
 void TryCatchInitHandlerSigSegv(
   // No arguments
   void);
 
 #endif
+
+// Function to get the ID of the last raised exception
+int TryCatchGetLastExc(
+  // No parameters
+  void);
 
 // End of the guard against multiple inclusion
 #endif

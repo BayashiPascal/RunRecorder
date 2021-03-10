@@ -18,79 +18,27 @@ int main() {
     //recorder = RunRecorderCreate(pathDb);
     recorder = RunRecorderCreate(pathApi);
 
-  } Catch(TryCatchException_CreateTableFailed) {
+  } Catch(RunRecorderExc_CreateTableFailed)
+    CatchAlso(RunRecorderExc_OpenDbFailed)
+    CatchAlso(RunRecorderExc_CreateCurlFailed)
+    CatchAlso(RunRecorderExc_CurlSetOptFailed)
+    CatchAlso(RunRecorderExc_SQLRequestFailed)
+    CatchAlso(RunRecorderExc_ApiRequestFailed)
+    CatchAlso(RunRecorderExc_MallocFailed) {
 
     fprintf(
       stderr,
-      "Failed to create tables in the database.\n");
-    fprintf(
-      stderr,
-      "%s\n",
-      recorder->errMsg);
-    RunRecorderFree(&recorder);
-    exit(EXIT_FAILURE);
+      "Caught exception %d.\n",
+      TryCatchGetLastExc());
+    if (recorder->errMsg != NULL) {
 
-  } Catch(TryCatchException_OpenDbFailed) {
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->errMsg);
 
-    fprintf(
-      stderr,
-      "Failed to open the database.\n");
-    fprintf(
-      stderr,
-      "%s\n",
-      recorder->errMsg);
-    RunRecorderFree(&recorder);
-    exit(EXIT_FAILURE);
+    }
 
-  } Catch(TryCatchException_CreateCurlFailed) {
-
-    fprintf(
-      stderr,
-      "Failed to create the Curl instance.\n");
-    RunRecorderFree(&recorder);
-    exit(EXIT_FAILURE);
-
-  } Catch(TryCatchException_CurlSetOptFailed) {
-
-    fprintf(
-      stderr,
-      "Curl setopt failed.\n");
-    fprintf(
-      stderr,
-      "%s\n",
-      recorder->errMsg);
-    RunRecorderFree(&recorder);
-    exit(EXIT_FAILURE);
-
-  } Catch(TryCatchException_SQLRequestFailed) {
-
-    fprintf(
-      stderr,
-      "SQL request failed.\n");
-    fprintf(
-      stderr,
-      "%s\n",
-      recorder->errMsg);
-    RunRecorderFree(&recorder);
-    exit(EXIT_FAILURE);
-
-  } Catch(TryCatchException_ApiRequestFailed) {
-
-    fprintf(
-      stderr,
-      "API request failed.\n");
-    fprintf(
-      stderr,
-      "%s\n",
-      recorder->errMsg);
-    RunRecorderFree(&recorder);
-    exit(EXIT_FAILURE);
-
-  } Catch(TryCatchException_MallocFailed) {
-
-    fprintf(
-      stderr,
-      "malloc failed.\n");
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
@@ -105,59 +53,25 @@ int main() {
       version);
     free(version);
 
-  } Catch(TryCatchException_SQLRequestFailed) {
+  } Catch(RunRecorderExc_SQLRequestFailed)
+    CatchAlso(RunRecorderExc_CurlSetOptFailed)
+    CatchAlso(RunRecorderExc_CurlRequestFailed)
+    CatchAlso(RunRecorderExc_ApiRequestFailed)
+    CatchAlso(RunRecorderExc_MallocFailed) {
 
     fprintf(
       stderr,
-      "SQL request failed.\n");
-    fprintf(
-      stderr,
-      "%s\n",
-      recorder->errMsg);
-    RunRecorderFree(&recorder);
-    exit(EXIT_FAILURE);
+      "Caught exception %d.\n",
+      TryCatchGetLastExc());
+    if (recorder->errMsg != NULL) {
 
-  } Catch(TryCatchException_CurlSetOptFailed) {
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->errMsg);
 
-    fprintf(
-      stderr,
-      "Curl setopt failed.\n");
-    fprintf(
-      stderr,
-      "%s\n",
-      recorder->errMsg);
-    RunRecorderFree(&recorder);
-    exit(EXIT_FAILURE);
+    }
 
-  } Catch(TryCatchException_CurlRequestFailed) {
-
-    fprintf(
-      stderr,
-      "Curl request failed.\n");
-    fprintf(
-      stderr,
-      "%s\n",
-      recorder->errMsg);
-    RunRecorderFree(&recorder);
-    exit(EXIT_FAILURE);
-
-  } Catch(TryCatchException_ApiRequestFailed) {
-
-    fprintf(
-      stderr,
-      "API request failed.\n");
-    fprintf(
-      stderr,
-      "%s\n",
-      recorder->errMsg);
-    RunRecorderFree(&recorder);
-    exit(EXIT_FAILURE);
-
-  } Catch(TryCatchException_MallocFailed) {
-
-    fprintf(
-      stderr,
-      "malloc failed.\n");
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
@@ -175,59 +89,27 @@ int main() {
       "refProject: %ld\n",
       refProject);
 
-  } Catch(TryCatchException_SQLRequestFailed) {
+  } Catch(RunRecorderExc_SQLRequestFailed)
+    CatchAlso(RunRecorderExc_CurlSetOptFailed)
+    CatchAlso(RunRecorderExc_CurlRequestFailed)
+    CatchAlso(RunRecorderExc_ApiRequestFailed)
+    CatchAlso(RunRecorderExc_InvalidProjectName)
+    CatchAlso(RunRecorderExc_AddProjectFailed)
+    CatchAlso(RunRecorderExc_MallocFailed) {
 
     fprintf(
       stderr,
-      "SQL request failed.\n");
-    RunRecorderFree(&recorder);
-    exit(EXIT_FAILURE);
+      "Caught exception %d.\n",
+      TryCatchGetLastExc());
+    if (recorder->errMsg != NULL) {
 
-  } Catch(TryCatchException_CurlSetOptFailed) {
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->errMsg);
 
-    fprintf(
-      stderr,
-      "Curl setopt failed.\n");
-    RunRecorderFree(&recorder);
-    exit(EXIT_FAILURE);
+    }
 
-  } Catch(TryCatchException_CurlRequestFailed) {
-
-    fprintf(
-      stderr,
-      "curl request failed.\n");
-    RunRecorderFree(&recorder);
-    exit(EXIT_FAILURE);
-
-  } Catch(TryCatchException_ApiRequestFailed) {
-
-    fprintf(
-      stderr,
-      "API request failed.\n");
-    RunRecorderFree(&recorder);
-    exit(EXIT_FAILURE);
-
-  } Catch(TryCatchException_InvalidProjectName) {
-
-    fprintf(
-      stderr,
-      "invalid project name.\n");
-    RunRecorderFree(&recorder);
-    exit(EXIT_FAILURE);
-
-  } Catch(TryCatchException_AddProjectFailed) {
-
-    fprintf(
-      stderr,
-      "add project failed.\n");
-    RunRecorderFree(&recorder);
-    exit(EXIT_FAILURE);
-
-  } Catch(TryCatchException_MallocFailed) {
-
-    fprintf(
-      stderr,
-      "malloc failed.\n");
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 

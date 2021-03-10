@@ -31,14 +31,14 @@ void RunRecorderResetCurlReply(
   struct RunRecorder* const that);
 
 // Create the database locally
-// Raise: TryCatchException_CreateTableFailed,
-// TryCatchException_CurlRequestFailed
+// Raise: RunRecorderExc_CreateTableFailed,
+// RunRecorderExc_CurlRequestFailed
 void RunRecorderCreateDb(
   // The struct RunRecorder
   struct RunRecorder* const that);
 
 // Create the database locally
-// Raise: TryCatchException_CreateTableFailed
+// Raise: RunRecorderExc_CreateTableFailed
 void RunRecorderCreateDbLocal(
   // The struct RunRecorder
   struct RunRecorder* const that);
@@ -62,9 +62,10 @@ char* RunRecorderGetVersionLocal(
 
 // Get the version of the database via the Web API
 // Return a new string
-// Raise: TryCatchException_CurlSetOptFailed,
-// TryCatchException_CurlRequestFailed,
-// TryCatchException_ApiRequestFailed
+// Raise: 
+//   RunRecorderExc_CurlSetOptFailed
+//   RunRecorderExc_CurlRequestFailed
+//   RunRecorderExc_ApiRequestFailed
 char* RunRecorderGetVersionAPI(
   // The struct RunRecorder
   struct RunRecorder* const that);
@@ -82,7 +83,7 @@ size_t RunRecorderGetReplyAPI(
 // Input:
 //   that: the struct RunRecorder
 // Raise:
-//   TryCatchException_OpenDbFailed
+//   RunRecorderExc_OpenDbFailed
 void RunRecorderInitLocal(
   struct RunRecorder* const that) {
 
@@ -101,7 +102,7 @@ void RunRecorderInitLocal(
 
     (fp != NULL ? fclose(fp) : 0);
     that->errMsg = strdup(sqlite3_errmsg(that->db));
-    Raise(TryCatchException_OpenDbFailed);
+    Raise(RunRecorderExc_OpenDbFailed);
 
   }
 
@@ -123,8 +124,8 @@ void RunRecorderInitLocal(
 // Input:
 //   that: the struct RunRecorder
 // Raise:
-//   TryCatchException_CreateCurlFailed
-//   TryCatchException_CurlSetOptFailed
+//   RunRecorderExc_CreateCurlFailed
+//   RunRecorderExc_CurlSetOptFailed
 void RunRecorderInitWebAPI(
   struct RunRecorder* const that) {
 
@@ -134,7 +135,7 @@ void RunRecorderInitWebAPI(
   if (that->curl == NULL) {
 
     curl_global_cleanup();
-    Raise(TryCatchException_CreateCurlFailed);
+    Raise(RunRecorderExc_CreateCurlFailed);
 
   }
 
@@ -145,7 +146,7 @@ void RunRecorderInitWebAPI(
     curl_easy_cleanup(that->curl);
     curl_global_cleanup();
     that->errMsg = strdup(curl_easy_strerror(res));
-    Raise(TryCatchException_CurlSetOptFailed);
+    Raise(RunRecorderExc_CurlSetOptFailed);
 
   }
 
@@ -160,7 +161,7 @@ void RunRecorderInitWebAPI(
     curl_easy_cleanup(that->curl);
     curl_global_cleanup();
     that->errMsg = strdup(curl_easy_strerror(res));
-    Raise(TryCatchException_CurlSetOptFailed);
+    Raise(RunRecorderExc_CurlSetOptFailed);
 
   }
   res =
@@ -173,7 +174,7 @@ void RunRecorderInitWebAPI(
     curl_easy_cleanup(that->curl);
     curl_global_cleanup();
     that->errMsg = strdup(curl_easy_strerror(res));
-    Raise(TryCatchException_CurlSetOptFailed);
+    Raise(RunRecorderExc_CurlSetOptFailed);
 
   }
 
@@ -185,13 +186,13 @@ void RunRecorderInitWebAPI(
 // Output:
 //  Return a new struct RunRecorder
 // Raise: 
-//   TryCatchException_CreateTableFailed
-//   TryCatchException_OpenDbFailed
-//   TryCatchException_CreateCurlFailed
-//   TryCatchException_CurlSetOptFailed
-//   TryCatchException_SQLRequestFailed
-//   TryCatchException_ApiRequestFailed
-//   TryCatchException_MallocFailed
+//   RunRecorderExc_CreateTableFailed
+//   RunRecorderExc_OpenDbFailed
+//   RunRecorderExc_CreateCurlFailed
+//   RunRecorderExc_CurlSetOptFailed
+//   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_ApiRequestFailed
+//   RunRecorderExc_MallocFailed
 struct RunRecorder* RunRecorderCreate(
   char const* const url) {
 
@@ -310,8 +311,8 @@ void RunRecorderResetCurlReply(
 // Input:
 //   that: The struct RunRecorder
 // Raise:
-//   TryCatchException_CreateTableFailed,
-//   TryCatchException_CurlRequestFailed
+//   RunRecorderExc_CreateTableFailed
+//   RunRecorderExc_CurlRequestFailed
 void RunRecorderCreateDb(
   struct RunRecorder* const that) {
 
@@ -331,7 +332,7 @@ void RunRecorderCreateDb(
 // Input:
 //   that: The struct RunRecorder
 // Raise:
-//   TryCatchException_CreateTableFailed
+//   RunRecorderExc_CreateTableFailed
 void RunRecorderCreateDbLocal(
   struct RunRecorder* const that) {
 
@@ -382,7 +383,7 @@ void RunRecorderCreateDbLocal(
         // No user data
         NULL,
         &(that->errMsg));
-    (retExec != SQLITE_OK ? Raise(TryCatchException_CreateTableFailed) : 0);
+    (retExec != SQLITE_OK ? Raise(RunRecorderExc_CreateTableFailed) : 0);
 
   }
 
@@ -405,11 +406,11 @@ void RunRecorderUpgradeDb(
 // Output:
 //   Return a new string
 // Raise:
-//   TryCatchException_SQLRequestFailed
-//   TryCatchException_CurlSetOptFailed,
-//   TryCatchException_CurlRequestFailed,
-//   TryCatchException_ApiRequestFailed
-//   TryCatchException_MallocFailed
+//   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_CurlSetOptFailed
+//   RunRecorderExc_CurlRequestFailed
+//   RunRecorderExc_ApiRequestFailed
+//   RunRecorderExc_MallocFailed
 char* RunRecorderGetVersion(
   struct RunRecorder* const that) {
 
@@ -466,7 +467,7 @@ static int RunRecorderGetVersionLocalCb(
 // Output:
 //   Return a new string
 // Raise:
-//   TryCatchException_SQLRequestFailed
+//   RunRecorderExc_SQLRequestFailed
 char* RunRecorderGetVersionLocal(
   struct RunRecorder* const that) {
 
@@ -487,7 +488,7 @@ char* RunRecorderGetVersionLocal(
       &(that->errMsg));
   if (retExec != SQLITE_OK) {
 
-    Raise(TryCatchException_SQLRequestFailed);
+    Raise(RunRecorderExc_SQLRequestFailed);
 
   }
 
@@ -505,7 +506,7 @@ char* RunRecorderGetVersionLocal(
 // Output:
 //   Return the number of received byte
 // Raise:
-//   TryCatchException_MallocFailed
+//   RunRecorderExc_MallocFailed
 size_t RunRecorderGetReplyAPI(
    char* data,
   size_t size,
@@ -539,7 +540,7 @@ size_t RunRecorderGetReplyAPI(
     // If the allocation failed
     if (reply == NULL) {
 
-      Raise(TryCatchException_MallocFailed);
+      Raise(RunRecorderExc_MallocFailed);
 
     }
 
@@ -564,7 +565,7 @@ size_t RunRecorderGetReplyAPI(
 // Output:
 //   Return a new string, or NULL if the key doesn't exist
 // Raise:
-//   TryCatchException_MallocFailed
+//   RunRecorderExc_MallocFailed
 char* RunRecoderGetJSONValOfKey(
   char const* const json,
   char const* const key) {
@@ -591,7 +592,7 @@ char* RunRecoderGetJSONValOfKey(
     key);
   if (keyDecorated == NULL) {
 
-    Raise(TryCatchException_MallocFailed);
+    Raise(RunRecorderExc_MallocFailed);
 
   }
 
@@ -630,7 +631,7 @@ char* RunRecoderGetJSONValOfKey(
       if (val == NULL) {
 
         free(keyDecorated);
-        Raise(TryCatchException_MallocFailed);
+        Raise(RunRecorderExc_MallocFailed);
 
       }
 
@@ -658,7 +659,7 @@ char* RunRecoderGetJSONValOfKey(
 //   that: the struct RunRecorder
 //   data: the POST data
 // Raise:
-//   TryCatchException_CurlSetOptFailed
+//   RunRecorderExc_CurlSetOptFailed
 void RunRecorderSetAPIReqPostVal(
   struct RunRecorder* const that,
   char const* const data) {
@@ -672,7 +673,7 @@ void RunRecorderSetAPIReqPostVal(
   if (res != CURLE_OK) {
 
     that->errMsg = strdup(curl_easy_strerror(res));
-    Raise(TryCatchException_CurlSetOptFailed);
+    Raise(RunRecorderExc_CurlSetOptFailed);
 
   }
 
@@ -684,7 +685,7 @@ void RunRecorderSetAPIReqPostVal(
 // Output:
 //   Return a new string
 // Raise:
-//   TryCatchException_ApiRequestFailed
+//   RunRecorderExc_ApiRequestFailed
 char* RunRecorderGetAPIRetCode(
   struct RunRecorder* const that) {
 
@@ -696,7 +697,7 @@ char* RunRecorderGetAPIRetCode(
   if (retCode == NULL) {
 
     that->errMsg = strdup("'err' key missing in API reply");
-    Raise(TryCatchException_ApiRequestFailed);
+    Raise(RunRecorderExc_ApiRequestFailed);
 
   }
 
@@ -709,7 +710,7 @@ char* RunRecorderGetAPIRetCode(
 // Input:
 //   that: the struct RunRecorder
 // Raise:
-//   TryCatchException_CurlRequestFailed
+//   RunRecorderExc_CurlRequestFailed
 void RunRecorderSendAPIReq(
   struct RunRecorder* const that) {
 
@@ -719,7 +720,7 @@ void RunRecorderSendAPIReq(
   if (res != CURLE_OK) {
 
     that->errMsg = strdup(curl_easy_strerror(res));
-    Raise(TryCatchException_CurlRequestFailed);
+    Raise(RunRecorderExc_CurlRequestFailed);
 
   }
 
@@ -736,7 +737,7 @@ void RunRecorderSendAPIReq(
       RunRecoderGetJSONValOfKey(
         that->curlReply,
         "errMsg");
-    Raise(TryCatchException_ApiRequestFailed);
+    Raise(RunRecorderExc_ApiRequestFailed);
 
   }
 
@@ -748,10 +749,10 @@ void RunRecorderSendAPIReq(
 // Output:
 //   Return a new string
 // Raise:
-//   TryCatchException_CurlSetOptFailed,
-//   TryCatchException_CurlRequestFailed,
-//   TryCatchException_ApiRequestFailed
-//   TryCatchException_MallocFailed
+//   RunRecorderExc_CurlSetOptFailed,
+//   RunRecorderExc_CurlRequestFailed
+//   RunRecorderExc_ApiRequestFailed
+//   RunRecorderExc_MallocFailed
 char* RunRecorderGetVersionAPI(
   struct RunRecorder* const that) {
 
@@ -785,8 +786,8 @@ char* RunRecorderGetVersionAPI(
 // Output:
 //   Return the reference of the new project
 // Raise:
-//   TryCatchException_SQLRequestFailed
-//   TryCatchException_MallocFailed
+//   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_MallocFailed
 long RunRecorderAddProjectLocal(
   struct RunRecorder* const that,
   char const* const name) {
@@ -797,7 +798,7 @@ long RunRecorderAddProjectLocal(
   // Create the SQL command
   char* cmdBase = "INSERT INTO Project (Ref, Label) VALUES (NULL, \"%s\")";
   char* cmd = malloc(strlen(cmdBase) + strlen(name) - 1);
-  (cmd == NULL ? Raise(TryCatchException_MallocFailed) : 0);
+  (cmd == NULL ? Raise(RunRecorderExc_MallocFailed) : 0);
   sprintf(
     cmd,
     cmdBase,
@@ -814,7 +815,7 @@ long RunRecorderAddProjectLocal(
       NULL,
       &(that->errMsg));
   free(cmd);
-  (retExec != SQLITE_OK ? Raise(TryCatchException_AddProjectFailed) : 0);
+  (retExec != SQLITE_OK ? Raise(RunRecorderExc_AddProjectFailed) : 0);
 
   // Get the reference of the new project
   long refProject = sqlite3_last_insert_rowid(that->db);
@@ -832,12 +833,12 @@ long RunRecorderAddProjectLocal(
 // Output:
 //   Return the reference of the new project
 // Raise:
-//   TryCatchException_SQLRequestFailed
-//   TryCatchException_CurlSetOptFailed
-//   TryCatchException_CurlRequestFailed
-//   TryCatchException_ApiRequestFailed
-//   TryCatchException_MallocFailed
-//   TryCatchException_AddProjectFailed
+//   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_CurlSetOptFailed
+//   RunRecorderExc_CurlRequestFailed
+//   RunRecorderExc_ApiRequestFailed
+//   RunRecorderExc_MallocFailed
+//   RunRecorderExc_AddProjectFailed
 long RunRecorderAddProjectAPI(
   struct RunRecorder* const that,
   char const* const name) {
@@ -848,7 +849,7 @@ long RunRecorderAddProjectAPI(
   // Create the request to the Web API
   char* cmdBase = "action=add_project&label=";
   char* cmd = malloc(strlen(cmdBase) + strlen(name) + 1);
-  (cmd == NULL ? Raise(TryCatchException_MallocFailed) : 0);
+  (cmd == NULL ? Raise(RunRecorderExc_MallocFailed) : 0);
   sprintf(
     cmd,
     "%s%s",
@@ -860,10 +861,10 @@ long RunRecorderAddProjectAPI(
       that,
       cmd);
 
-  } Catch(TryCatchException_CurlSetOptFailed) {
+  } Catch(RunRecorderExc_CurlSetOptFailed) {
 
     free(cmd);
-    Raise(TryCatchException_CurlSetOptFailed);
+    Raise(RunRecorderExc_CurlSetOptFailed);
 
   } EndTry;
 
@@ -879,7 +880,7 @@ long RunRecorderAddProjectAPI(
   if (refProjectStr == NULL) {
 
     that->errMsg = strdup(that->curlReply);
-    Raise(TryCatchException_ApiRequestFailed);
+    Raise(RunRecorderExc_ApiRequestFailed);
 
   }
 
@@ -890,7 +891,7 @@ long RunRecorderAddProjectAPI(
       NULL,
       10);
   free(refProjectStr);
-  (errno != 0 ? Raise(TryCatchException_AddProjectFailed) : 0);
+  (errno != 0 ? Raise(RunRecorderExc_AddProjectFailed) : 0);
 
   // Return the version
   return refProject;
@@ -905,13 +906,13 @@ long RunRecorderAddProjectAPI(
 // Output:
 //   Return the reference of the new project
 // Raise:
-//   TryCatchException_SQLRequestFailed
-//   TryCatchException_CurlSetOptFailed,
-//   TryCatchException_CurlRequestFailed
-//   TryCatchException_ApiRequestFailed
-//   TryCatchException_MallocFailed
-//   TryCatchException_InvalidProjectName
-//   TryCatchException_AddProjectFailed
+//   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_CurlSetOptFailed
+//   RunRecorderExc_CurlRequestFailed
+//   RunRecorderExc_ApiRequestFailed
+//   RunRecorderExc_MallocFailed
+//   RunRecorderExc_InvalidProjectName
+//   RunRecorderExc_AddProjectFailed
 long RunRecorderAddProject(
   struct RunRecorder* const that,
   char const* const name) {
@@ -933,7 +934,7 @@ long RunRecorderAddProject(
       ptrEqual != NULL || 
       ptrAmpersand != NULL) {
 
-    Raise(TryCatchException_InvalidProjectName);
+    Raise(RunRecorderExc_InvalidProjectName);
 
   }
 

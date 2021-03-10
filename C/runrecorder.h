@@ -46,13 +46,13 @@ struct RunRecorder {
 // Output:
 //  Return a new struct RunRecorder
 // Raise: 
-//   TryCatchException_CreateTableFailed
-//   TryCatchException_OpenDbFailed
-//   TryCatchException_CreateCurlFailed
-//   TryCatchException_CurlSetOptFailed
-//   TryCatchException_SQLRequestFailed
-//   TryCatchException_ApiRequestFailed
-//   TryCatchException_MallocFailed
+//   RunRecorderExc_CreateTableFailed
+//   RunRecorderExc_OpenDbFailed
+//   RunRecorderExc_CreateCurlFailed
+//   RunRecorderExc_CurlSetOptFailed
+//   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_ApiRequestFailed
+//   RunRecorderExc_MallocFailed
 struct RunRecorder* RunRecorderCreate(
   char const* const url);
 
@@ -68,11 +68,11 @@ void RunRecorderFree(
 // Output:
 //   Return a new string
 // Raise:
-//   TryCatchException_SQLRequestFailed
-//   TryCatchException_CurlSetOptFailed
-//   TryCatchException_CurlRequestFailed
-//   TryCatchException_ApiRequestFailed
-//   TryCatchException_MallocFailed
+//   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_CurlSetOptFailed
+//   RunRecorderExc_CurlRequestFailed
+//   RunRecorderExc_ApiRequestFailed
+//   RunRecorderExc_MallocFailed
 char* RunRecorderGetVersion(
   struct RunRecorder* const that);
 
@@ -84,13 +84,13 @@ char* RunRecorderGetVersion(
 // Output:
 //   Return the reference of the new project
 // Raise:
-//   TryCatchException_SQLRequestFailed
-//   TryCatchException_CurlSetOptFailed
-//   TryCatchException_CurlRequestFailed
-//   TryCatchException_ApiRequestFailed
-//   TryCatchException_MallocFailed
-//   TryCatchException_InvalidProjectName
-//   TryCatchException_AddProjectFailed
+//   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_CurlSetOptFailed
+//   RunRecorderExc_CurlRequestFailed
+//   RunRecorderExc_ApiRequestFailed
+//   RunRecorderExc_MallocFailed
+//   RunRecorderExc_InvalidProjectName
+//   RunRecorderExc_AddProjectFailed
 long RunRecorderAddProject(
   struct RunRecorder* const that,
   char const* const name);
