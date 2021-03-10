@@ -13,6 +13,7 @@
 
 // Label for the exceptions
 char* RunRecorderExceptionStr[RunRecorderExc_LastID] = {
+  "",
   "RunRecorderExc_Segv",
   "RunRecorderExc_CreateTableFailed",
   "RunRecorderExc_OpenDbFailed",

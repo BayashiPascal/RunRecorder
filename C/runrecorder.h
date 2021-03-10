@@ -14,7 +14,7 @@
 #include <curl/curl.h>
 #include <errno.h>
 
-// Include own mdules header
+// Include own modules header
 #include "trycatch.h"
 
 // Labels for the exception

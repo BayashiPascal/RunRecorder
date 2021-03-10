@@ -70,3 +70,7 @@ curl/include/curl/curl.h:
 
 clean:
 	rm -rf *.o main sqlite* curl*
+
+valgrind :
+	valgrind -v --track-origins=yes --leak-check=full \
+	--gen-suppressions=yes --show-leak-kinds=all ./main

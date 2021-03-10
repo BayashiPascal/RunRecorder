@@ -30,7 +30,7 @@ int main() {
 
     fprintf(
       stderr,
-      "Caught exception %s.\n",
+      "Caught exception %s during RunRecorderInit.\n",
       RunRecorderExceptionStr[TryCatchGetLastExc()]);
     if (recorder->errMsg != NULL) {
 
@@ -63,7 +63,7 @@ int main() {
 
     fprintf(
       stderr,
-      "Caught exception %s.\n",
+      "Caught exception %s during RunRecorderGetVersion.\n",
       RunRecorderExceptionStr[TryCatchGetLastExc()]);
     if (recorder->errMsg != NULL) {
 
@@ -101,7 +101,7 @@ int main() {
 
     fprintf(
       stderr,
-      "Caught exception %s.\n",
+      "Caught exception %s during RunRecorderAddProject.\n",
       RunRecorderExceptionStr[TryCatchGetLastExc()]);
     if (recorder->errMsg != NULL) {
 
