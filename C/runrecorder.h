@@ -45,6 +45,12 @@ struct RunRecorder {
 //   url: Path to the SQLite database or Web API
 // Output:
 //  Return a new struct RunRecorder
+struct RunRecorder* RunRecorderCreate(
+  char const* const url);
+
+// Initialise a struct RunRecorder
+// Input:
+//   that: The struct RunRecorder
 // Raise: 
 //   RunRecorderExc_CreateTableFailed
 //   RunRecorderExc_OpenDbFailed
@@ -53,8 +59,8 @@ struct RunRecorder {
 //   RunRecorderExc_SQLRequestFailed
 //   RunRecorderExc_ApiRequestFailed
 //   RunRecorderExc_MallocFailed
-struct RunRecorder* RunRecorderCreate(
-  char const* const url);
+void RunRecorderInit(
+  struct RunRecorder* const that);
 
 // Destructor for a struct RunRecorder
 // Input:

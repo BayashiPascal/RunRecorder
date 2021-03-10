@@ -185,14 +185,6 @@ void RunRecorderInitWebAPI(
 //   url: Path to the SQLite database or Web API
 // Output:
 //  Return a new struct RunRecorder
-// Raise: 
-//   RunRecorderExc_CreateTableFailed
-//   RunRecorderExc_OpenDbFailed
-//   RunRecorderExc_CreateCurlFailed
-//   RunRecorderExc_CurlSetOptFailed
-//   RunRecorderExc_SQLRequestFailed
-//   RunRecorderExc_ApiRequestFailed
-//   RunRecorderExc_MallocFailed
 struct RunRecorder* RunRecorderCreate(
   char const* const url) {
 
@@ -205,7 +197,27 @@ struct RunRecorder* RunRecorderCreate(
   // Initialise the other properties
   that->errMsg = NULL;
   that->db = NULL;
+  that->curl = NULL;
   that->curlReply = NULL;
+
+  // Return the struct RunRecorder
+  return that;
+
+}
+
+// Initialise a struct RunRecorder
+// Input:
+//   that: The struct RunRecorder
+// Raise: 
+//   RunRecorderExc_CreateTableFailed
+//   RunRecorderExc_OpenDbFailed
+//   RunRecorderExc_CreateCurlFailed
+//   RunRecorderExc_CurlSetOptFailed
+//   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_ApiRequestFailed
+//   RunRecorderExc_MallocFailed
+void RunRecorderInit(
+  struct RunRecorder* const that) {
 
   // If the recorder doesn't use the API
   if (RunRecorderUsesAPI(that) == false) {
@@ -234,9 +246,6 @@ struct RunRecorder* RunRecorderCreate(
     RunRecorderUpgradeDb(that);
 
   }
-
-  // Return the struct RunRecorder
-  return that;
 
 }
 

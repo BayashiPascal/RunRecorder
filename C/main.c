@@ -7,16 +7,17 @@ int main() {
   // Path to the SQLite database local file or Web API
   char const* pathDb = "./runrecorder.db";
   //char const* pathApi = "https://localhost/RunRecorder/api.php";
-  char const* pathApi = "https://www.bayashiinjapan.net/RunRecorder/api.php";
+  char const* pathApi = "http://www.bayashiinjapan.net/RunRecorder/api.php";
 
   // Create the RunRecorder instance
-  struct RunRecorder* recorder;
+  // Give pathApi in argument if you want to use the Web API instead
+  // of a local file
+  //struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  struct RunRecorder* recorder = RunRecorderCreate(pathApi);
   Try {
 
-    // Give pathApi in argument if you want to use the Web API instead
-    // of a local file
-    //recorder = RunRecorderCreate(pathDb);
-    recorder = RunRecorderCreate(pathApi);
+    // Initialise the struct RunRecorder
+    RunRecorderInit(recorder);
 
   } Catch(RunRecorderExc_CreateTableFailed)
     CatchAlso(RunRecorderExc_OpenDbFailed)

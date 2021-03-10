@@ -119,12 +119,11 @@ int main() {
   char const* pathApi = "https://localhost/RunRecorder/api.php";
 
   // Create the RunRecorder instance
-  struct RunRecorder* recorder;
-
+  // Give pathApi in argument if you want to use the Web API instead
+  // of a local file
+  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
   Try {
-    // Give pathApi in argument if you want to use the Web API instead
-    // of a local file
-    recorder = RunRecorderCreate(pathDb);
+    RunRecorderInit(recorder);
   } Catch(TryCatchException_CreateTableFailed) {
     exit(EXIT_FAILURE);
   // Other Catch omitted...
@@ -179,10 +178,10 @@ int main() {
   char const* pathApi = "https://localhost/RunRecorder/api.php";
 
   // Create the RunRecorder instance
-  struct RunRecorder* recorder;
   // Give pathApi in argument if you want to use the Web API instead
   // of a local file
-  recorder = RunRecorderCreate(pathDb);
+  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  RunRecorderInit(recorder);
 
   // Get the version of the database
   char* version = RunRecorderGetVersion(recorder);
@@ -229,10 +228,10 @@ int main() {
   char const* pathApi = "https://localhost/RunRecorder/api.php";
 
   // Create the RunRecorder instance
-  struct RunRecorder* recorder;
   // Give pathApi in argument if you want to use the Web API instead
   // of a local file
-  recorder = RunRecorderCreate(pathDb);
+  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  RunRecorderInit(recorder);
 
   // Create a new project
   long refProject =
