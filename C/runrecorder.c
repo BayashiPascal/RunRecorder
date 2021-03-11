@@ -116,7 +116,7 @@ void RunRecorderInitLocal(
       &(that->db));
   if (ret != 0) {
 
-    (fp != NULL ? fclose(fp) : 0);
+    if (fp != NULL) fclose(fp);
     that->errMsg = strdup(sqlite3_errmsg(that->db));
     Raise(RunRecorderExc_OpenDbFailed);
 
@@ -410,7 +410,7 @@ void RunRecorderCreateDbLocal(
         // No user data
         NULL,
         &(that->errMsg));
-    (retExec != SQLITE_OK ? Raise(RunRecorderExc_CreateTableFailed) : 0);
+    if (retExec != SQLITE_OK) Raise(RunRecorderExc_CreateTableFailed);
 
   }
 
@@ -826,7 +826,7 @@ long RunRecorderAddProjectLocal(
   char* cmdBase = "INSERT INTO Project (Ref, Label) VALUES (NULL, \"%s\")";
   free(that->cmd);
   that->cmd = malloc(strlen(cmdBase) + strlen(name) - 1);
-  (that->cmd == NULL ? Raise(RunRecorderExc_MallocFailed) : 0);
+  if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
   sprintf(
     that->cmd,
     cmdBase,
@@ -842,7 +842,7 @@ long RunRecorderAddProjectLocal(
       // No user data
       NULL,
       &(that->errMsg));
-  (retExec != SQLITE_OK ? Raise(RunRecorderExc_AddProjectFailed) : 0);
+  if (retExec != SQLITE_OK) Raise(RunRecorderExc_AddProjectFailed);
 
   // Get the reference of the new project
   long refProject = sqlite3_last_insert_rowid(that->db);
@@ -877,7 +877,7 @@ long RunRecorderAddProjectAPI(
   char* cmdBase = "action=add_project&label=";
   free(that->cmd);
   that->cmd = malloc(strlen(cmdBase) + strlen(name) + 1);
-  (that->cmd == NULL ? Raise(RunRecorderExc_MallocFailed) : 0);
+  if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
   sprintf(
     that->cmd,
     "%s%s",
@@ -909,7 +909,7 @@ long RunRecorderAddProjectAPI(
       NULL,
       10);
   free(refProjectStr);
-  (errno != 0 ? Raise(RunRecorderExc_AddProjectFailed) : 0);
+  if (errno != 0) Raise(RunRecorderExc_AddProjectFailed);
 
   // Return the version
   return refProject;
