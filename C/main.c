@@ -10,11 +10,13 @@ int main() {
   char const* pathApi = "http://www.bayashiinjapan.net/RunRecorder/api.php";
 
   // Create the RunRecorder instance
-  // Give pathApi in argument if you want to use the Web API instead
-  // of a local file
-  //struct RunRecorder* recorder = RunRecorderCreate(pathDb);
-  struct RunRecorder* recorder = RunRecorderCreate(pathApi);
+  struct RunRecorder* recorder = NULL;
   Try {
+
+    // Give pathApi in argument if you want to use the Web API instead
+    // of a local file
+    recorder = RunRecorderCreate(pathDb);
+    //recorder = RunRecorderCreate(pathApi);
 
     // Initialise the struct RunRecorder
     RunRecorderInit(recorder);
@@ -117,21 +119,48 @@ int main() {
 
   } EndTry;
 
-/*
+
   // Get the list of projects
-  success =
-    RunRecorderGetProjects(
-      recorder,
-      );
-  if (success == false) {
+  struct RunRecorderPairsRefVal* projects = NULL;
+  Try {
+
+    projects = RunRecorderGetProjects(recorder);
+    for (
+      long iProject = 0;
+      iProject < projects->nb;
+      ++iProject) {
+
+      printf(
+        "ref: %ld label: %s\n",
+        projects->refs[iProject],
+        projects->vals[iProject]);
+
+    }
+
+  } Catch(RunRecorderExc_SQLRequestFailed)
+    CatchAlso(RunRecorderExc_ApiRequestFailed)
+    CatchAlso(RunRecorderExc_MallocFailed) {
 
     fprintf(
       stderr,
-      "%s\n",
-      recorder->errMsg);
+      "Caught exception %s during RunRecorderGetProjects.\n",
+      RunRecorderExceptionStr[TryCatchGetLastExc()]);
+    if (recorder->errMsg != NULL) {
 
-  }
-  
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->errMsg);
+
+    }
+
+    RunRecorderPairsRefValFree(&projects);
+    RunRecorderFree(&recorder);
+    exit(EXIT_FAILURE);
+
+  } EndTry;
+
+/*  
 bodyrecorder->sh add_metric "project=1&label=Date&default=-"
 bodyrecorder->sh add_metric "project=1&label=Weight&default=0.0"
 bodyrecorder->sh metrics "project=1"
@@ -139,6 +168,7 @@ bodyrecorder->sh metrics "project=1"
 */
   // Free memory
   RunRecorderFree(&recorder);
+  RunRecorderPairsRefValFree(&projects);
 
   return EXIT_SUCCESS;
 

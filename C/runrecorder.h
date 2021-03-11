@@ -20,7 +20,7 @@
 // Labels for the exception
 char* RunRecorderExceptionStr[RunRecorderExc_LastID];
 
-// Structure 
+// Structure of a RunRecorder
 struct RunRecorder {
 
   // Path to the SQLite database or Web API
@@ -29,8 +29,12 @@ struct RunRecorder {
   // SQLite database file.
   char* url;
 
-  // String to memorise the eventual error message
+  // String to memorise the error message
   char* errMsg;
+
+  // String to memorise the SQLite3 error message (they need to be
+  // managed separately to be freed their own way)
+  char* sqliteErrMsg;
 
   // Connection to the database if it's a local file
   sqlite3* db;
@@ -48,11 +52,27 @@ struct RunRecorder {
 
 };
 
+// Structure to memorise pairs of ref/value
+struct RunRecorderPairsRefVal {
+
+  // Number of pairs
+  long nb;
+
+  // Array of references
+  long* refs;
+
+  // Array of values
+  char** vals;
+
+};
+
 // Constructor for a struct RunRecorder
 // Input:
 //   url: Path to the SQLite database or Web API
 // Output:
 //  Return a new struct RunRecorder
+// Raise:
+//   RunRecorderExc_MallocFailed
 struct RunRecorder* RunRecorderCreate(
   char const* const url);
 
@@ -108,6 +128,28 @@ char* RunRecorderGetVersion(
 long RunRecorderAddProject(
   struct RunRecorder* const that,
   char const* const name);
+
+// Get the list of projects
+// Input:
+//   that: the struct RunRecorder
+// Output:
+//   Return the projects' reference/label
+// Raise:
+//   RunRecorderExc_SQLRequestFailed
+struct RunRecorderPairsRefVal* RunRecorderGetProjects(
+  struct RunRecorder* const that);
+
+// Create a static struct RunRecorderPairsRefVal
+// Output:
+//   Return the new struct RunRecorderPairsRefVal
+struct RunRecorderPairsRefVal* RunRecorderPairsRefValCreate(
+  void);
+
+// Free a static struct RunRecorderPairsRefVal
+// Input:
+//   that: the struct RunRecorderPairsRefVal
+void RunRecorderPairsRefValFree(
+  struct RunRecorderPairsRefVal** that);
 
 // End of the guard against multiple inclusion
 #endif

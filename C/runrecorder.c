@@ -60,14 +60,17 @@ void RunRecorderCreateDbLocal(
   struct RunRecorder* const that);
 
 // Callback for RunRecorderGetVersionLocal
+// Input:
+//      data: The version
+//     nbCol: Number of columns in the returned rows
+//    colVal: Row values
+//   colName: Columns name
+// Output:
+//   Return 0 if successfull, else 1
 static int RunRecorderGetVersionLocalCb(
-  // char** to memorise the version
-   void* ptrVersion,
-  // Number of columns in the returned rows
+   void* data,
      int nbCol,
-  // Rows values
   char** colVal,
-  // Columns name
   char** colName);
 
 // Get the version of the local database
@@ -201,14 +204,13 @@ void RunRecorderInitWebAPI(
 //   url: Path to the SQLite database or Web API
 // Output:
 //  Return a new struct RunRecorder
+// Raise:
+//   RunRecorderExc_MallocFailed
 struct RunRecorder* RunRecorderCreate(
   char const* const url) {
 
   // Declare the struct RunRecorder
   struct RunRecorder* that = malloc(sizeof(struct RunRecorder));
-
-  // Duplicate the url
-  that->url = strdup(url);
 
   // Initialise the other properties
   that->errMsg = NULL;
@@ -216,6 +218,11 @@ struct RunRecorder* RunRecorderCreate(
   that->curl = NULL;
   that->curlReply = NULL;
   that->cmd = NULL;
+  that->sqliteErrMsg = NULL;
+
+  // Duplicate the url
+  that->url = strdup(url);
+  if (that->url == NULL) Raise(RunRecorderExc_MallocFailed);
 
   // Return the struct RunRecorder
   return that;
@@ -278,7 +285,9 @@ void RunRecorderFree(
     // Free memory used by the properties
     free((*that)->url);
     free((*that)->errMsg);
+    sqlite3_free((*that)->sqliteErrMsg);
     free((*that)->curlReply);
+    free((*that)->cmd);
 
     // Close the connection to the local database if it was opened
     if ((*that)->db != NULL) {
@@ -398,7 +407,7 @@ void RunRecorderCreateDbLocal(
     ++iCmd) {
 
     // Ensure errMsg is freed
-    free(that->errMsg);
+    sqlite3_free(that->sqliteErrMsg);
 
     // Execute the command to create the table
     int retExec =
@@ -409,7 +418,7 @@ void RunRecorderCreateDbLocal(
         NULL,
         // No user data
         NULL,
-        &(that->errMsg));
+        &(that->sqliteErrMsg));
     if (retExec != SQLITE_OK) Raise(RunRecorderExc_CreateTableFailed);
 
   }
@@ -457,20 +466,23 @@ char* RunRecorderGetVersion(
 
 // Callback for RunRecorderGetVersionLocal
 // Input:
-//   ptrVersion: char** to memorise the version
-//        nbCol: Number of columns in the returned rows
-//       colVal: Rows values
-//      colName: Columns name
+//      data: The version
+//     nbCol: Number of columns in the returned rows
+//    colVal: Row values
+//   colName: Columns name
 // Output:
 //   Return 0 if successfull, else 1
 static int RunRecorderGetVersionLocalCb(
-   void* ptrVersion,
+   void* data,
      int nbCol,
   char** colVal,
   char** colName) {
 
   // Unused argument
   (void)colName;
+
+  // Cast the data
+  char** ptrVersion = (char**)data;
 
   // If the arguments are invalid
   if (nbCol != 1 || colVal == NULL || *colVal == NULL) {
@@ -481,7 +493,8 @@ static int RunRecorderGetVersionLocalCb(
   }
 
   // Memorise the returned value
-  *(char**)ptrVersion = strdup(*colVal);
+  *ptrVersion = strdup(*colVal);
+  if (*ptrVersion == NULL) return 1;
 
   // Return success code
   return 0;
@@ -499,7 +512,7 @@ char* RunRecorderGetVersionLocal(
   struct RunRecorder* const that) {
 
   // Ensure errMsg is freed
-  free(that->errMsg);
+  sqlite3_free(that->sqliteErrMsg);
 
   // Declare a variable to memeorise the version
   char* version = NULL;
@@ -512,7 +525,7 @@ char* RunRecorderGetVersionLocal(
       sqlCmd,
       RunRecorderGetVersionLocalCb,
       &version,
-      &(that->errMsg));
+      &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) {
 
     Raise(RunRecorderExc_SQLRequestFailed);
@@ -538,10 +551,13 @@ size_t RunRecorderGetReplyAPI(
    char* data,
   size_t size,
   size_t nmemb,
-   void* reply) {
+   void* ptr) {
 
   // Get the size in byte of the received data
   size_t dataSize = size * nmemb;
+
+  // Cast
+  char** reply = (char**)ptr;
 
   // If there is received data
   if (dataSize != 0) {
@@ -550,18 +566,18 @@ size_t RunRecorderGetReplyAPI(
     size_t replyLength = 0;
 
     // If the current buffer for the reply is not empty
-    if (*(char**)reply != NULL) {
+    if (*reply != NULL) {
 
       // Get the current length of the reply
-      replyLength = strlen(*(char**)reply);
+      replyLength = strlen(*reply);
 
     }
 
     // Allocate memory for current data, the incoming data and the
     // terminating '\0'
-    *(char**)reply =
+    *reply =
       realloc(
-        *(char**)reply,
+        *reply,
         replyLength + dataSize + 1);
 
     // If the allocation failed
@@ -573,10 +589,10 @@ size_t RunRecorderGetReplyAPI(
 
     // Copy the incoming data and the end of the current buffer
     memcpy(
-      *(char**)reply + replyLength,
+      *reply + replyLength,
       data,
       dataSize);
-    (*(char**)reply)[replyLength + dataSize] = '\0';
+    (*reply)[replyLength + dataSize] = '\0';
 
   }
 
@@ -820,7 +836,7 @@ long RunRecorderAddProjectLocal(
   char const* const name) {
 
   // Ensure errMsg is freed
-  free(that->errMsg);
+  sqlite3_free(that->sqliteErrMsg);
 
   // Create the SQL command
   char* cmdBase = "INSERT INTO Project (Ref, Label) VALUES (NULL, \"%s\")";
@@ -841,7 +857,7 @@ long RunRecorderAddProjectLocal(
       NULL,
       // No user data
       NULL,
-      &(that->errMsg));
+      &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_AddProjectFailed);
 
   // Get the reference of the new project
@@ -903,6 +919,7 @@ long RunRecorderAddProjectAPI(
   }
 
   // Convert from string to long
+  errno = 0;
   long refProject =
     strtol(
       refProjectStr,
@@ -971,6 +988,212 @@ long RunRecorderAddProject(
       RunRecorderAddProjectAPI(
         that,
         name);
+
+  }
+
+}
+
+// Callback for RunRecorderGetProjectsLocal
+// Input:
+//      data: The projects
+//     nbCol: Number of columns in the returned rows
+//    colVal: Row values
+//   colName: Columns name
+// Output:
+//   Return 0 if successfull, else 1
+// Raise:
+//   RunRecorderExc_MallocFailed
+static int RunRecorderGetProjectsLocalCb(
+   void* data,
+     int nbCol,
+  char** colVal,
+  char** colName) {
+
+  // Unused argument
+  (void)colName;
+
+  // Cast the data
+  struct RunRecorderPairsRefVal* projects =
+    (struct RunRecorderPairsRefVal*)data;
+
+  // If the arguments are invalid
+  if (nbCol != 2 || colVal == NULL ||
+      colVal[0] == NULL || colVal[1] == NULL) {
+
+    // Return non zero to trigger SQLITE_ABORT in the calling function
+    return 1;
+
+  }
+
+  // Allocate memory
+  long* refs =
+    realloc(
+      projects->refs,
+      sizeof(long) * (projects->nb + 1));
+  if (refs == NULL) {
+
+    return 1;
+
+  }
+  char** vals =
+    realloc(
+      projects->vals,
+      sizeof(char*) * (projects->nb + 1));
+  if (vals == NULL) {
+
+    free(refs);
+    return 1;
+
+  }
+  projects->refs = refs;
+  projects->vals = vals;
+  projects->vals[projects->nb] = NULL;
+
+  // Update the number of projects
+  ++(projects->nb);
+
+  // Copy the reference and label of the project
+  errno = 0;
+  projects->refs[projects->nb - 1] =
+    strtol(
+      colVal[0],
+      NULL,
+      10);
+  if (errno != 0) return 1;
+  projects->vals[projects->nb - 1] = strdup(colVal[1]);
+  if (projects->vals[projects->nb - 1] == NULL) return 1;
+
+  // Return success code
+  return 0;
+
+}
+
+// Get the list of projects in the local database
+// Input:
+//   that: the struct RunRecorder
+// Output:
+//   Return the projects' reference/label
+// Raise:
+//   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_MallocFailed
+struct RunRecorderPairsRefVal* RunRecorderGetProjectsLocal(
+  struct RunRecorder* const that) {
+
+  // Ensure errMsg is freed
+  sqlite3_free(that->sqliteErrMsg);
+
+  // Declare a variable to memorise the projects
+  struct RunRecorderPairsRefVal* projects = RunRecorderPairsRefValCreate();
+
+  // Execute the command to get the version
+  char* sqlCmd = "SELECT Ref, Label FROM Project";
+  int retExec =
+    sqlite3_exec(
+      that->db,
+      sqlCmd,
+      RunRecorderGetProjectsLocalCb,
+      projects,
+      &(that->sqliteErrMsg));
+  if (retExec != SQLITE_OK) {
+
+    RunRecorderPairsRefValFree(&projects);
+    Raise(RunRecorderExc_SQLRequestFailed);
+
+  }
+
+  // Return the projects
+  return projects;
+
+}
+
+// Get the list of projects through the Web API
+// Input:
+//   that: the struct RunRecorder
+// Output:
+//   Return the projects' reference/label
+// Raise:
+
+struct RunRecorderPairsRefVal* RunRecorderGetProjectsAPI(
+  struct RunRecorder* const that) {
+  return NULL;
+}
+
+// Get the list of projects
+// Input:
+//   that: the struct RunRecorder
+// Output:
+//   Return the projects' reference/label
+// Raise:
+//   RunRecorderExc_SQLRequestFailed
+struct RunRecorderPairsRefVal* RunRecorderGetProjects(
+  struct RunRecorder* const that) {
+
+  // If the RunRecorder uses a local database
+  if (RunRecorderUsesAPI(that) == false) {
+
+    return RunRecorderGetProjectsLocal(that);
+
+  // Else, the RunRecorder uses the Web API
+  } else {
+
+    return RunRecorderGetProjectsAPI(that);
+
+  }
+
+}
+
+// Create a static struct RunRecorderPairsRefVal
+// Output:
+//   Return the new struct RunRecorderPairsRefVal
+// Raise:
+//   RunRecorderExc_MallocFailed
+struct RunRecorderPairsRefVal* RunRecorderPairsRefValCreate(
+  void) {
+
+  // Declare the new struct RunRecorderPairsRefVal
+  struct RunRecorderPairsRefVal* pairs =
+    malloc(sizeof(struct RunRecorderPairsRefVal));
+  if (pairs == NULL) Raise(RunRecorderExc_MallocFailed);
+
+  // Initialise properties
+  pairs->nb = 0;
+  pairs->refs = NULL;
+  pairs->vals = NULL;
+
+  // Return the new struct RunRecorderPairsRefVal
+  return pairs;
+
+}
+
+// Free a static struct RunRecorderPairsRefVal
+// Input:
+//   that: the struct RunRecorderPairsRefVal
+void RunRecorderPairsRefValFree(
+  struct RunRecorderPairsRefVal** that) {
+
+  // If the struct is not already freed
+  if (that != NULL && *that != NULL) {
+
+    if ((*that)->vals != NULL) {
+
+      // Loop on the pairs
+      for (
+        long iPair = 0;
+        iPair < (*that)->nb;
+        ++iPair) {
+
+        // Free the value
+        free((*that)->vals[iPair]);
+
+      }
+
+    }
+
+    // Free memory
+    free((*that)->vals);
+    free((*that)->refs);
+    free(*that);
+    *that = NULL;
 
   }
 
