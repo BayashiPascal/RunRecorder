@@ -215,6 +215,7 @@ struct RunRecorder* RunRecorderCreate(
   that->db = NULL;
   that->curl = NULL;
   that->curlReply = NULL;
+  that->cmd = NULL;
 
   // Return the struct RunRecorder
   return that;
@@ -823,10 +824,11 @@ long RunRecorderAddProjectLocal(
 
   // Create the SQL command
   char* cmdBase = "INSERT INTO Project (Ref, Label) VALUES (NULL, \"%s\")";
-  char* cmd = malloc(strlen(cmdBase) + strlen(name) - 1);
-  (cmd == NULL ? Raise(RunRecorderExc_MallocFailed) : 0);
+  free(that->cmd);
+  that->cmd = malloc(strlen(cmdBase) + strlen(name) - 1);
+  (that->cmd == NULL ? Raise(RunRecorderExc_MallocFailed) : 0);
   sprintf(
-    cmd,
+    that->cmd,
     cmdBase,
     name);
 
@@ -834,13 +836,12 @@ long RunRecorderAddProjectLocal(
   int retExec =
     sqlite3_exec(
       that->db,
-      cmd,
+      that->cmd,
       // No callback
       NULL,
       // No user data
       NULL,
       &(that->errMsg));
-  free(cmd);
   (retExec != SQLITE_OK ? Raise(RunRecorderExc_AddProjectFailed) : 0);
 
   // Get the reference of the new project
@@ -874,29 +875,20 @@ long RunRecorderAddProjectAPI(
 
   // Create the request to the Web API
   char* cmdBase = "action=add_project&label=";
-  char* cmd = malloc(strlen(cmdBase) + strlen(name) + 1);
-  (cmd == NULL ? Raise(RunRecorderExc_MallocFailed) : 0);
+  free(that->cmd);
+  that->cmd = malloc(strlen(cmdBase) + strlen(name) + 1);
+  (that->cmd == NULL ? Raise(RunRecorderExc_MallocFailed) : 0);
   sprintf(
-    cmd,
+    that->cmd,
     "%s%s",
     cmdBase,
     name);
-  Try {
-
-    RunRecorderSetAPIReqPostVal(
-      that,
-      cmd);
-
-  } Catch(RunRecorderExc_CurlSetOptFailed) {
-
-    free(cmd);
-    Raise(RunRecorderExc_CurlSetOptFailed);
-
-  } EndTry;
+  RunRecorderSetAPIReqPostVal(
+    that,
+    that->cmd);
 
   // Send the request to the API
   RunRecorderSendAPIReq(that);
-  free(cmd);
 
   // Extract the reference of the project from the JSON reply
   char* refProjectStr =

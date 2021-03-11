@@ -41,6 +41,11 @@ struct RunRecorder {
   // String to memorise the reply from Curl requests
   char* curlReply;
 
+  // String to memorise the API or SQL commands when they are
+  // dynamically allocated to make memory management easier if an
+  // exception is raised
+  char* cmd;
+
 };
 
 // Constructor for a struct RunRecorder
