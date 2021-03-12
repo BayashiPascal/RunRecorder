@@ -166,6 +166,9 @@ int main() {
 
   } Catch(RunRecorderExc_SQLRequestFailed)
     CatchAlso(RunRecorderExc_ApiRequestFailed)
+    CatchAlso(RunRecorderExc_CurlRequestFailed)
+    CatchAlso(RunRecorderExc_CurlSetOptFailed)
+    CatchAlso(RunRecorderExc_InvalidJSON)
     CatchAlso(RunRecorderExc_MallocFailed) {
 
     fprintf(

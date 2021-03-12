@@ -25,6 +25,7 @@ char* RunRecorderExceptionStr[RunRecorderExc_LastID] = {
   "RunRecorderExc_MallocFailed",
   "RunRecorderExc_InvalidProjectName",
   "RunRecorderExc_AddProjectFailed",
+  "RunRecorderExc_InvalidJSON",
 };
 
 // ================== Functions declaration =========================
@@ -603,10 +604,10 @@ char* RunRecoderGetJSONValOfKey(
   size_t lenKey = strlen(key);
 
   // Create the key decorated with it's syntax
-  char* keyDecorated = malloc(lenKey + 5);
+  char* keyDecorated = malloc(lenKey + 4);
   sprintf(
     keyDecorated,
-    "\"%s\":\"",
+    "\"%s\":",
     key);
   if (keyDecorated == NULL) Raise(RunRecorderExc_MallocFailed);
 
@@ -618,20 +619,31 @@ char* RunRecoderGetJSONValOfKey(
   if (ptrKey != NULL) {
 
     // Variable to memorise the start of the value
-    char const* ptrVal = ptrKey + strlen(keyDecorated);
-    // Loop on the characters of the value until the next double quote
+    char const* ptrVal = ptrKey + strlen(keyDecorated) + 1;
+
+    // Declare a pointer to loop on the string until the end of the value
     char const* ptr = ptrVal;
-    while (ptr != NULL && *ptr != '"') {
+    if (ptrKey[strlen(keyDecorated)] == '"') {
 
-      ++ptr;
+      // Loop on the characters of the value until the next double quote
+      while (*ptr != '\0' && *ptr != '"') {
 
-      // Skip the escaped character
-      if (ptr != NULL && *ptr == '\\') ++ptr;
+        ++ptr;
+
+        // Skip the escaped character
+        if (*ptr != '\0' && *ptr == '\\') ++ptr;
+
+      }
+
+    } else if (ptrKey[strlen(keyDecorated)] == '{') {
+
+      // Loop on the characters of the value until the closing curly brace
+      while (*ptr != '\0' && *ptr != '}') ++ptr;
 
     }
 
-    // If we have found the closing double quote
-    if (ptr != NULL) {
+    // If we have found the end of the value
+    if (*ptr != '\0') {
 
       // Get the length of the value
       size_t lenVal = ptr - ptrVal;
@@ -708,7 +720,7 @@ char* RunRecorderGetAPIRetCode(
   if (retCode == NULL) {
 
     free(that->errMsg);
-    that->errMsg = strdup("'err' key missing in API reply");
+    that->errMsg = strdup("'ret' key missing in API reply");
     Raise(RunRecorderExc_ApiRequestFailed);
 
   }
@@ -955,6 +967,49 @@ long RunRecorderAddProject(
 
 }
 
+// Add a new pair in a struct RunRecorderPairsRefVal
+// Inputs:
+//   pairs: the struct RunRecorderPairsRefVal
+//     ref: the reference of the pair
+//     val: the val of the pair
+// Raise:
+//   RunRecorderExc_MallocFailed
+void RunRecorderPairsRefValAdd(
+  struct RunRecorderPairsRefVal* const pairs,
+                            long const ref,
+                     char const* const val) {
+
+  // Allocate memory
+  long* refs =
+    realloc(
+      pairs->refs,
+      sizeof(long) * (pairs->nb + 1));
+  if (refs == NULL) Raise(RunRecorderExc_MallocFailed);
+  char** vals =
+    realloc(
+      pairs->vals,
+      sizeof(char*) * (pairs->nb + 1));
+  if (vals == NULL) {
+
+    free(refs);
+    Raise(RunRecorderExc_MallocFailed);
+
+  }
+
+  pairs->refs = refs;
+  pairs->vals = vals;
+  pairs->vals[pairs->nb] = NULL;
+
+  // Update the number of pairs
+  ++(pairs->nb);
+
+  // Set the reference and value of the pair
+  pairs->refs[pairs->nb - 1] = ref;
+  pairs->vals[pairs->nb - 1] = strdup(val);
+  if (pairs->vals[pairs->nb - 1] == NULL) Raise(RunRecorderExc_MallocFailed);
+
+}
+
 // Callback for RunRecorderGetProjectsLocal
 // Input:
 //      data: The projects
@@ -983,40 +1038,26 @@ static int RunRecorderGetProjectsLocalCb(
   if (nbCol != 2 || colVal == NULL ||
       colVal[0] == NULL || colVal[1] == NULL) return 1;
 
-  // Allocate memory
-  long* refs =
-    realloc(
-      projects->refs,
-      sizeof(long) * (projects->nb + 1));
-  if (refs == NULL) return 1;
-  char** vals =
-    realloc(
-      projects->vals,
-      sizeof(char*) * (projects->nb + 1));
-  if (vals == NULL) {
-
-    free(refs);
-    return 1;
-
-  }
-
-  projects->refs = refs;
-  projects->vals = vals;
-  projects->vals[projects->nb] = NULL;
-
-  // Update the number of projects
-  ++(projects->nb);
-
-  // Copy the reference and label of the project
+  // Add the project to the pairs
   errno = 0;
-  projects->refs[projects->nb - 1] =
+  long ref =
     strtol(
       colVal[0],
       NULL,
       10);
   if (errno != 0) return 1;
-  projects->vals[projects->nb - 1] = strdup(colVal[1]);
-  if (projects->vals[projects->nb - 1] == NULL) return 1;
+  Try {
+
+    RunRecorderPairsRefValAdd(
+      projects,
+      ref,
+      colVal[1]);
+
+  } Catch(RunRecorderExc_MallocFailed) {
+
+    return 1;
+
+  } EndTry;
 
   // Return success code
   return 0;
@@ -1061,16 +1102,153 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjectsLocal(
 
 }
 
+// Extract a struct RunRecorderPairsRefVal from a JSON string
+// Input:
+//   json: the JSON string, such as "1":"A","2":"B"
+// Output:
+//   Return a new struct RunRecorderPairsRefVal
+// Raise:
+//   RunRecorderExc_MallocFailed
+//   RunRecorderExc_InvalidJSON
+struct RunRecorderPairsRefVal* RunRecorderGetPairsRefValFromJSON(
+  char const* json) {
+
+  // Create the pairs
+  struct RunRecorderPairsRefVal* pairs = RunRecorderPairsRefValCreate();
+
+  // Declare a pointer to loop on the json string
+  char const* ptr = json;
+
+  // Loop until the end of the json string
+  while (*ptr != '\0') {
+
+    // Go to the next double quote
+    while (*ptr != '\0' && *ptr != '"') ++ptr;
+
+    if (*ptr != '\0') {
+
+      // Skip the opening double quote for the reference
+      ++ptr;
+
+      // Get the reference
+      char* ptrEnd = NULL;
+      errno = 0;
+      long ref =
+        strtol(
+          ptr,
+          &ptrEnd,
+          10);
+      if (errno != 0 || *ptrEnd != '"') Raise(RunRecorderExc_InvalidJSON);
+
+      // Move to the character after the closing double quote
+      ptr = ptrEnd + 1;
+
+      // Go to the opening double quote for the value
+      while (*ptr != '\0' && *ptr != '"') ++ptr;
+
+      // If we couldn't find the opening double quote for the value
+      if (*ptr == '\0') Raise(RunRecorderExc_InvalidJSON);
+
+      // Skip the opening double quote for the value
+      ++ptr;
+
+      // Search the closing double quote for the value
+      char const* ptrEndVal = ptr;
+      while (*ptrEndVal != '\0' && *ptrEndVal != '"') ++ptrEndVal;
+
+      // If we couldn't find the closing double quote for the value
+      // or the value is null
+      if (*ptrEndVal == '\0' ||
+          ptrEndVal == ptr) Raise(RunRecorderExc_InvalidJSON);
+
+      // Get the value
+      size_t lenVal = ptrEndVal - ptr;
+      char* val = malloc(lenVal + 1);
+      if (val == NULL) Raise(RunRecorderExc_MallocFailed);
+      memcpy(
+        val,
+        ptr,
+        lenVal);
+      val[lenVal] = '\0';
+
+      // Move to the character after the closing double quote of the value
+      ptr = ptrEndVal + 1;
+
+      // Add the pair
+      Try {
+
+        RunRecorderPairsRefValAdd(
+          pairs,
+          ref,
+          val);
+
+      } Catch (RunRecorderExc_MallocFailed) {
+
+        free(val);
+        Raise(TryCatchGetLastExc());
+
+      } EndTry;
+
+      free(val);
+
+    }
+
+  }
+
+  // Return the pairs
+  return pairs;
+
+}
+
 // Get the list of projects through the Web API
 // Input:
 //   that: the struct RunRecorder
 // Output:
 //   Return the projects' reference/label
 // Raise:
+//   RunRecorderExc_CurlSetOptFailed
+//   RunRecorderExc_CurlRequestFailed
+//   RunRecorderExc_MallocFailed
+//   RunRecorderExc_ApiRequestFailed
+//   RunRecorderExc_InvalidJSON
 
 struct RunRecorderPairsRefVal* RunRecorderGetProjectsAPI(
   struct RunRecorder* const that) {
-  return NULL;
+
+  // Create the request to the Web API
+  RunRecorderSetAPIReqPostVal(
+    that,
+    "action=projects");
+
+  // Send the request to the API
+  RunRecorderSendAPIReq(that);
+
+  // Get the projects list in the JSON reply
+  char* json =
+    RunRecoderGetJSONValOfKey(
+      that->curlReply,
+      "projects");
+  if (json == NULL) Raise(RunRecorderExc_ApiRequestFailed);
+
+  // Extract the projects
+  struct RunRecorderPairsRefVal* projects = NULL;
+  Try {
+
+    projects = RunRecorderGetPairsRefValFromJSON(json);
+
+  } Catch(RunRecorderExc_MallocFailed) {
+
+    free(json);
+    Raise(TryCatchGetLastExc());
+    
+  } EndTry;
+
+  // Free memory
+  free(json);
+
+  // Return the projects
+  return projects;
+
 }
 
 // Get the list of projects
@@ -1080,6 +1258,11 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjectsAPI(
 //   Return the projects' reference/label
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_CurlSetOptFailed
+//   RunRecorderExc_CurlRequestFailed
+//   RunRecorderExc_MallocFailed
+//   RunRecorderExc_ApiRequestFailed
+//   RunRecorderExc_InvalidJSON
 struct RunRecorderPairsRefVal* RunRecorderGetProjects(
   struct RunRecorder* const that) {
 

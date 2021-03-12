@@ -136,6 +136,11 @@ long RunRecorderAddProject(
 //   Return the projects' reference/label
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_CurlSetOptFailed
+//   RunRecorderExc_CurlRequestFailed
+//   RunRecorderExc_MallocFailed
+//   RunRecorderExc_ApiRequestFailed
+//   RunRecorderExc_InvalidJSON
 struct RunRecorderPairsRefVal* RunRecorderGetProjects(
   struct RunRecorder* const that);
 

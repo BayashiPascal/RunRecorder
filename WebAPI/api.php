@@ -168,9 +168,10 @@ function GetProjects($db) {
     if ($rows === false) {
       throw new Exception("query() failed");
     }
+    $res["projects"] = [];
     while ($row = $rows->fetchArray()) {
 
-      $res[$row["Ref"]] = $row["Label"];
+      $res["projects"][$row["Ref"]] = $row["Label"];
 
     }
 
@@ -259,9 +260,10 @@ function GetMetrics($db, $project) {
     if ($rows === false) {
       throw new Exception("query() failed");
     }
+    $res["metrics"] = [];
     while ($row = $rows->fetchArray()) {
 
-      $res[$row["Ref"]] = $row["Label"];
+      $res["metrics"][$row["Ref"]] = $row["Label"];
 
     }
 

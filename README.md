@@ -274,7 +274,7 @@ TODO
 
 On success, the API returns, for example:
 ```
-{"ret":"0","1":"Room temperature"}
+{"ret":"0","projects":{"1":"Room temperature"}}
 ```
 
 On failure, an error message is returned.
@@ -337,7 +337,7 @@ TODO
 
 On success, the API returns, for example:
 ```
-{"1":"Date","2":"Temperature","ret":"0"}
+{"metrics":{"1":"Date","2":"Temperature"},"ret":"0"}
 ```
 
 On failure, an error message is returned.

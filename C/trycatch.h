@@ -40,6 +40,7 @@ enum RunRecorderException {
   RunRecorderExc_MallocFailed,
   RunRecorderExc_InvalidProjectName,
   RunRecorderExc_AddProjectFailed,
+  RunRecorderExc_InvalidJSON,
   RunRecorderExc_LastID
 
 };
