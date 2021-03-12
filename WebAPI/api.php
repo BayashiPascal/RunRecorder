@@ -193,6 +193,28 @@ function GetProjects($db) {
 
 }
 
+// Get the reference of a project from its name
+function GetRefProject($db, $project) {
+
+  // Get the project reference
+  $rows = $db->query(
+    'SELECT Ref FROM _Project WHERE Label = "' .
+    $project . '"');
+  if ($rows === false) {
+    throw new Exception("query() failed");
+  }
+  $row = $rows->fetchArray();
+  if ($row === false) {
+    throw new Exception("The project's name is invalid.");
+  }
+  $refProject = $row["Ref"];
+
+  // Return the reference
+  return $refProject;
+
+}
+
+
 // Add a new metric to a project
 function AddMetric($db, $project, $label, $default) {
 
@@ -200,22 +222,15 @@ function AddMetric($db, $project, $label, $default) {
 
   try {
 
-    // Check the project reference
-    $rows = $db->query('SELECT COUNT(*) as nb FROM _Project WHERE Ref = ' .
-                       $project);
-    if ($rows === false) {
-      throw new Exception("query() failed");
-    }
-    if (($rows->fetchArray())["nb"] != 1) {
-      throw new Exception("The project's reference is invalid.");
-    }
+    // Get the project reference
+    $refProject = GetRefProject($db, $project);
 
     // Check the label
     if (preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $label) == false) {
       throw new Exception("The label " . $label. " is invalid.");
     }
     $rows = $db->query('SELECT COUNT(*) as nb FROM _Metric WHERE Label = "' .
-                       $label . '" AND RefProject = ' . $project);
+                       $label . '" AND RefProject = ' . $refProject);
     if ($rows === false) {
       throw new Exception("query() failed");
     }
@@ -231,7 +246,7 @@ function AddMetric($db, $project, $label, $default) {
 
     // Add the metric in the database
     $cmd = 'INSERT INTO _Metric(RefProject, Label, DefaultValue) ' .
-           'VALUES (' . $project . ', "' . $label . '", "' .
+           'VALUES (' . $refProject . ', "' . $label . '", "' .
            $default . '")';
     $success = $db->exec($cmd);
 
@@ -261,7 +276,9 @@ function GetMetrics($db, $project) {
 
     // Get the metrics for the project
     $rows = $db->query(
-      'SELECT Ref, Label FROM _Metric WHERE RefProject = ' . $project);
+      'SELECT _Metric.Ref, _Metric.Label FROM _Metric, _Project ' .
+      'WHERE _Metric.RefProject = _Project.Ref AND ' . 
+      '_Project.Label = "' . $project . '"');
     if ($rows === false) {
       throw new Exception("query() failed");
     }
@@ -292,12 +309,15 @@ function AddMeasure($db, $project, $values) {
 
   try {
 
+    // Get the project reference
+    $refProject = GetRefProject($db, $project);
+
     // Get the date of the record
     $date = date("Y-m-d H:m:s");
 
     // Add the measure in the database
     $cmd = 'INSERT INTO _Measure(RefProject, DateMeasure) VALUES (' . 
-           $project . ', "' . $date . '")';
+           $refProject . ', "' . $date . '")';
     $success = $db->exec($cmd);
     if ($success === false) {
       throw new Exception("exec() failed for " . $cmd);
@@ -310,7 +330,7 @@ function AddMeasure($db, $project, $values) {
 
       // Get the reference of the metric
       $rows = $db->query('SELECT Ref FROM _Metric WHERE Label = "' .
-                         $metric . '" AND RefProject = ' . $project);
+                         $metric . '" AND RefProject = ' . $refProject);
       if ($rows === false) {
         throw new Exception("query() failed");
       }
@@ -352,10 +372,13 @@ function GetMeasures($db, $project) {
 
   try {
 
+    // Get the project reference
+    $refProject = GetRefProject($db, $project);
+
     // Get the metrics for the project
     $rows = $db->query(
       'SELECT Ref, Label, DefaultValue FROM _Metric WHERE RefProject = ' .
-      $project . ' ORDER BY Label');
+      $refProject . ' ORDER BY Label');
     if ($rows === false) {
       throw new Exception("query() failed");
     }
@@ -374,7 +397,7 @@ function GetMeasures($db, $project) {
     // Get the measures for the project
     $rows = $db->query(
       'SELECT Ref FROM _Measure WHERE RefProject = ' .
-      $project . ' ORDER BY DateMeasure');
+      $refProject . ' ORDER BY DateMeasure');
     if ($rows === false) {
       throw new Exception("query() failed");
     }
@@ -435,31 +458,34 @@ function FlushProject($db, $project) {
 
   try {
 
+    // Get the project reference
+    $refProject = GetRefProject($db, $project);
+
     // Delete the values of the project
     $cmd = 'DELETE FROM _Value WHERE RefMeasure IN ' .
            '(SELECT Ref FROM _Measure WHERE RefProject = ' .
-           $project . ')';
+           $refProject . ')';
     $success = $db->exec($cmd);
     if ($success === false) {
       throw new Exception("exec() failed for " . $cmd);
     }
 
     // Delete the measures of the project
-    $cmd = 'DELETE FROM _Measure WHERE RefProject = ' . $project;
+    $cmd = 'DELETE FROM _Measure WHERE RefProject = ' . $refProject;
     $success = $db->exec($cmd);
     if ($success === false) {
       throw new Exception("exec() failed for " . $cmd);
     }
 
     // Delete the metrics of the project
-    $cmd = 'DELETE FROM _Metric WHERE RefProject = ' . $project;
+    $cmd = 'DELETE FROM _Metric WHERE RefProject = ' . $refProject;
     $success = $db->exec($cmd);
     if ($success === false) {
       throw new Exception("exec() failed for " . $cmd);
     }
 
     // Delete the project
-    $cmd = 'DELETE FROM _Project WHERE Ref = ' . $project;
+    $cmd = 'DELETE FROM _Project WHERE Ref = ' . $refProject;
     $success = $db->exec($cmd);
     if ($success === false) {
       throw new Exception("exec() failed for " . $cmd);

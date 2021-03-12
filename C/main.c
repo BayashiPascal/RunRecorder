@@ -204,12 +204,12 @@ int main() {
 
     RunRecorderAddMetric(
       recorder,
-      refProject,
+      "RoomTemperature",
       "Date",
       "-");
     RunRecorderAddMetric(
       recorder,
-      refProject,
+      "RoomTemperature",
       "Temperature",
       "0.0");
 

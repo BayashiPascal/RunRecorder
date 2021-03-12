@@ -315,15 +315,15 @@ After adding a new project you'll probably want to add metrics that defines this
 
 ```
 <action>: add_metric
-<data>: project=<reference of this metric's project>&label=<metric's name>&default=<default value of the metric>
+<data>: project=<name of this metric's project>&label=<metric's name>&default=<default value of the metric>
 ```
 
 *The metric's name must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default of the metric must be one character long at least. The double quote `"`, equal sign `=` and ampersand `&` can't be used in the default value. There cannot be two metrics with the same label for the same project. A metric label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).*
 
 Example using the shell script:
 ```
-runrecorder.sh add_metric "project=1&label=Date&default=-"
-runrecorder.sh add_metric "project=1&label=Temperature&default=0.0"
+runrecorder.sh add_metric "project=RoomTemperature&label=Date&default=-"
+runrecorder.sh add_metric "project=RoomTemperature&label=Temperature&default=0.0"
 ```
 
 Example using the C library:
@@ -349,12 +349,12 @@ You can get the list of metrics for a project.
 
 ```
 <action>: metrics
-<data>: project=<reference of the project>
+<data>: project=<name of the project>
 ```
 
 Example using the shell script:
 ```
-runrecorder.sh metrics "project=1"
+runrecorder.sh metrics "project=RoomTemperature"
 ```
 
 Example using the C library:
@@ -378,15 +378,15 @@ Now you're ready to add measurement to your project!
 
 ```
 <action>: add_measure
-<data>: project=<reference of the project>&<metric 1>=<value metric 1>&<metric 2>=<value metric 2>...
+<data>: project=<name of the project>&<metric 1>=<value metric 1>&<metric 2>=<value metric 2>...
 ```
 
 *The double quote `"`, equal sign `=` and ampersand `&` can't be used in the  value. A value must be at least one character long. It is not mandatory to provide a value for all the metrics of the project (if missing, the default value is used instead).*
 
 Example using the shell script:
 ```
-runrecorder.sh add_measure "project=1&Date=2021-03-08 15:45:00&Temperature=18.5"
-runrecorder.sh add_measure "project=1&Date=2021-03-08 16:19:00&Temperature=19.1"
+runrecorder.sh add_measure "project=RoomTemperature&Date=2021-03-08 15:45:00&Temperature=18.5"
+runrecorder.sh add_measure "project=RoomTemperature&Date=2021-03-08 16:19:00&Temperature=19.1"
 ```
 
 Example using the C library:
@@ -412,12 +412,12 @@ Obviously after adding your measurements you'll want to use them. You can access
 
 ```
 <action>: measures
-<data>: project=<reference of the project>
+<data>: project=<name of the project>
 ```
 
 Example using the shell script:
 ```
-runrecorder.sh measures "project=1"
+runrecorder.sh measures "project=RoomTemperature"
 ```
 
 Example using the C library:
@@ -445,12 +445,12 @@ Once you've finished collecting data for a project and want to free space in the
 
 ```
 <action>: flush
-<data>: project=<reference of the project>
+<data>: project=<name of the project>
 ```
 
 Example using the shell script:
 ```
-runrecorder.sh flush "project=1"
+runrecorder.sh flush "project=RoomTemperature"
 ```
 
 Example using the C library:

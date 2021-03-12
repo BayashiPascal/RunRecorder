@@ -1361,7 +1361,7 @@ void RunRecorderPairsRefValFree(
 // Add a metric to a project
 // Input:
 //         that: the struct RunRecorder
-//   refProject: the reference of the project to which add the metric
+//      project: the name of the project to which add the metric
 //        label: the label of the metric. 
 //   defaultVal: the default value of the metric 
 // The label of the metric must respect the following pattern:
@@ -1375,7 +1375,7 @@ void RunRecorderPairsRefValFree(
 
 void RunRecorderAddMetric(
   struct RunRecorder* const that,
-                 long const refProject,
+          char const* const project,
           char const* const label,
           char const* const defaultVal) {
 
