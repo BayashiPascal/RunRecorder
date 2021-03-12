@@ -370,27 +370,27 @@ void RunRecorderCreateDbLocal(
   // List of commands to create the table
   char* sqlCmd[RUNRECORDER_NB_TABLE + 1] = {
 
-    "CREATE TABLE Version ("
+    "CREATE TABLE _Version ("
     "  Ref INTEGER PRIMARY KEY,"
     "  Label TEXT NOT NULL)",
-    "CREATE TABLE Project ("
+    "CREATE TABLE _Project ("
     "  Ref INTEGER PRIMARY KEY,"
-    "  Label TEXT NOT NULL)",
-    "CREATE TABLE Measure ("
+    "  Label TEXT UNIQUE NOT NULL)",
+    "CREATE TABLE _Measure ("
     "  Ref INTEGER PRIMARY KEY,"
     "  RefProject INTEGER NOT NULL,"
     "  DateMeasure DATETIME NOT NULL)",
-    "CREATE TABLE Value ("
+    "CREATE TABLE _Value ("
     "  Ref INTEGER PRIMARY KEY,"
     "  RefMeasure INTEGER NOT NULL,"
     "  RefMetric INTEGER NOT NULL,"
     "  Value TEXT NOT NULL)",
-    "CREATE TABLE Metric ("
+    "CREATE TABLE _Metric ("
     "  Ref INTEGER PRIMARY KEY,"
     "  RefProject INTEGER NOT NULL,"
     "  Label TEXT NOT NULL,"
     "  DefaultValue TEXT NOT NULL)",
-    "INSERT INTO Version (Ref, Label) "
+    "INSERT INTO _Version (Ref, Label) "
     "VALUES (NULL, '" RUNRECORDER_VERSION_DB "')"
 
   };
@@ -509,7 +509,7 @@ char* RunRecorderGetVersionLocal(
   char* version = NULL;
 
   // Execute the command to get the version
-  char* sqlCmd = "SELECT Label FROM Version LIMIT 1";
+  char* sqlCmd = "SELECT Label FROM _Version LIMIT 1";
   int retExec =
     sqlite3_exec(
       that->db,
@@ -820,7 +820,8 @@ long RunRecorderAddProjectLocal(
   sqlite3_free(that->sqliteErrMsg);
 
   // Create the SQL command
-  char* cmdBase = "INSERT INTO Project (Ref, Label) VALUES (NULL, \"%s\")";
+  char* cmdBase =
+    "INSERT INTO _Project (Ref, Label) VALUES (NULL, \"%s\")";
   free(that->cmd);
   that->cmd = malloc(strlen(cmdBase) + strlen(name) - 1);
   if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
@@ -1103,7 +1104,7 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjectsLocal(
   struct RunRecorderPairsRefVal* projects = RunRecorderPairsRefValCreate();
 
   // Execute the command to get the version
-  char* sqlCmd = "SELECT Ref, Label FROM Project";
+  char* sqlCmd = "SELECT Ref, Label FROM _Project";
   int retExec =
     sqlite3_exec(
       that->db,
