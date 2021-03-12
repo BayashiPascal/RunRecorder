@@ -15,8 +15,8 @@ int main() {
 
     // Give pathApi in argument if you want to use the Web API instead
     // of a local file
-    recorder = RunRecorderCreate(pathDb);
-    //recorder = RunRecorderCreate(pathApi);
+    //recorder = RunRecorderCreate(pathDb);
+    recorder = RunRecorderCreate(pathApi);
 
     // Initialise the struct RunRecorder
     RunRecorderInit(recorder);
@@ -106,7 +106,7 @@ int main() {
     refProject =
       RunRecorderAddProject(
         recorder,
-        "Room temperature");
+        "RoomTemperature");
     printf(
       "refProject: %ld\n",
       refProject);

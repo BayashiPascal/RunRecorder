@@ -110,11 +110,12 @@ void RunRecorderFree(
 char* RunRecorderGetVersion(
   struct RunRecorder* const that);
 
-// Add a new projet
+// Add a new project
 // Input:
 //   that: the struct RunRecorder
-//   name: the name of the new project, double quote `"`, equal sign `=` and
-//         ampersand `&` can't be used in the project's name
+//   name: the name of the new project
+// The project's name must respect the following pattern: 
+// /^[a-zA-Z][a-zA-Z0-9_]*$/ .
 // Output:
 //   Return the reference of the new project
 // Raise:
@@ -150,8 +151,9 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjects(
 //   refProject: the reference of the project to which add the metric
 //        label: the label of the metric. 
 //   defaultVal: the default value of the metric 
-// The label of the metric must contain only characters in a-zA-Z0-9. The
-// label and default of the metric must be one character long at least.
+// The label of the metric must respect the following pattern:
+// /^[a-zA-Z][a-zA-Z0-9_]*$/.
+// The default of the metric must be one character long at least.
 // The double quote `"`, equal sign `=` and ampersand `&` can't be used in
 // the default value. There cannot be two metrics with the same label for
 // the same project. A metric label can't be 'action' or 'project' (case

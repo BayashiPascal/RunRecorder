@@ -29,7 +29,7 @@ function CreateDatabase($path, $version) {
       "  Label TEXT NOT NULL)",
       "CREATE TABLE Project (" .
       "  Ref INTEGER PRIMARY KEY," .
-      "  Label TEXT NOT NULL)",
+      "  Label TEXT UNIQUE NOT NULL)",
       "CREATE TABLE Measure (" .
       "  Ref INTEGER PRIMARY KEY," .
       "  RefProject INTEGER NOT NULL," .
@@ -134,6 +134,11 @@ function AddProject($db, $label) {
 
   try {
 
+    // Check the label
+    if (preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $label) == false) {
+      throw new Exception("The label " . $label. " is invalid.");
+    }
+
     // Add the project in the database
     $cmd = 'INSERT INTO Project(Label) VALUES ("' . $label . '")';
     $success = $db->exec($cmd);
@@ -206,8 +211,8 @@ function AddMetric($db, $project, $label, $default) {
     }
 
     // Check the label
-    if (strlen($label) == 0 or preg_match('[^a-zA-Z0-9]', $label) === true) {
-      throw new Exception("The label is invalid.");
+    if (preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $label) == false) {
+      throw new Exception("The label " . $label. " is invalid.");
     }
     $rows = $db->query('SELECT COUNT(*) as nb FROM Metric WHERE Label = "' .
                        $label . '" AND RefProject = ' . $project);

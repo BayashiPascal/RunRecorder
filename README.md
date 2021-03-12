@@ -209,11 +209,11 @@ In RunRecorder, data are grouped by projects. To start recording data, the first
 <data>: label=<the project's name>
 ```
 
-*The double quote `"`, equal sign `=` and ampersand `&` can't be used in the project's name.*
+*The project's name must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`.*
 
 Example using the shell script:
 ```
-> runrecorder.sh add_project "label=Room temperature"
+> runrecorder.sh add_project "label=RoomTemperature"
 {"refProject":1,"ret":"0"}
 ```
 
@@ -237,7 +237,7 @@ int main() {
   long refProject =
     RunRecorderAddProject(
       recorder,
-      "Body weight");
+      "RoomTemperature");
   printf(
     "%ld\n",
     refProject);
@@ -265,7 +265,7 @@ You can get the list of projects.
 Example using the shell script:
 ```
 > runrecorder.sh projects
-{"ret":"0","projects":{"1":"Room temperature"}}
+{"ret":"0","projects":{"1":"RoomTemperature"}}
 ```
 
 Example using the C library:
@@ -306,7 +306,7 @@ int main() {
 }
 
 // Result:
-// ref: 1 label: Room temperature
+// ref: 1 label: RoomTemperature
 ```
 
 #### Add a metric to a project
@@ -318,7 +318,7 @@ After adding a new project you'll probably want to add metrics that defines this
 <data>: project=<reference of this metric's project>&label=<metric's name>&default=<default value of the metric>
 ```
 
-*The label of the metric must contain only characters in a-zA-Z0-9. The label and default of the metric must be one character long at least. The double quote `"`, equal sign `=` and ampersand `&` can't be used in the default value. There cannot be two metrics with the same label for the same project. A metric label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).*
+*The metric's name must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default of the metric must be one character long at least. The double quote `"`, equal sign `=` and ampersand `&` can't be used in the default value. There cannot be two metrics with the same label for the same project. A metric label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).*
 
 Example using the shell script:
 ```

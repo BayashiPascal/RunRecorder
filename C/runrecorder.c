@@ -804,8 +804,9 @@ char* RunRecorderGetVersionAPI(
 // Add a new projet in a local database
 // Input:
 //   that: the struct RunRecorder
-//   name: the name of the new project, double quote `"`, equal sign `=` and
-//         ampersand `&` can't be used in the project's name
+//   name: the name of the new project
+// The project's name must respect the following pattern: 
+// /^[a-zA-Z][a-zA-Z0-9_]*$/ .
 // Output:
 //   Return the reference of the new project
 // Raise:
@@ -851,8 +852,9 @@ long RunRecorderAddProjectLocal(
 // Add a new projet in a remote database
 // Input:
 //   that: the struct RunRecorder
-//   name: the name of the new project, double quote `"`, equal sign `=` and
-//         ampersand `&` can't be used in the project's name
+//   name: the name of the new project
+// The project's name must respect the following pattern: 
+// /^[a-zA-Z][a-zA-Z0-9_]*$/ .
 // Output:
 //   Return the reference of the new project
 // Raise:
@@ -911,11 +913,43 @@ long RunRecorderAddProjectAPI(
 
 }
 
+// Check if a string respect the pattern /[a-zA-Z][a-zA-Z0-9_]*/
+// Input:
+//   str: the string to check
+// Output:
+//   Return true if the string respect the pattern, else false
+bool RunRecorderIsValidLabel(
+  char const* const str) {
+
+  // Check the first character
+  if (*str < 'a' && *str > 'z' &&
+      *str < 'A' && *str > 'Z') return false;
+
+  // Loop on the other characters
+  char const* ptr = str + 1;
+  while (*ptr != '\0') {
+
+    // Check the character
+    if (*ptr < 'a' && *ptr > 'z' &&
+        *ptr < 'A' && *ptr > 'Z' &&
+        *ptr != '_') return false;
+
+    // Move to the next character
+    ++ptr;
+
+  }
+
+  // If we reach here the string is valid
+  return true;
+
+}
+
 // Add a new project
 // Input:
 //   that: the struct RunRecorder
-//   name: the name of the new project, double quote `"`, equal sign `=` and
-//         ampersand `&` can't be used in the project's name
+//   name: the name of the new project
+// The project's name must respect the following pattern: 
+// /^[a-zA-Z][a-zA-Z0-9_]*$/ .
 // Output:
 //   Return the reference of the new project
 // Raise:
@@ -930,22 +964,9 @@ long RunRecorderAddProject(
   struct RunRecorder* const that,
   char const* const name) {
 
-  // Check the label
-  char const* ptrDoubleQuote =
-    strchr(
-      name,
-      '"');
-  char const* ptrEqual =
-    strchr(
-      name,
-      '=');
-  char const* ptrAmpersand =
-    strchr(
-      name,
-      '&');
-  if (ptrDoubleQuote != NULL ||
-      ptrEqual != NULL || 
-      ptrAmpersand != NULL) Raise(RunRecorderExc_InvalidProjectName);
+  // Check the name
+  bool isValidName = RunRecorderIsValidLabel(name);
+  if (isValidName == false) Raise(RunRecorderExc_InvalidProjectName);
 
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {
@@ -1342,8 +1363,9 @@ void RunRecorderPairsRefValFree(
 //   refProject: the reference of the project to which add the metric
 //        label: the label of the metric. 
 //   defaultVal: the default value of the metric 
-// The label of the metric must contain only characters in a-zA-Z0-9. The
-// label and default of the metric must be one character long at least.
+// The label of the metric must respect the following pattern:
+// /^[a-zA-Z][a-zA-Z0-9_]*$/.
+// The default of the metric must be one character long at least.
 // The double quote `"`, equal sign `=` and ampersand `&` can't be used in
 // the default value. There cannot be two metrics with the same label for
 // the same project. A metric label can't be 'action' or 'project' (case
