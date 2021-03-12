@@ -213,7 +213,7 @@ In RunRecorder, data are grouped by projects. To start recording data, the first
 
 Example using the shell script:
 ```
-runrecorder.sh add_project "label=Room temperature"
+> runrecorder.sh add_project "label=Room temperature"
 {"refProject":1,"ret":"0"}
 ```
 
@@ -264,22 +264,49 @@ You can get the list of projects.
 
 Example using the shell script:
 ```
-runrecorder.sh projects
+> runrecorder.sh projects
+{"ret":"0","projects":{"1":"Room temperature"}}
 ```
 
 Example using the C library:
 ```
-TODO
-```
+#include <stdio.h>
+#include "runrecorder.h"
 
-On success, the API returns, for example:
-```
-{"ret":"0","projects":{"1":"Room temperature"}}
-```
+int main() {
 
-On failure, an error message is returned.
-```
-{"errMsg":"something went wrong","ret":"0"}
+  char const* pathDb = "./runrecorder.db";
+  char const* pathApi = "https://localhost/RunRecorder/api.php";
+
+  // Create the RunRecorder instance
+  // Give pathApi in argument if you want to use the Web API instead
+  // of a local file
+  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  RunRecorderInit(recorder);
+
+  // Get the projects
+  struct RunRecorderPairsRefVal* projects = RunRecorderGetProjects(recorder);
+  for (
+    long iProject = 0;
+    iProject < projects->nb;
+    ++iProject) {
+
+    printf(
+      "ref: %ld label: %s\n",
+      projects->refs[iProject],
+      projects->vals[iProject]);
+
+  }
+
+
+  // Free memory
+  RunRecorderFree(&recorder);
+  return EXIT_SUCCESS;
+
+}
+
+// Result:
+// ref: 1 label: Room temperature
 ```
 
 #### Add a metric to a project

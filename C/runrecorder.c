@@ -1211,7 +1211,6 @@ struct RunRecorderPairsRefVal* RunRecorderGetPairsRefValFromJSON(
 //   RunRecorderExc_MallocFailed
 //   RunRecorderExc_ApiRequestFailed
 //   RunRecorderExc_InvalidJSON
-
 struct RunRecorderPairsRefVal* RunRecorderGetProjectsAPI(
   struct RunRecorder* const that) {
 
