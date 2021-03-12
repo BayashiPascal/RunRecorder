@@ -106,7 +106,7 @@ int main() {
     refProject =
       RunRecorderAddProject(
         recorder,
-        "Body weight");
+        "Room temperature");
     printf(
       "refProject: %ld\n",
       refProject);
@@ -198,6 +198,56 @@ int main() {
     exit(EXIT_FAILURE);
 
   } EndTry;
+
+  // Create a new metric
+  Try {
+
+    RunRecorderAddMetric(
+      recorder,
+      refProject,
+      "Date",
+      "-");
+    RunRecorderAddMetric(
+      recorder,
+      refProject,
+      "Temperature",
+      "0.0");
+
+  } Catch(RunRecorderExc_SQLRequestFailed)
+    CatchAlso(RunRecorderExc_CurlSetOptFailed)
+    CatchAlso(RunRecorderExc_CurlRequestFailed)
+    CatchAlso(RunRecorderExc_ApiRequestFailed)
+    CatchAlso(RunRecorderExc_InvalidProjectName)
+    CatchAlso(RunRecorderExc_AddProjectFailed)
+    CatchAlso(RunRecorderExc_MallocFailed) {
+
+    fprintf(
+      stderr,
+      "Caught exception %s during RunRecorderAddMetric.\n",
+      RunRecorderExceptionStr[TryCatchGetLastExc()]);
+    if (recorder->errMsg != NULL) {
+
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->errMsg);
+
+    }
+
+    if (recorder->sqliteErrMsg != NULL) {
+
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->sqliteErrMsg);
+
+    }
+
+    RunRecorderFree(&recorder);
+    exit(EXIT_FAILURE);
+
+  } EndTry;
+
 
 /*  
 bodyrecorder->sh add_metric "project=1&label=Date&default=-"

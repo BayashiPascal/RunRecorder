@@ -144,6 +144,26 @@ long RunRecorderAddProject(
 struct RunRecorderPairsRefVal* RunRecorderGetProjects(
   struct RunRecorder* const that);
 
+// Add a metric to a project
+// Input:
+//         that: the struct RunRecorder
+//   refProject: the reference of the project to which add the metric
+//        label: the label of the metric. 
+//   defaultVal: the default value of the metric 
+// The label of the metric must contain only characters in a-zA-Z0-9. The
+// label and default of the metric must be one character long at least.
+// The double quote `"`, equal sign `=` and ampersand `&` can't be used in
+// the default value. There cannot be two metrics with the same label for
+// the same project. A metric label can't be 'action' or 'project' (case
+//  sensitive, so 'Action' is fine).
+// Raise:
+
+void RunRecorderAddMetric(
+  struct RunRecorder* const that,
+                 long const refProject,
+          char const* const label,
+          char const* const defaultVal);
+
 // Create a static struct RunRecorderPairsRefVal
 // Output:
 //   Return the new struct RunRecorderPairsRefVal
