@@ -32,8 +32,8 @@ struct RunRecorder {
   // String to memorise the error message
   char* errMsg;
 
-  // String to memorise the SQLite3 error message (they need to be
-  // managed separately to be freed their own way)
+  // String to memorise the SQLite3 error message from sqlite3_exec
+  // (they need to be managed separately to be freed their own way)
   char* sqliteErrMsg;
 
   // Connection to the database if it's a local file

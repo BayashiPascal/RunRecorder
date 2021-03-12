@@ -43,6 +43,15 @@ int main() {
 
     }
 
+    if (recorder->sqliteErrMsg != NULL) {
+
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->sqliteErrMsg);
+
+    }
+
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
@@ -73,6 +82,15 @@ int main() {
         stderr,
         "%s\n",
         recorder->errMsg);
+
+    }
+
+    if (recorder->sqliteErrMsg != NULL) {
+
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->sqliteErrMsg);
 
     }
 
@@ -114,6 +132,15 @@ int main() {
 
     }
 
+    if (recorder->sqliteErrMsg != NULL) {
+
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->sqliteErrMsg);
+
+    }
+
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
@@ -151,6 +178,15 @@ int main() {
         stderr,
         "%s\n",
         recorder->errMsg);
+
+    }
+
+    if (recorder->sqliteErrMsg != NULL) {
+
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->sqliteErrMsg);
 
     }
 

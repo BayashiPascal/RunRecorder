@@ -120,6 +120,7 @@ void RunRecorderInitLocal(
   if (ret != 0) {
 
     if (fp != NULL) fclose(fp);
+    free(that->errMsg);
     that->errMsg = strdup(sqlite3_errmsg(that->db));
     Raise(RunRecorderExc_OpenDbFailed);
 
@@ -133,6 +134,7 @@ void RunRecorderInitLocal(
 
   } else {
 
+    // Close the FILE*
     fclose(fp);
 
   }
@@ -164,6 +166,7 @@ void RunRecorderInitWebAPI(
 
     curl_easy_cleanup(that->curl);
     curl_global_cleanup();
+    free(that->errMsg);
     that->errMsg = strdup(curl_easy_strerror(res));
     Raise(RunRecorderExc_CurlSetOptFailed);
 
@@ -179,6 +182,7 @@ void RunRecorderInitWebAPI(
 
     curl_easy_cleanup(that->curl);
     curl_global_cleanup();
+    free(that->errMsg);
     that->errMsg = strdup(curl_easy_strerror(res));
     Raise(RunRecorderExc_CurlSetOptFailed);
 
@@ -192,6 +196,7 @@ void RunRecorderInitWebAPI(
 
     curl_easy_cleanup(that->curl);
     curl_global_cleanup();
+    free(that->errMsg);
     that->errMsg = strdup(curl_easy_strerror(res));
     Raise(RunRecorderExc_CurlSetOptFailed);
 
@@ -258,18 +263,14 @@ void RunRecorderInit(
   }
 
   // If the version of the database is different from the last version
+  // upgrade the database
   char* version = RunRecorderGetVersion(that);
   int cmpVersion =
     strcmp(
       version,
       RUNRECORDER_VERSION_DB);
   free(version);
-  if (cmpVersion != 0) {
-
-    // Upgrade the database
-    RunRecorderUpgradeDb(that);
-
-  }
+  if (cmpVersion != 0) RunRecorderUpgradeDb(that);
 
 }
 
@@ -290,11 +291,7 @@ void RunRecorderFree(
     free((*that)->cmd);
 
     // Close the connection to the local database if it was opened
-    if ((*that)->db != NULL) {
-
-      sqlite3_close((*that)->db);
-
-    }
+    if ((*that)->db != NULL) sqlite3_close((*that)->db);
 
     // Clean up the curl instance if it was created
     if ((*that)->curl != NULL) {
@@ -353,11 +350,8 @@ void RunRecorderCreateDb(
   struct RunRecorder* const that) {
 
   // If the RunRecorder uses a local database
-  if (RunRecorderUsesAPI(that) == false) {
+  if (RunRecorderUsesAPI(that) == false) RunRecorderCreateDbLocal(that);
 
-    RunRecorderCreateDbLocal(that);
-
-  }
   // If the RunRecorder uses the Web API there is
   // nothing to do as the remote API will take care of creating the
   // database when necessary
@@ -485,12 +479,8 @@ static int RunRecorderGetVersionLocalCb(
   char** ptrVersion = (char**)data;
 
   // If the arguments are invalid
-  if (nbCol != 1 || colVal == NULL || *colVal == NULL) {
-
-    // Return non zero to trigger SQLITE_ABORT in the calling function
-    return 1;
-
-  }
+  // Return non zero to trigger SQLITE_ABORT in the calling function
+  if (nbCol != 1 || colVal == NULL || *colVal == NULL) return 1;
 
   // Memorise the returned value
   *ptrVersion = strdup(*colVal);
@@ -526,11 +516,7 @@ char* RunRecorderGetVersionLocal(
       RunRecorderGetVersionLocalCb,
       &version,
       &(that->sqliteErrMsg));
-  if (retExec != SQLITE_OK) {
-
-    Raise(RunRecorderExc_SQLRequestFailed);
-
-  }
+  if (retExec != SQLITE_OK) Raise(RunRecorderExc_SQLRequestFailed);
 
   // Return the version
   return version;
@@ -566,12 +552,8 @@ size_t RunRecorderGetReplyAPI(
     size_t replyLength = 0;
 
     // If the current buffer for the reply is not empty
-    if (*reply != NULL) {
-
-      // Get the current length of the reply
-      replyLength = strlen(*reply);
-
-    }
+    // Get the current length of the reply
+    if (*reply != NULL) replyLength = strlen(*reply);
 
     // Allocate memory for current data, the incoming data and the
     // terminating '\0'
@@ -581,11 +563,7 @@ size_t RunRecorderGetReplyAPI(
         replyLength + dataSize + 1);
 
     // If the allocation failed
-    if (reply == NULL) {
-
-      Raise(RunRecorderExc_MallocFailed);
-
-    }
+    if (reply == NULL) Raise(RunRecorderExc_MallocFailed);
 
     // Copy the incoming data and the end of the current buffer
     memcpy(
@@ -614,12 +592,9 @@ char* RunRecoderGetJSONValOfKey(
   char const* const key) {
 
   // If the json or key is null or empty
-  if (json == NULL || key == NULL || *json == '\0' || *key == '\0') {
-
-    // Nothing to do
-    return NULL;
-
-  }
+  // Nothing to do
+  if (json == NULL || key == NULL ||
+      *json == '\0' || *key == '\0') return NULL;
 
   // Variable to memorise the value
   char* val = NULL;
@@ -633,11 +608,7 @@ char* RunRecoderGetJSONValOfKey(
     keyDecorated,
     "\"%s\":\"",
     key);
-  if (keyDecorated == NULL) {
-
-    Raise(RunRecorderExc_MallocFailed);
-
-  }
+  if (keyDecorated == NULL) Raise(RunRecorderExc_MallocFailed);
 
   // Search the key in the JSON encoded string
   char const* ptrKey =
@@ -655,11 +626,7 @@ char* RunRecoderGetJSONValOfKey(
       ++ptr;
 
       // Skip the escaped character
-      if (ptr != NULL && *ptr == '\\') {
-
-        ++ptr;
-
-      }
+      if (ptr != NULL && *ptr == '\\') ++ptr;
 
     }
 
@@ -715,6 +682,7 @@ void RunRecorderSetAPIReqPostVal(
       data);
   if (res != CURLE_OK) {
 
+    free(that->errMsg);
     that->errMsg = strdup(curl_easy_strerror(res));
     Raise(RunRecorderExc_CurlSetOptFailed);
 
@@ -739,6 +707,7 @@ char* RunRecorderGetAPIRetCode(
       "ret");
   if (retCode == NULL) {
 
+    free(that->errMsg);
     that->errMsg = strdup("'err' key missing in API reply");
     Raise(RunRecorderExc_ApiRequestFailed);
 
@@ -762,6 +731,7 @@ void RunRecorderSendAPIReq(
   CURLcode res = curl_easy_perform(that->curl);
   if (res != CURLE_OK) {
 
+    free(that->errMsg);
     that->errMsg = strdup(curl_easy_strerror(res));
     Raise(RunRecorderExc_CurlRequestFailed);
 
@@ -776,6 +746,7 @@ void RunRecorderSendAPIReq(
   free(retCode);
   if (cmpRet != 0) {
 
+    free(that->errMsg);
     that->errMsg =
       RunRecoderGetJSONValOfKey(
         that->curlReply,
@@ -798,9 +769,6 @@ void RunRecorderSendAPIReq(
 //   RunRecorderExc_MallocFailed
 char* RunRecorderGetVersionAPI(
   struct RunRecorder* const that) {
-
-  // Ensure errMsg is freed
-  free(that->errMsg);
 
   // Create the request to the Web API
   RunRecorderSetAPIReqPostVal(
@@ -886,9 +854,6 @@ long RunRecorderAddProjectAPI(
   struct RunRecorder* const that,
   char const* const name) {
 
-  // Ensure errMsg is freed
-  free(that->errMsg);
-
   // Create the request to the Web API
   char* cmdBase = "action=add_project&label=";
   free(that->cmd);
@@ -913,6 +878,7 @@ long RunRecorderAddProjectAPI(
       "refProject");
   if (refProjectStr == NULL) {
 
+    free(that->errMsg);
     that->errMsg = strdup(that->curlReply);
     Raise(RunRecorderExc_ApiRequestFailed);
 
@@ -967,11 +933,7 @@ long RunRecorderAddProject(
       '&');
   if (ptrDoubleQuote != NULL ||
       ptrEqual != NULL || 
-      ptrAmpersand != NULL) {
-
-    Raise(RunRecorderExc_InvalidProjectName);
-
-  }
+      ptrAmpersand != NULL) Raise(RunRecorderExc_InvalidProjectName);
 
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {
@@ -1017,24 +979,16 @@ static int RunRecorderGetProjectsLocalCb(
     (struct RunRecorderPairsRefVal*)data;
 
   // If the arguments are invalid
+  // Return non zero to trigger SQLITE_ABORT in the calling function
   if (nbCol != 2 || colVal == NULL ||
-      colVal[0] == NULL || colVal[1] == NULL) {
-
-    // Return non zero to trigger SQLITE_ABORT in the calling function
-    return 1;
-
-  }
+      colVal[0] == NULL || colVal[1] == NULL) return 1;
 
   // Allocate memory
   long* refs =
     realloc(
       projects->refs,
       sizeof(long) * (projects->nb + 1));
-  if (refs == NULL) {
-
-    return 1;
-
-  }
+  if (refs == NULL) return 1;
   char** vals =
     realloc(
       projects->vals,
@@ -1045,6 +999,7 @@ static int RunRecorderGetProjectsLocalCb(
     return 1;
 
   }
+
   projects->refs = refs;
   projects->vals = vals;
   projects->vals[projects->nb] = NULL;
