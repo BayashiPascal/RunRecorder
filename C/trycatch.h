@@ -39,9 +39,11 @@ enum RunRecorderException {
   RunRecorderExc_ApiRequestFailed,
   RunRecorderExc_MallocFailed,
   RunRecorderExc_InvalidProjectName,
+  RunRecorderExc_ProjectNameAlreadyUsed,
   RunRecorderExc_AddProjectFailed,
   RunRecorderExc_InvalidJSON,
   RunRecorderExc_InvalidMetricName,
+  RunRecorderExc_MetricNameAlreadyUsed,
   RunRecorderExc_LastID
 
 };

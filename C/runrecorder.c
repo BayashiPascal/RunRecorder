@@ -24,8 +24,9 @@ char* RunRecorderExceptionStr[RunRecorderExc_LastID] = {
   "RunRecorderExc_ApiRequestFailed",
   "RunRecorderExc_MallocFailed",
   "RunRecorderExc_InvalidProjectName",
+  "RunRecorderExc_ProjectNameAlreadyUsed",
   "RunRecorderExc_AddProjectFailed",
-  "RunRecorderExc_InvalidMetricName",
+  "RunRecorderExc_MetricNameAlreadyUsed",
   "RunRecorderExc_InvalidJSON",
 };
 
@@ -808,12 +809,10 @@ char* RunRecorderGetVersionAPI(
 //   name: the name of the new project
 // The project's name must respect the following pattern: 
 // /^[a-zA-Z][a-zA-Z0-9_]*$/ .
-// Output:
-//   Return the reference of the new project
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
 //   RunRecorderExc_MallocFailed
-long RunRecorderAddProjectLocal(
+void RunRecorderAddProjectLocal(
   struct RunRecorder* const that,
   char const* const name) {
 
@@ -843,12 +842,6 @@ long RunRecorderAddProjectLocal(
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_AddProjectFailed);
 
-  // Get the reference of the new project
-  long refProject = sqlite3_last_insert_rowid(that->db);
-
-  // Return the reference
-  return refProject;
-
 }
 
 // Add a new projet in a remote database
@@ -857,8 +850,6 @@ long RunRecorderAddProjectLocal(
 //   name: the name of the new project
 // The project's name must respect the following pattern: 
 // /^[a-zA-Z][a-zA-Z0-9_]*$/ .
-// Output:
-//   Return the reference of the new project
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
 //   RunRecorderExc_CurlSetOptFailed
@@ -866,7 +857,7 @@ long RunRecorderAddProjectLocal(
 //   RunRecorderExc_ApiRequestFailed
 //   RunRecorderExc_MallocFailed
 //   RunRecorderExc_AddProjectFailed
-long RunRecorderAddProjectAPI(
+void RunRecorderAddProjectAPI(
   struct RunRecorder* const that,
   char const* const name) {
 
@@ -886,32 +877,6 @@ long RunRecorderAddProjectAPI(
 
   // Send the request to the API
   RunRecorderSendAPIReq(that);
-
-  // Extract the reference of the project from the JSON reply
-  char* refProjectStr =
-    RunRecoderGetJSONValOfKey(
-      that->curlReply,
-      "refProject");
-  if (refProjectStr == NULL) {
-
-    free(that->errMsg);
-    that->errMsg = strdup(that->curlReply);
-    Raise(RunRecorderExc_ApiRequestFailed);
-
-  }
-
-  // Convert from string to long
-  errno = 0;
-  long refProject =
-    strtol(
-      refProjectStr,
-      NULL,
-      10);
-  free(refProjectStr);
-  if (errno != 0) Raise(RunRecorderExc_AddProjectFailed);
-
-  // Return the version
-  return refProject;
 
 }
 
@@ -946,6 +911,41 @@ bool RunRecorderIsValidLabel(
 
 }
 
+// Check if a value is present in pairs ref/val
+// Inputs:
+//   that: the struct RunRecorderPairsRefVal
+//    val: the value to check
+// Output:
+//   Return true if the value is present in the pairs, else false
+bool RunRecorderPairsRefValContainsVal(
+  struct RunRecorderPairsRefVal const* const that,
+                           char const* const val) {
+
+  // Loop on the pairs
+  for (
+    long iPair = 0;
+    iPair < that->nb;
+    ++iPair) {
+
+    // If the pair's value is the checked value
+    int retCmp =
+      strcmp(
+        val,
+        that->vals[iPair]);
+    if (retCmp == 0) {
+
+      // Return true
+      return true;
+
+    }
+
+  }
+
+  // If we reach here, we haven't found the checked value, return false
+  return false;
+
+}
+
 // Add a new project
 // Input:
 //   that: the struct RunRecorder
@@ -961,8 +961,9 @@ bool RunRecorderIsValidLabel(
 //   RunRecorderExc_ApiRequestFailed
 //   RunRecorderExc_MallocFailed
 //   RunRecorderExc_InvalidProjectName
+//   RunRecorderExc_ProjectNameAlreadyUsed
 //   RunRecorderExc_AddProjectFailed
-long RunRecorderAddProject(
+void RunRecorderAddProject(
   struct RunRecorder* const that,
   char const* const name) {
 
@@ -970,21 +971,32 @@ long RunRecorderAddProject(
   bool isValidName = RunRecorderIsValidLabel(name);
   if (isValidName == false) Raise(RunRecorderExc_InvalidProjectName);
 
+  // Check if there is no other metric with same name for this project
+  struct RunRecorderPairsRefVal* projects = RunRecorderGetProjects(that);
+  bool alreadyUsed =
+    RunRecorderPairsRefValContainsVal(
+      projects,
+      name);
+  RunRecorderPairsRefValFree(&projects);
+  if (alreadyUsed == true) {
+
+    Raise(RunRecorderExc_ProjectNameAlreadyUsed);
+
+  }
+
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {
 
-    return
-      RunRecorderAddProjectLocal(
-        that,
-        name);
+    RunRecorderAddProjectLocal(
+      that,
+      name);
 
   // Else, the RunRecorder uses the Web API
   } else {
 
-    return
-      RunRecorderAddProjectAPI(
-        that,
-        name);
+    RunRecorderAddProjectAPI(
+      that,
+      name);
 
   }
 
@@ -1619,7 +1631,7 @@ void RunRecorderAddMetricAPI(
 //   RunRecorderExc_SQLRequestFailed
 //   RunRecorderExc_MallocFailed
 //   RunRecorderExc_InvalidMetricName
-
+//   RunRecorderExc_MetricNameAlreadyUsed
 void RunRecorderAddMetric(
   struct RunRecorder* const that,
           char const* const project,
@@ -1635,25 +1647,16 @@ void RunRecorderAddMetric(
     RunRecorderGetMetrics(
       that,
       project);
-  for (
-    long iMetric = 0;
-    iMetric < metrics->nb;
-    ++iMetric) {
+  bool alreadyUsed =
+    RunRecorderPairsRefValContainsVal(
+      metrics,
+      label);
+  RunRecorderPairsRefValFree(&metrics);
+  if (alreadyUsed == true) {
 
-    int retCmp =
-      strcmp(
-        label,
-        metrics->vals[iMetric]);
-    if (retCmp == 0) {
-
-      RunRecorderPairsRefValFree(&metrics);
-      Raise(RunRecorderExc_InvalidMetricName);
-
-    }
+    Raise(RunRecorderExc_MetricNameAlreadyUsed);
 
   }
-
-  RunRecorderPairsRefValFree(&metrics);
 
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {

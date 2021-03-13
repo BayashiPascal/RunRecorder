@@ -139,15 +139,24 @@ function AddProject($db, $label) {
       throw new Exception("The label " . $label. " is invalid.");
     }
 
-    // Add the project in the database
-    $cmd = 'INSERT INTO _Project(Label) VALUES ("' . $label . '")';
-    $success = $db->exec($cmd);
+    // If the project doesn't already exists
+    $rows = $db->query(
+      'SELECT COUNT(*) as nb FROM _Project WHERE Label = "' . $label . '"');
+    if ($rows === false) {
+      throw new Exception("query() failed");
+    }
+    if (($rows->fetchArray())["nb"] == 0) {
 
-    if ($success === false) {
-      throw new Exception("exec() failed for " . $cmd);
+      // Add the project in the database
+      $cmd = 'INSERT INTO _Project(Label) VALUES ("' . $label . '")';
+      $success = $db->exec($cmd);
+
+      if ($success === false) {
+        throw new Exception("exec() failed for " . $cmd);
+      }
+
     }
 
-    $res["refProject"] = "" . $db->lastInsertRowID();
     $res["ret"] = "0";
 
   } catch (Exception $e) {
@@ -229,29 +238,30 @@ function AddMetric($db, $project, $label, $default) {
     if (preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $label) == false) {
       throw new Exception("The label " . $label. " is invalid.");
     }
+
+    // If the metric doesn't already exists
     $rows = $db->query('SELECT COUNT(*) as nb FROM _Metric WHERE Label = "' .
                        $label . '" AND RefProject = ' . $refProject);
     if ($rows === false) {
       throw new Exception("query() failed");
     }
-    if (($rows->fetchArray())["nb"] != 0) {
-      throw new Exception(
-        "Another metric with same label already exists for this project.");
-    }
+    if (($rows->fetchArray())["nb"] == 0) {
 
-    // Check the default value
-    if (strlen($default) == 0 or strpos($default, '"') !== false) {
-      throw new Exception("The default value is invalid.");
-    }
+      // Check the default value
+      if (strlen($default) == 0 or strpos($default, '"') !== false) {
+        throw new Exception("The default value is invalid.");
+      }
 
-    // Add the metric in the database
-    $cmd = 'INSERT INTO _Metric(RefProject, Label, DefaultValue) ' .
-           'VALUES (' . $refProject . ', "' . $label . '", "' .
-           $default . '")';
-    $success = $db->exec($cmd);
+      // Add the metric in the database
+      $cmd = 'INSERT INTO _Metric(RefProject, Label, DefaultValue) ' .
+             'VALUES (' . $refProject . ', "' . $label . '", "' .
+             $default . '")';
+      $success = $db->exec($cmd);
 
-    if ($success === false) {
-      throw new Exception("exec() failed for " . $cmd);
+      if ($success === false) {
+        throw new Exception("exec() failed for " . $cmd);
+      }
+
     }
 
     $res["ret"] = "0";

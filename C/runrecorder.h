@@ -116,8 +116,6 @@ char* RunRecorderGetVersion(
 //   name: the name of the new project
 // The project's name must respect the following pattern: 
 // /^[a-zA-Z][a-zA-Z0-9_]*$/ .
-// Output:
-//   Return the reference of the new project
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
 //   RunRecorderExc_CurlSetOptFailed
@@ -125,8 +123,9 @@ char* RunRecorderGetVersion(
 //   RunRecorderExc_ApiRequestFailed
 //   RunRecorderExc_MallocFailed
 //   RunRecorderExc_InvalidProjectName
+//   RunRecorderExc_ProjectNameAlreadyUsed
 //   RunRecorderExc_AddProjectFailed
-long RunRecorderAddProject(
+void RunRecorderAddProject(
   struct RunRecorder* const that,
   char const* const name);
 
@@ -159,7 +158,10 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjects(
 // the same project. A metric label can't be 'action' or 'project' (case
 //  sensitive, so 'Action' is fine).
 // Raise:
-
+//   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_MallocFailed
+//   RunRecorderExc_InvalidMetricName
+//   RunRecorderExc_MetricNameAlreadyUsed
 void RunRecorderAddMetric(
   struct RunRecorder* const that,
           char const* const project,

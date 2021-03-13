@@ -100,16 +100,19 @@ int main() {
   } EndTry;
 
   // Create a new project
-  long refProject = 0;
   Try {
 
-    refProject =
+    Try {
+
       RunRecorderAddProject(
         recorder,
         "RoomTemperature");
-    printf(
-      "refProject: %ld\n",
-      refProject);
+
+    } Catch (RunRecorderExc_ProjectNameAlreadyUsed) {
+
+      printf("Project RoomTemperature already in the database\n");
+
+    } EndTry;
 
   } Catch(RunRecorderExc_SQLRequestFailed)
     CatchAlso(RunRecorderExc_CurlSetOptFailed)
@@ -202,16 +205,33 @@ int main() {
   // Create new metrics
   Try {
 
-    RunRecorderAddMetric(
-      recorder,
-      "RoomTemperature",
-      "Date",
-      "-");
-    RunRecorderAddMetric(
-      recorder,
-      "RoomTemperature",
-      "Temperature",
-      "0.0");
+    Try {
+
+      RunRecorderAddMetric(
+        recorder,
+        "RoomTemperature",
+        "Date",
+        "-");
+
+    } Catch (RunRecorderExc_MetricNameAlreadyUsed) {
+
+      printf("Metric Date already exists in RoomTemperature\n");
+
+    } EndTry;
+
+    Try {
+
+      RunRecorderAddMetric(
+        recorder,
+        "RoomTemperature",
+        "Temperature",
+        "0.0");
+
+    } Catch (RunRecorderExc_MetricNameAlreadyUsed) {
+
+      printf("Metric Temperature already exists in RoomTemperature\n");
+
+    } EndTry;
 
   } Catch(RunRecorderExc_SQLRequestFailed)
     CatchAlso(RunRecorderExc_CurlSetOptFailed)

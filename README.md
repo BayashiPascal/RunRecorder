@@ -214,7 +214,7 @@ In RunRecorder, data are grouped by projects. To start recording data, the first
 Example using the shell script:
 ```
 > runrecorder.sh add_project "label=RoomTemperature"
-{"refProject":1,"ret":"0"}
+{"ret":"0"}
 ```
 
 Example using the C library:
@@ -234,13 +234,9 @@ int main() {
   RunRecorderInit(recorder);
 
   // Create a new project
-  long refProject =
-    RunRecorderAddProject(
-      recorder,
-      "RoomTemperature");
-  printf(
-    "%ld\n",
-    refProject);
+  RunRecorderAddProject(
+    recorder,
+    "RoomTemperature");
 
   // Free memory
   RunRecorderFree(&recorder);
@@ -248,11 +244,7 @@ int main() {
 
 }
 
-// Result:
-// 1
 ```
-
-Memorise the value of `refProject`, you will need it to record measure later.
 
 #### Get the projects
 
