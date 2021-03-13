@@ -98,7 +98,6 @@ r = requests.post(url, data=payload, headers=headers)
 print(str(r.text))
 ```
 
-
 The API returns, when the request was successfull:
 ```
 {"ret":"0", ...}
@@ -198,6 +197,20 @@ int main() {
 
 // Result:
 // 01.00.00
+```
+
+### Help command
+
+When using th Web API, if you have forgotten the list of available command, you can get them with the following command:
+
+```
+<action>: help
+```
+
+Example using the shell script:
+```
+> runrecorder.sh help
+{"ret":"0","actions":"version, add_project&label=..., projects, add_metric&project=...&label=...&default=..., metrics&project=..., add_measure&project=...&...=...&..., measures&project=..., flush&project=..."}
 ```
 
 ### Create a new project
