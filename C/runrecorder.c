@@ -2000,6 +2000,35 @@ void RunRecorderAddMeasureAPI(
                        char const* const project,
   struct RunRecorderMeasure const* const measure) {
 
+  // Create the request to the Web API
+
+
+  char* cmdBase = "action=add_measure&project=%s&";
+  free(that->cmd);
+  that->cmd = malloc(
+    strlen(cmdBase) + strlen(project) + 1);
+
+
+  if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
+  sprintf(
+    that->cmd,
+    cmdBase,
+    project,
+    label,
+    defaultVal);
+  RunRecorderSetAPIReqPostVal(
+    that,
+    that->cmd);
+
+  // Send the request to the API
+  RunRecorderSendAPIReq(that);
+
+  // Extract the reference of the measure from the JSON reply
+  char* version =
+    RunRecoderGetJSONValOfKey(
+      that->curlReply,
+      "refMeasure");
+
 }
 
 // Add a measure to a project
