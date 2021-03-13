@@ -586,6 +586,17 @@ try {
       $res = FlushProject($db, $_POST["project"]);
       echo json_encode($res);
 
+    } else if ($_POST["action"] == "help") {
+
+      echo '{"ret":"0","actions":"version, ' . 
+        'add_project&label=..., ' .
+        'projects, ' .
+        'add_metric&project=...&label=...&default=..., ' .
+        'metrics&project=..., ' .
+        'add_measure&project=...&...=...&..., ' .
+        'measures&project=..., ' .
+        'flush&project=..."}';
+
     } else {
 
       echo '{"ret":"1","errMsg":"Invalid action"}';
