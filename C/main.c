@@ -199,7 +199,7 @@ int main() {
 
   } EndTry;
 
-  // Create a new metric
+  // Create new metrics
   Try {
 
     RunRecorderAddMetric(
@@ -248,6 +248,63 @@ int main() {
 
   } EndTry;
 
+  // Get the list of metrics
+  struct RunRecorderPairsRefVal* metrics = NULL;
+  Try {
+
+    metrics =
+      RunRecorderGetMetrics(
+        recorder,
+        "RoomTemperature");
+    for (
+      long iMetric = 0;
+      iMetric < metrics->nb;
+      ++iMetric) {
+
+      printf(
+        "ref: %ld label: %s\n",
+        metrics->refs[iMetric],
+        metrics->vals[iMetric]);
+
+    }
+
+  } Catch(RunRecorderExc_SQLRequestFailed)
+    CatchAlso(RunRecorderExc_ApiRequestFailed)
+    CatchAlso(RunRecorderExc_CurlRequestFailed)
+    CatchAlso(RunRecorderExc_CurlSetOptFailed)
+    CatchAlso(RunRecorderExc_InvalidJSON)
+    CatchAlso(RunRecorderExc_MallocFailed) {
+
+    fprintf(
+      stderr,
+      "Caught exception %s during RunRecorderGetMetrics.\n",
+      RunRecorderExceptionStr[TryCatchGetLastExc()]);
+    if (recorder->errMsg != NULL) {
+
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->errMsg);
+
+    }
+
+    if (recorder->sqliteErrMsg != NULL) {
+
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->sqliteErrMsg);
+
+    }
+
+    RunRecorderPairsRefValFree(&metrics);
+    RunRecorderPairsRefValFree(&projects);
+    RunRecorderFree(&recorder);
+    exit(EXIT_FAILURE);
+
+  } EndTry;
+
+
 
 /*  
 bodyrecorder->sh add_metric "project=1&label=Date&default=-"
@@ -258,6 +315,7 @@ bodyrecorder->sh metrics "project=1"
   // Free memory
   RunRecorderFree(&recorder);
   RunRecorderPairsRefValFree(&projects);
+  RunRecorderPairsRefValFree(&metrics);
 
   return EXIT_SUCCESS;
 

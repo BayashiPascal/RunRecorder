@@ -300,6 +300,7 @@ int main() {
 
 
   // Free memory
+  RunRecorderPairsRefValFree(&projects);
   RunRecorderFree(&recorder);
   return EXIT_SUCCESS;
 
@@ -322,23 +323,45 @@ After adding a new project you'll probably want to add metrics that defines this
 
 Example using the shell script:
 ```
-runrecorder.sh add_metric "project=RoomTemperature&label=Date&default=-"
-runrecorder.sh add_metric "project=RoomTemperature&label=Temperature&default=0.0"
+> runrecorder.sh add_metric "project=RoomTemperature&label=Date&default=-"
+{"ret":"0"}
+> runrecorder.sh add_metric "project=RoomTemperature&label=Temperature&default=0.0"
+{"ret":"0"}
 ```
 
 Example using the C library:
 ```
-TODO
-```
+#include <stdio.h>
+#include "runrecorder.h"
 
-On success, the API returns:
-```
-{"ret":"0"}
-```
+int main() {
 
-On failure, an error message is returned.
-```
-{"errMsg":"something went wrong","ret":"0"}
+  char const* pathDb = "./runrecorder.db";
+  char const* pathApi = "https://localhost/RunRecorder/api.php";
+
+  // Create the RunRecorder instance
+  // Give pathApi in argument if you want to use the Web API instead
+  // of a local file
+  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  RunRecorderInit(recorder);
+
+  // Add metrics to the project
+  RunRecorderAddMetric(
+    recorder,
+    "RoomTemperature",
+    "Date",
+    "-");
+  RunRecorderAddMetric(
+    recorder,
+    "RoomTemperature",
+    "Temperature",
+    "0.0");
+
+  // Free memory
+  RunRecorderFree(&recorder);
+  return EXIT_SUCCESS;
+
+}
 ```
 
 You can add metrics even after having recorded data. A measurement with no value for a given metric automatically get attributed the default value of this metric.
@@ -354,27 +377,59 @@ You can get the list of metrics for a project.
 
 Example using the shell script:
 ```
-runrecorder.sh metrics "project=RoomTemperature"
+> runrecorder.sh metrics "project=RoomTemperature"
+{"metrics":{"1":"Date","2":"Temperature"},"ret":"0"}
 ```
 
 Example using the C library:
 ```
-TODO
-```
+#include <stdio.h>
+#include "runrecorder.h"
 
-On success, the API returns, for example:
-```
-{"metrics":{"1":"Date","2":"Temperature"},"ret":"0"}
-```
+int main() {
 
-On failure, an error message is returned.
-```
-{"errMsg":"something went wrong","ret":"0"}
+  char const* pathDb = "./runrecorder.db";
+  char const* pathApi = "https://localhost/RunRecorder/api.php";
+
+  // Create the RunRecorder instance
+  // Give pathApi in argument if you want to use the Web API instead
+  // of a local file
+  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  RunRecorderInit(recorder);
+
+  // Get the metrics
+  metrics =
+    RunRecorderGetMetrics(
+      recorder,
+      "RoomTemperature");
+  for (
+    long iMetric = 0;
+    iMetric < metrics->nb;
+    ++iMetric) {
+
+    printf(
+      "ref: %ld label: %s\n",
+      metrics->refs[iMetric],
+      metrics->vals[iMetric]);
+
+  }
+
+
+  // Free memory
+  RunRecorderPairsRefValFree(&metrics);
+  RunRecorderFree(&recorder);
+  return EXIT_SUCCESS;
+
+}
+
+// Result:
+// ref: 1 label: Date
+// ref: 2 label: Temperature
 ```
 
 #### Add a measurement to a project
 
-Now you're ready to add measurement to your project!
+Now you're ready to add measurements to your project!
 
 ```
 <action>: add_measure

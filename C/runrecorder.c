@@ -25,6 +25,7 @@ char* RunRecorderExceptionStr[RunRecorderExc_LastID] = {
   "RunRecorderExc_MallocFailed",
   "RunRecorderExc_InvalidProjectName",
   "RunRecorderExc_AddProjectFailed",
+  "RunRecorderExc_InvalidMetricName",
   "RunRecorderExc_InvalidJSON",
 };
 
@@ -830,7 +831,7 @@ long RunRecorderAddProjectLocal(
     cmdBase,
     name);
 
-  // Execute the command to create the table
+  // Execute the command to add the project
   int retExec =
     sqlite3_exec(
       that->db,
@@ -1032,9 +1033,9 @@ void RunRecorderPairsRefValAdd(
 
 }
 
-// Callback for RunRecorderGetProjectsLocal
+// Callback to receive pairs of ref/value from sqlite3
 // Input:
-//      data: The projects
+//      data: The pairs
 //     nbCol: Number of columns in the returned rows
 //    colVal: Row values
 //   colName: Columns name
@@ -1042,7 +1043,7 @@ void RunRecorderPairsRefValAdd(
 //   Return 0 if successfull, else 1
 // Raise:
 //   RunRecorderExc_MallocFailed
-static int RunRecorderGetProjectsLocalCb(
+static int RunRecorderGetPairsLocalCb(
    void* data,
      int nbCol,
   char** colVal,
@@ -1052,7 +1053,7 @@ static int RunRecorderGetProjectsLocalCb(
   (void)colName;
 
   // Cast the data
-  struct RunRecorderPairsRefVal* projects =
+  struct RunRecorderPairsRefVal* pairs =
     (struct RunRecorderPairsRefVal*)data;
 
   // If the arguments are invalid
@@ -1060,7 +1061,7 @@ static int RunRecorderGetProjectsLocalCb(
   if (nbCol != 2 || colVal == NULL ||
       colVal[0] == NULL || colVal[1] == NULL) return 1;
 
-  // Add the project to the pairs
+  // Add the pair to the pairs
   errno = 0;
   long ref =
     strtol(
@@ -1071,7 +1072,7 @@ static int RunRecorderGetProjectsLocalCb(
   Try {
 
     RunRecorderPairsRefValAdd(
-      projects,
+      pairs,
       ref,
       colVal[1]);
 
@@ -1109,7 +1110,7 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjectsLocal(
     sqlite3_exec(
       that->db,
       sqlCmd,
-      RunRecorderGetProjectsLocalCb,
+      RunRecorderGetPairsLocalCb,
       projects,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) {
@@ -1358,7 +1359,207 @@ void RunRecorderPairsRefValFree(
 
 }
 
-// Add a metric to a project
+// Get the list of metrics for a project from a local database
+// Input:
+//      that: the struct RunRecorder
+//   project: the project
+// Output:
+//   Return the metrics' reference/label
+// Raise:
+//   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_MallocFailed
+struct RunRecorderPairsRefVal* RunRecorderGetMetricsLocal(
+  struct RunRecorder* const that,
+          char const* const project) {
+
+  // Create the request
+  char* cmdBase =
+    "SELECT _Metric.Ref, _Metric.Label FROM _Metric, _Project "
+    "WHERE _Metric.RefProject = _Project.Ref AND "
+    "_Project.Label = \"%s\"";
+  free(that->cmd);
+  that->cmd = malloc(strlen(cmdBase) + strlen(project) + 1);
+  if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
+  sprintf(
+    that->cmd,
+    cmdBase,
+    project);
+
+  // Declare a struct RunRecorderPairsRefVal to memorise the metrics
+  struct RunRecorderPairsRefVal* metrics = RunRecorderPairsRefValCreate();
+
+  // Execute the request
+  int retExec =
+    sqlite3_exec(
+      that->db,
+      that->cmd,
+      RunRecorderGetPairsLocalCb,
+      metrics,
+      &(that->sqliteErrMsg));
+  if (retExec != SQLITE_OK) {
+
+    RunRecorderPairsRefValFree(&metrics);
+    Raise(RunRecorderExc_SQLRequestFailed);
+
+  }
+
+  // Return the metrics
+  return metrics;
+
+}
+
+// Get the list of metrics for a project through the Web API
+// Input:
+//      that: the struct RunRecorder
+//   project: the project
+// Output:
+//   Return the metrics' reference/label
+// Raise:
+//   RunRecorderExc_CurlSetOptFailed
+//   RunRecorderExc_CurlRequestFailed
+//   RunRecorderExc_MallocFailed
+//   RunRecorderExc_ApiRequestFailed
+//   RunRecorderExc_InvalidJSON
+struct RunRecorderPairsRefVal* RunRecorderGetMetricsAPI(
+  struct RunRecorder* const that,
+          char const* const project) {
+
+  // Create the request to the Web API
+  // Create the request
+  char* cmdBase = "action=metrics&project=%s";
+  free(that->cmd);
+  that->cmd = malloc(strlen(cmdBase) + strlen(project) + 1);
+  if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
+  sprintf(
+    that->cmd,
+    cmdBase,
+    project);
+  RunRecorderSetAPIReqPostVal(
+    that,
+    that->cmd);
+
+  // Send the request to the API
+  RunRecorderSendAPIReq(that);
+
+  // Get the projects list in the JSON reply
+  char* json =
+    RunRecoderGetJSONValOfKey(
+      that->curlReply,
+      "metrics");
+  if (json == NULL) Raise(RunRecorderExc_ApiRequestFailed);
+  // Extract the metrics
+  struct RunRecorderPairsRefVal* metrics = NULL;
+  Try {
+
+    metrics = RunRecorderGetPairsRefValFromJSON(json);
+
+  } Catch(RunRecorderExc_MallocFailed) {
+
+    free(json);
+    Raise(TryCatchGetLastExc());
+    
+  } EndTry;
+
+  // Free memory
+  free(json);
+
+  // Return the metrics
+  return metrics;
+
+}
+
+// Get the list of metrics for a project
+// Input:
+//      that: the struct RunRecorder
+//   project: the project
+// Output:
+//   Return the metrics' reference/label
+// Raise:
+//   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_CurlSetOptFailed
+//   RunRecorderExc_CurlRequestFailed
+//   RunRecorderExc_MallocFailed
+//   RunRecorderExc_ApiRequestFailed
+//   RunRecorderExc_InvalidJSON
+struct RunRecorderPairsRefVal* RunRecorderGetMetrics(
+  struct RunRecorder* const that,
+          char const* const project) {
+
+  // If the RunRecorder uses a local database
+  if (RunRecorderUsesAPI(that) == false) {
+
+    return RunRecorderGetMetricsLocal(
+      that,
+      project);
+
+  // Else, the RunRecorder uses the Web API
+  } else {
+
+    return RunRecorderGetMetricsAPI(
+      that,
+      project);
+
+  }
+
+}
+
+// Add a metric to a project to a local database
+// Input:
+//         that: the struct RunRecorder
+//      project: the name of the project to which add the metric
+//        label: the label of the metric. 
+//   defaultVal: the default value of the metric 
+// The label of the metric must respect the following pattern:
+// /^[a-zA-Z][a-zA-Z0-9_]*$/.
+// The default of the metric must be one character long at least.
+// The double quote `"`, equal sign `=` and ampersand `&` can't be used in
+// the default value. There cannot be two metrics with the same label for
+// the same project. A metric label can't be 'action' or 'project' (case
+//  sensitive, so 'Action' is fine).
+// Raise:
+//   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_MallocFailed
+void RunRecorderAddMetricLocal(
+  struct RunRecorder* const that,
+          char const* const project,
+          char const* const label,
+          char const* const defaultVal) {
+
+  // Ensure errMsg is freed
+  sqlite3_free(that->sqliteErrMsg);
+
+  // Create the SQL command
+  char* cmdBase =
+    "INSERT INTO _Metric (Ref, RefProject, Label, DefaultValue) "
+    "SELECT NULL, _Project.Ref, \"%s\", \"%s\" FROM _Project "
+    "WHERE _Project.Label = \"%s\"";
+  free(that->cmd);
+  that->cmd = malloc(
+    strlen(cmdBase) + strlen(label) +
+    strlen(defaultVal) + strlen(project) + 1);
+  if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
+  sprintf(
+    that->cmd,
+    cmdBase,
+    label,
+    defaultVal,
+    project);
+
+  // Execute the command to add the metric
+  int retExec =
+    sqlite3_exec(
+      that->db,
+      that->cmd,
+      // No callback
+      NULL,
+      // No user data
+      NULL,
+      &(that->sqliteErrMsg));
+  if (retExec != SQLITE_OK) Raise(RunRecorderExc_AddProjectFailed);
+
+}
+
+// Add a metric to a project through the Web API
 // Input:
 //         that: the struct RunRecorder
 //      project: the name of the project to which add the metric
@@ -1373,11 +1574,108 @@ void RunRecorderPairsRefValFree(
 //  sensitive, so 'Action' is fine).
 // Raise:
 
+void RunRecorderAddMetricAPI(
+  struct RunRecorder* const that,
+          char const* const project,
+          char const* const label,
+          char const* const defaultVal) {
+
+  // Create the request to the Web API
+  char* cmdBase = "action=add_metric&project=%s&label=%s&default=%s";
+  free(that->cmd);
+  that->cmd = malloc(
+    strlen(cmdBase) + strlen(label) + strlen(project) +
+    strlen(defaultVal) + 1);
+  if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
+  sprintf(
+    that->cmd,
+    cmdBase,
+    project,
+    label,
+    defaultVal);
+  RunRecorderSetAPIReqPostVal(
+    that,
+    that->cmd);
+
+  // Send the request to the API
+  RunRecorderSendAPIReq(that);
+
+}
+
+// Add a metric to a project
+// Input:
+//         that: the struct RunRecorder
+//      project: the name of the project to which add the metric
+//        label: the label of the metric. 
+//   defaultVal: the default value of the metric 
+// The label of the metric must respect the following pattern:
+// /^[a-zA-Z][a-zA-Z0-9_]*$/.
+// The default of the metric must be one character long at least.
+// The double quote `"`, equal sign `=` and ampersand `&` can't be used in
+// the default value. There cannot be two metrics with the same label for
+// the same project. A metric label can't be 'action' or 'project' (case
+//  sensitive, so 'Action' is fine).
+// Raise:
+//   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_MallocFailed
+//   RunRecorderExc_InvalidMetricName
+
 void RunRecorderAddMetric(
   struct RunRecorder* const that,
           char const* const project,
           char const* const label,
           char const* const defaultVal) {
+
+  // Check the label
+  bool isValidLabel = RunRecorderIsValidLabel(label);
+  if (isValidLabel == false) Raise(RunRecorderExc_InvalidMetricName);
+
+  // Check if there is no other metric with same name for this project
+  struct RunRecorderPairsRefVal* metrics =
+    RunRecorderGetMetrics(
+      that,
+      project);
+  for (
+    long iMetric = 0;
+    iMetric < metrics->nb;
+    ++iMetric) {
+
+    int retCmp =
+      strcmp(
+        label,
+        metrics->vals[iMetric]);
+    if (retCmp == 0) {
+
+      RunRecorderPairsRefValFree(&metrics);
+      Raise(RunRecorderExc_InvalidMetricName);
+
+    }
+
+  }
+
+  RunRecorderPairsRefValFree(&metrics);
+
+  // If the RunRecorder uses a local database
+  if (RunRecorderUsesAPI(that) == false) {
+
+    return
+      RunRecorderAddMetricLocal(
+        that,
+        project,
+        label,
+        defaultVal);
+
+  // Else, the RunRecorder uses the Web API
+  } else {
+
+    return
+      RunRecorderAddMetricAPI(
+        that,
+        project,
+        label,
+        defaultVal);
+
+  }
 
 }
 

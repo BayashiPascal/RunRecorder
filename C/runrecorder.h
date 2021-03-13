@@ -166,6 +166,23 @@ void RunRecorderAddMetric(
           char const* const label,
           char const* const defaultVal);
 
+// Get the list of metrics for a project
+// Input:
+//      that: the struct RunRecorder
+//   project: the project
+// Output:
+//   Return the metrics' reference/label
+// Raise:
+//   RunRecorderExc_SQLRequestFailed
+//   RunRecorderExc_CurlSetOptFailed
+//   RunRecorderExc_CurlRequestFailed
+//   RunRecorderExc_MallocFailed
+//   RunRecorderExc_ApiRequestFailed
+//   RunRecorderExc_InvalidJSON
+struct RunRecorderPairsRefVal* RunRecorderGetMetrics(
+  struct RunRecorder* const that,
+          char const* const project);
+
 // Create a static struct RunRecorderPairsRefVal
 // Output:
 //   Return the new struct RunRecorderPairsRefVal

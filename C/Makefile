@@ -69,7 +69,10 @@ curl/include/curl/curl.h:
 	cd -
 
 clean:
-	rm -rf *.o main sqlite* curl*
+	rm -f *.o main
+
+clean_all: clean
+	rm -rf sqlite* curl*
 
 valgrind :
 	valgrind -v --track-origins=yes --leak-check=full \
