@@ -335,6 +335,12 @@ function AddMeasure($db, $project, $values) {
 
     $refMeasure = $db->lastInsertRowID();
 
+    // Declare a variable to memorise an eventual failure
+    // The policy here is to try to save has much data has possible
+    // even if some fails, inform the user and let him/her take
+    // appropriate action
+    $hasFailed = false;
+
     // Loop on the metrics in argument
     foreach ($values as $metric => $value) {
 
@@ -354,11 +360,15 @@ function AddMeasure($db, $project, $values) {
                $refMeasure . ', ' . $row["Ref"] . ', "' . $value . '")';
         $success = $db->exec($cmd);
         if ($success === false) {
-          throw new Exception("exec() failed for " . $cmd);
+          $hasFailed = true;
         }
 
       }
    
+    }
+
+    if ($hasFailed == false) {
+      throw new Exception("exec() failed for INSERT INTO _Value");
     }
 
     $res["ret"] = "0";

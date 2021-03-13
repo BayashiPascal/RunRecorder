@@ -44,6 +44,7 @@ enum RunRecorderException {
   RunRecorderExc_InvalidJSON,
   RunRecorderExc_InvalidMetricName,
   RunRecorderExc_MetricNameAlreadyUsed,
+  RunRecorderExc_AddMeasureFailed,
   RunRecorderExc_LastID
 
 };

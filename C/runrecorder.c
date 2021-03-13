@@ -27,6 +27,7 @@ char* RunRecorderExceptionStr[RunRecorderExc_LastID] = {
   "RunRecorderExc_ProjectNameAlreadyUsed",
   "RunRecorderExc_AddProjectFailed",
   "RunRecorderExc_MetricNameAlreadyUsed",
+  "RunRecorderExc_AddMeasureFailed",
   "RunRecorderExc_InvalidJSON",
 };
 
@@ -1696,7 +1697,7 @@ struct RunRecorderMeasure* RunRecorderMeasureCreate(
   if (measure == NULL) Raise(RunRecorderExc_MallocFailed);
 
   // Initialise properties
-  measure->nb = 0;
+  measure->nbVal = 0;
   measure->metrics = NULL;
   measure->vals = NULL;
 
@@ -1719,7 +1720,7 @@ void RunRecorderMeasureFree(
       // Loop on the measure
       for (
         long iVal = 0;
-        iVal < (*that)->nb;
+        iVal < (*that)->nbVal;
         ++iVal) {
 
         // Free the value
@@ -1734,7 +1735,7 @@ void RunRecorderMeasureFree(
       // Loop on the measure
       for (
         long iVal = 0;
-        iVal < (*that)->nb;
+        iVal < (*that)->nbVal;
         ++iVal) {
 
         // Free the value
@@ -1770,12 +1771,12 @@ void RunRecorderMeasureAddValueStr(
   char** metrics =
     realloc(
       that->metrics,
-      sizeof(char*) * (that->nb + 1));
+      sizeof(char*) * (that->nbVal + 1));
   if (metrics == NULL) Raise(RunRecorderExc_MallocFailed);
   char** vals =
     realloc(
       that->vals,
-      sizeof(char*) * (that->nb + 1));
+      sizeof(char*) * (that->nbVal + 1));
   if (vals == NULL) {
 
     free(metrics);
@@ -1785,17 +1786,17 @@ void RunRecorderMeasureAddValueStr(
 
   that->metrics = metrics;
   that->vals = vals;
-  that->metrics[that->nb] = NULL;
-  that->vals[that->nb] = NULL;
+  that->metrics[that->nbVal] = NULL;
+  that->vals[that->nbVal] = NULL;
 
   // Update the number of values
-  ++(that->nb);
+  ++(that->nbVal);
 
   // Set the reference and value of the measure
-  that->metrics[that->nb - 1] = strdup(metric);
-  if (that->metrics[that->nb - 1] == NULL) Raise(RunRecorderExc_MallocFailed);
-  that->vals[that->nb - 1] = strdup(val);
-  if (that->vals[that->nb - 1] == NULL) Raise(RunRecorderExc_MallocFailed);
+  that->metrics[that->nbVal - 1] = strdup(metric);
+  if (that->metrics[that->nbVal - 1] == NULL) Raise(RunRecorderExc_MallocFailed);
+  that->vals[that->nbVal - 1] = strdup(val);
+  if (that->vals[that->nbVal - 1] == NULL) Raise(RunRecorderExc_MallocFailed);
 
 }
 
@@ -1865,17 +1866,165 @@ void RunRecorderMeasureAddValueFloat(
 
 }
 
+// Add a measure to a project in a local database
+// Inputs:
+//         that: the struct RunRecorder
+//      project: the project to add the measure to
+//      measure: the measure to add
+// Raise:
+
+void RunRecorderAddMeasureLocal(
+               struct RunRecorder* const that,
+                       char const* const project,
+  struct RunRecorderMeasure const* const measure) {
+
+  // Ensure errMsg is freed
+  sqlite3_free(that->sqliteErrMsg);
+
+  // Get the date of the record (use the current local date)
+  time_t mytime = time(NULL);
+  char* dateStr = ctime(&mytime);
+  dateStr[strlen(dateStr)-1] = '\0';
+
+  // Create the SQL command
+  char* cmdBase =
+    "INSERT INTO _Measure (RefProject, DateMeasure) "
+    "SELECT _Project.Ref, \"%s\" FROM _Project "
+    "WHERE _Project.Label = \"%s\"";
+  free(that->cmd);
+  that->cmd = malloc(
+    strlen(cmdBase) + strlen(dateStr) + strlen(project) + 1);
+  if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
+  sprintf(
+    that->cmd,
+    cmdBase,
+    dateStr,
+    project);
+
+  // Execute the command to add the measure
+  int retExec =
+    sqlite3_exec(
+      that->db,
+      that->cmd,
+      // No callback
+      NULL,
+      // No user data
+      NULL,
+      &(that->sqliteErrMsg));
+  if (retExec != SQLITE_OK) Raise(RunRecorderExc_AddMeasureFailed);
+
+  // Get the reference of the measure
+  sqlite3_int64 refMeasure = sqlite3_last_insert_rowid(that->db);
+  int lenRefMeasureStr =
+    snprintf(
+    NULL,
+    0,
+    "%lld",
+    refMeasure);
+  char* refMeasureStr = malloc(lenRefMeasureStr + 1);
+  if (refMeasureStr == NULL) Raise(RunRecorderExc_MallocFailed);
+  sprintf(
+    refMeasureStr,
+    "%lld",
+    refMeasure);
+
+  // Declare a variable to memorise an eventual failure
+  // The policy here is to try to save has much data has possible
+  // even if some fails, inform the user and let him/her take
+  // appropriate action
+  bool hasFailed = false;
+
+  // Loop on the values in the measure
+  for (
+    long iVal = 0;
+    iVal < measure->nbVal;
+    ++iVal) {
+
+    // Create the SQL command
+    char* cmdValBase =
+      "INSERT INTO _Value (RefMeasure, RefMetric, Value) "
+      "SELECT \"%s\", _Metric.Ref, \"%s\" FROM _Metric "
+      "WHERE _Metric.Label = \"%s\"";
+    free(that->cmd);
+    that->cmd = malloc(
+      strlen(cmdValBase) + strlen(refMeasureStr) +
+      strlen(measure->vals[iVal]) + strlen(measure->metrics[iVal]) + 1);
+    if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
+    sprintf(
+      that->cmd,
+      cmdBase,
+      refMeasureStr,
+      measure->vals[iVal],
+      measure->metrics[iVal]);
+
+    // Execute the command to add the value
+    int retExec =
+      sqlite3_exec(
+        that->db,
+        that->cmd,
+        // No callback
+        NULL,
+        // No user data
+        NULL,
+        &(that->sqliteErrMsg));
+    if (retExec != SQLITE_OK) hasFailed = true;
+
+  }
+
+  // Free memory
+  free(refMeasureStr);
+
+  // If there has been a failure
+  if (hasFailed == true) Raise(RunRecorderExc_AddMeasureFailed);
+
+}
+
+// Add a measure to a project through the WebAPI
+// Inputs:
+//         that: the struct RunRecorder
+//      project: the project to add the measure to
+//      measure: the measure to add
+// Raise:
+
+void RunRecorderAddMeasureAPI(
+               struct RunRecorder* const that,
+                       char const* const project,
+  struct RunRecorderMeasure const* const measure) {
+
+}
+
 // Add a measure to a project
 // Inputs:
 //         that: the struct RunRecorder
 //      project: the project to add the measure to
-//      measure: the emasure to add
+//      measure: the measure to add
 // Raise:
 
 void RunRecorderAddMeasure(
                struct RunRecorder* const that,
                        char const* const project,
   struct RunRecorderMeasure const* const measure) {
+
+  // If the RunRecorder uses a local database
+  if (RunRecorderUsesAPI(that) == false) {
+
+    return
+      RunRecorderAddMeasureLocal(
+        that,
+        project,
+        measure);
+
+  // Else, the RunRecorder uses the Web API
+  } else {
+
+    return
+      RunRecorderAddMeasureAPI(
+        that,
+        project,
+        measure);
+
+  }
+
 }
 
 // ------------------ runrecorder.c ------------------

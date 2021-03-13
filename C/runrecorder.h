@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 #include <sqlite3/sqlite3.h>
 #include <curl/curl.h>
 #include <errno.h>
@@ -71,7 +72,7 @@ struct RunRecorderPairsRefVal {
 struct RunRecorderMeasure {
 
   // Number of values
-  long nb;
+  long nbVal;
 
   // Array of metrics label
   char** metrics;
@@ -187,7 +188,7 @@ void RunRecorderAddMetric(
 // Inputs:
 //         that: the struct RunRecorder
 //      project: the project to add the measure to
-//      measure: the emasure to add
+//      measure: the measure to add
 // Raise:
 
 void RunRecorderAddMeasure(
