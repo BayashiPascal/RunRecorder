@@ -51,6 +51,9 @@ struct RunRecorder {
   // exception is raised
   char* cmd;
 
+  // Reference of the last added measure
+  sqlite3_int64 refLastAddedMeasure;
+
 };
 
 // Structure to memorise pairs of ref/value

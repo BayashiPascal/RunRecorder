@@ -445,26 +445,16 @@ Now you're ready to add measurements to your project!
 
 Example using the shell script:
 ```
-runrecorder.sh add_measure "project=RoomTemperature&Date=2021-03-08 15:45:00&Temperature=18.5"
-runrecorder.sh add_measure "project=RoomTemperature&Date=2021-03-08 16:19:00&Temperature=19.1"
+> runrecorder.sh add_measure "project=RoomTemperature&Date=2021-03-08 15:45:00&Temperature=18.5"
+{"ret":"0","refMeasure":"1"}
+> runrecorder.sh add_measure "project=RoomTemperature&Date=2021-03-08 16:19:00&Temperature=19.1"
+{"ret":"0","refMeasure":"2"}
 ```
 
 Example using the C library:
 ```
 TODO
 ```
-
-On success, the API returns:
-```
-{"ret":"0"}
-```
-
-On failure, an error message is returned.
-```
-{"errMsg":"something went wrong","ret":"0"}
-```
-
-Unknown metrics are ignored.
 
 #### Retrieve measurements from a project
 

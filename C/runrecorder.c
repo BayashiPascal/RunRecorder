@@ -228,6 +228,7 @@ struct RunRecorder* RunRecorderCreate(
   that->curlReply = NULL;
   that->cmd = NULL;
   that->sqliteErrMsg = NULL;
+  that->refLastAddedMeasure = 0;
 
   // Duplicate the url
   that->url = strdup(url);
@@ -1872,7 +1873,8 @@ void RunRecorderMeasureAddValueFloat(
 //      project: the project to add the measure to
 //      measure: the measure to add
 // Raise:
-
+//   RunRecorderExc_AddMeasureFailed
+//   RunRecorderExc_MallocFailed
 void RunRecorderAddMeasureLocal(
                struct RunRecorder* const that,
                        char const* const project,
@@ -1914,19 +1916,19 @@ void RunRecorderAddMeasureLocal(
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_AddMeasureFailed);
 
   // Get the reference of the measure
-  sqlite3_int64 refMeasure = sqlite3_last_insert_rowid(that->db);
+  that->refLastAddedMeasure = sqlite3_last_insert_rowid(that->db);
   int lenRefMeasureStr =
     snprintf(
     NULL,
     0,
     "%lld",
-    refMeasure);
+    that->refLastAddedMeasure);
   char* refMeasureStr = malloc(lenRefMeasureStr + 1);
   if (refMeasureStr == NULL) Raise(RunRecorderExc_MallocFailed);
   sprintf(
     refMeasureStr,
     "%lld",
-    refMeasure);
+    that->refLastAddedMeasure);
 
   // Declare a variable to memorise an eventual failure
   // The policy here is to try to save has much data has possible
@@ -1949,25 +1951,32 @@ void RunRecorderAddMeasureLocal(
     that->cmd = malloc(
       strlen(cmdValBase) + strlen(refMeasureStr) +
       strlen(measure->vals[iVal]) + strlen(measure->metrics[iVal]) + 1);
-    if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
-    sprintf(
-      that->cmd,
-      cmdBase,
-      refMeasureStr,
-      measure->vals[iVal],
-      measure->metrics[iVal]);
+    if (that->cmd == NULL) {
 
-    // Execute the command to add the value
-    int retExec =
-      sqlite3_exec(
-        that->db,
+      hasFailed = true;
+
+    } else {
+
+      sprintf(
         that->cmd,
-        // No callback
-        NULL,
-        // No user data
-        NULL,
-        &(that->sqliteErrMsg));
-    if (retExec != SQLITE_OK) hasFailed = true;
+        cmdBase,
+        refMeasureStr,
+        measure->vals[iVal],
+        measure->metrics[iVal]);
+
+      // Execute the command to add the value
+      int retExec =
+        sqlite3_exec(
+          that->db,
+          that->cmd,
+          // No callback
+          NULL,
+          // No user data
+          NULL,
+          &(that->sqliteErrMsg));
+      if (retExec != SQLITE_OK) hasFailed = true;
+
+    }
 
   }
 
@@ -2005,23 +2014,24 @@ void RunRecorderAddMeasure(
                        char const* const project,
   struct RunRecorderMeasure const* const measure) {
 
+  // Reset the reference of the last added measure
+  that->refLastAddedMeasure = 0;
+
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {
 
-    return
-      RunRecorderAddMeasureLocal(
-        that,
-        project,
-        measure);
+    RunRecorderAddMeasureLocal(
+      that,
+      project,
+      measure);
 
   // Else, the RunRecorder uses the Web API
   } else {
 
-    return
-      RunRecorderAddMeasureAPI(
-        that,
-        project,
-        measure);
+    RunRecorderAddMeasureAPI(
+      that,
+      project,
+      measure);
 
   }
 

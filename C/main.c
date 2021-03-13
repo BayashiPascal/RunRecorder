@@ -341,6 +341,9 @@ int main() {
       recorder,
       "RoomTemperature",
       measure);
+    printf(
+      "Added measure ref. %lld\n",
+      recorder->refLastAddedMeasure);
 
     RunRecorderMeasureFree(&measure);
     measure = RunRecorderMeasureCreate();
@@ -356,13 +359,18 @@ int main() {
       recorder,
       "RoomTemperature",
       measure);
+    printf(
+      "Added measure ref. %lld\n",
+      recorder->refLastAddedMeasure);
 
   } Catch (RunRecorderExc_MallocFailed) {
 
     fprintf(
       stderr,
-      "Caught exception %s during RunRecorderAddMeasure.\n",
-      RunRecorderExceptionStr[TryCatchGetLastExc()]);
+      "Caught exception %s during RunRecorderAddMeasure.\n"
+      "last measure reference is %lld\n",
+      RunRecorderExceptionStr[TryCatchGetLastExc()],
+      recorder->refLastAddedMeasure);
     if (recorder->errMsg != NULL) {
 
       fprintf(

@@ -367,6 +367,8 @@ function AddMeasure($db, $project, $values) {
    
     }
 
+    $res["refMeasure"] = $refMeasure;
+
     if ($hasFailed == false) {
       throw new Exception("exec() failed for INSERT INTO _Value");
     }
