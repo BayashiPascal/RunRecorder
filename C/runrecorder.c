@@ -1682,5 +1682,201 @@ void RunRecorderAddMetric(
 
 }
 
+// Create a struct RunRecorderMeasure
+// Output:
+//   Return the new struct RunRecorderMeasure
+// Raise:
+//   RunRecorderExc_MallocFailed
+struct RunRecorderMeasure* RunRecorderMeasureCreate(
+  void) {
+
+  // Declare the new struct RunRecorderMeasure
+  struct RunRecorderMeasure* measure =
+    malloc(sizeof(struct RunRecorderMeasure));
+  if (measure == NULL) Raise(RunRecorderExc_MallocFailed);
+
+  // Initialise properties
+  measure->nb = 0;
+  measure->metrics = NULL;
+  measure->vals = NULL;
+
+  // Return the new struct RunRecorderMeasure
+  return measure;
+
+}
+
+// Free a struct RunRecorderMeasure
+// Input:
+//   that: the struct RunRecorderMeasure
+void RunRecorderMeasureFree(
+  struct RunRecorderMeasure** that) {
+
+  // If the struct is not already freed
+  if (that != NULL && *that != NULL) {
+
+    if ((*that)->metrics != NULL) {
+
+      // Loop on the measure
+      for (
+        long iVal = 0;
+        iVal < (*that)->nb;
+        ++iVal) {
+
+        // Free the value
+        free((*that)->metrics[iVal]);
+
+      }
+
+    }
+
+    if ((*that)->vals != NULL) {
+
+      // Loop on the measure
+      for (
+        long iVal = 0;
+        iVal < (*that)->nb;
+        ++iVal) {
+
+        // Free the value
+        free((*that)->vals[iVal]);
+
+      }
+
+    }
+
+    // Free memory
+    free((*that)->metrics);
+    free((*that)->vals);
+    free(*that);
+    *that = NULL;
+
+  }
+
+}
+
+// Add a value to a measure
+// Input:
+//     that: the struct RunRecorderMeasure
+//   metric: the value's metric
+//      val: the value
+// Raise:
+//   RunRecorderExc_MallocFailed
+void RunRecorderMeasureAddValueStr(
+  struct RunRecorderMeasure* that,
+           char const* const metric,
+           char const* const val) {
+
+  // Allocate memory
+  char** metrics =
+    realloc(
+      that->metrics,
+      sizeof(char*) * (that->nb + 1));
+  if (metrics == NULL) Raise(RunRecorderExc_MallocFailed);
+  char** vals =
+    realloc(
+      that->vals,
+      sizeof(char*) * (that->nb + 1));
+  if (vals == NULL) {
+
+    free(metrics);
+    Raise(RunRecorderExc_MallocFailed);
+
+  }
+
+  that->metrics = metrics;
+  that->vals = vals;
+  that->metrics[that->nb] = NULL;
+  that->vals[that->nb] = NULL;
+
+  // Update the number of values
+  ++(that->nb);
+
+  // Set the reference and value of the measure
+  that->metrics[that->nb - 1] = strdup(metric);
+  if (that->metrics[that->nb - 1] == NULL) Raise(RunRecorderExc_MallocFailed);
+  that->vals[that->nb - 1] = strdup(val);
+  if (that->vals[that->nb - 1] == NULL) Raise(RunRecorderExc_MallocFailed);
+
+}
+
+void RunRecorderMeasureAddValueInt(
+  struct RunRecorderMeasure* that,
+           char const* const metric,
+                  long const val) {
+
+  // Convert the value to a string
+  int lenStr = snprintf(NULL, 0, "%ld", val);
+  char* str = malloc(lenStr + 1);
+  sprintf(
+    str,
+    "%ld",
+    val); 
+
+  // Add the value
+  Try {
+
+    RunRecorderMeasureAddValueStr(
+      that,
+      metric,
+      str);
+
+    } Catch (RunRecorderExc_MallocFailed) {
+
+      free(str);
+      Raise(TryCatchGetLastExc());
+
+    } EndTry;
+
+  // Free memory
+  free(str);
+
+}
+
+void RunRecorderMeasureAddValueFloat(
+  struct RunRecorderMeasure* that,
+           char const* const metric,
+                double const val) {
+
+  // Convert the value to a string
+  int lenStr = snprintf(NULL, 0, "%lf", val);
+  char* str = malloc(lenStr + 1);
+  sprintf(
+    str,
+    "%lf",
+    val); 
+
+  // Add the value
+  Try {
+
+    RunRecorderMeasureAddValueStr(
+      that,
+      metric,
+      str);
+
+    } Catch (RunRecorderExc_MallocFailed) {
+
+      free(str);
+      Raise(TryCatchGetLastExc());
+
+    } EndTry;
+
+  // Free memory
+  free(str);
+
+}
+
+// Add a measure to a project
+// Inputs:
+//         that: the struct RunRecorder
+//      project: the project to add the measure to
+//      measure: the emasure to add
+// Raise:
+
+void RunRecorderAddMeasure(
+               struct RunRecorder* const that,
+                       char const* const project,
+  struct RunRecorderMeasure const* const measure) {
+}
+
 // ------------------ runrecorder.c ------------------
 

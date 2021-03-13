@@ -66,6 +66,21 @@ struct RunRecorderPairsRefVal {
 
 };
 
+// Structure to add one measurement (i.e. a set of metrics and their
+// value for one project)
+struct RunRecorderMeasure {
+
+  // Number of values
+  long nb;
+
+  // Array of metrics label
+  char** metrics;
+
+  // Array of values
+  char** vals;
+
+};
+
 // Constructor for a struct RunRecorder
 // Input:
 //   url: Path to the SQLite database or Web API
@@ -168,6 +183,18 @@ void RunRecorderAddMetric(
           char const* const label,
           char const* const defaultVal);
 
+// Add a measure to a project
+// Inputs:
+//         that: the struct RunRecorder
+//      project: the project to add the measure to
+//      measure: the emasure to add
+// Raise:
+
+void RunRecorderAddMeasure(
+               struct RunRecorder* const that,
+                       char const* const project,
+  struct RunRecorderMeasure const* const measure);
+
 // Get the list of metrics for a project
 // Input:
 //      that: the struct RunRecorder
@@ -196,6 +223,49 @@ struct RunRecorderPairsRefVal* RunRecorderPairsRefValCreate(
 //   that: the struct RunRecorderPairsRefVal
 void RunRecorderPairsRefValFree(
   struct RunRecorderPairsRefVal** that);
+
+// Create a static struct RunRecorderMeasure
+// Output:
+//   Return the new struct RunRecorderMeasure
+struct RunRecorderMeasure* RunRecorderMeasureCreate(
+  void);
+
+// Free a static struct RunRecorderMeasure
+// Input:
+//   that: the struct RunRecorderMeasure
+void RunRecorderMeasureFree(
+  struct RunRecorderMeasure** that);
+
+// Add a value to a measure
+// Input:
+//     that: the struct RunRecorderMeasure
+//   metric: the value's metric
+//      val: the value
+// Raise:
+//   RunRecorderExc_MallocFailed
+void RunRecorderMeasureAddValueStr(
+  struct RunRecorderMeasure* that,
+           char const* const metric,
+           char const* const val);
+
+void RunRecorderMeasureAddValueInt(
+  struct RunRecorderMeasure* that,
+           char const* const metric,
+                  long const val);
+
+void RunRecorderMeasureAddValueFloat(
+  struct RunRecorderMeasure* that,
+           char const* const metric,
+                double const val);
+
+#define RunRecorderMeasureAddValue(T, M, V) _Generic(V, \
+  char*: RunRecorderMeasureAddValueStr, \
+  char const*: RunRecorderMeasureAddValueStr, \
+  int: RunRecorderMeasureAddValueInt, \
+  unsigned int: RunRecorderMeasureAddValueInt, \
+  long: RunRecorderMeasureAddValueInt, \
+  float: RunRecorderMeasureAddValueFloat, \
+  double: RunRecorderMeasureAddValueFloat)(T, M, V)
 
 // End of the guard against multiple inclusion
 #endif

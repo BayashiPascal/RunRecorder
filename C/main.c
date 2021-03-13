@@ -324,15 +324,73 @@ int main() {
 
   } EndTry;
 
+  // Add measurements
+  struct RunRecorderMeasure* measure = NULL;
+  Try {
 
+    measure = RunRecorderMeasureCreate();
+    RunRecorderMeasureAddValue(
+      measure,
+      "Date",
+      "2021-03-08 15:45:00");
+    RunRecorderMeasureAddValue(
+      measure,
+      "Temperature",
+      18.5);
+    RunRecorderAddMeasure(
+      recorder,
+      "RoomTemperature",
+      measure);
 
-/*  
-bodyrecorder->sh add_metric "project=1&label=Date&default=-"
-bodyrecorder->sh add_metric "project=1&label=Weight&default=0.0"
-bodyrecorder->sh metrics "project=1"
+    RunRecorderMeasureFree(&measure);
+    measure = RunRecorderMeasureCreate();
+    RunRecorderMeasureAddValue(
+      measure,
+      "Date",
+      "2021-03-08 16:19:00");
+    RunRecorderMeasureAddValue(
+      measure,
+      "Temperature",
+      19.1);
+    RunRecorderAddMeasure(
+      recorder,
+      "RoomTemperature",
+      measure);
 
-*/
+  } Catch (RunRecorderExc_MallocFailed) {
+
+    fprintf(
+      stderr,
+      "Caught exception %s during RunRecorderAddMeasure.\n",
+      RunRecorderExceptionStr[TryCatchGetLastExc()]);
+    if (recorder->errMsg != NULL) {
+
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->errMsg);
+
+    }
+
+    if (recorder->sqliteErrMsg != NULL) {
+
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->sqliteErrMsg);
+
+    }
+
+    RunRecorderMeasureFree(&measure);
+    RunRecorderPairsRefValFree(&metrics);
+    RunRecorderPairsRefValFree(&projects);
+    RunRecorderFree(&recorder);
+    exit(EXIT_FAILURE);
+
+  } EndTry;
+
   // Free memory
+  RunRecorderMeasureFree(&measure);
   RunRecorderFree(&recorder);
   RunRecorderPairsRefValFree(&projects);
   RunRecorderPairsRefValFree(&metrics);
