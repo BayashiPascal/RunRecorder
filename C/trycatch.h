@@ -105,7 +105,7 @@ void TryCatchEnd(
 //    // case of the raised exception
 //    case e:
 #define Catch(e) \
-      break;\
+        break;\
       case e:
 
 // Macro to assign several exceptions to one Catch segment in the TryCatch
@@ -139,6 +139,7 @@ void TryCatchEnd(
 //    // default case
 //    default:
 #define CatchDefault \
+      break; \
     default:
 
 // Tail of the TryCatch block, to be used as
