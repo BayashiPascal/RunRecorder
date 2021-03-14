@@ -461,13 +461,13 @@ TODO
 Obviously after adding your measurements you'll want to use them. You can access directly the SQLite database with any compatible software, or you can retrieve them in CSV format using RunRecorder. 
 
 ```
-<action>: measures
+<action>: csv
 <data>: project=<name of the project>
 ```
 
 Example using the shell script:
 ```
-runrecorder.sh measures "project=RoomTemperature"
+runrecorder.sh csv "project=RoomTemperature"
 ```
 
 Example using the C library:

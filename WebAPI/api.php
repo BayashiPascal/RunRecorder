@@ -586,7 +586,7 @@ try {
       $res = AddMeasure($db, $_POST["project"], $_POST);
       echo json_encode($res);
 
-    } else if ($_POST["action"] == "measures" and 
+    } else if ($_POST["action"] == "csv" and 
                isset($_POST["project"])) {
 
       $res = GetMeasures($db, $_POST["project"]);
@@ -606,7 +606,7 @@ try {
         'add_metric&project=...&label=...&default=..., ' .
         'metrics&project=..., ' .
         'add_measure&project=...&...=...&..., ' .
-        'measures&project=..., ' .
+        'csv&project=..., ' .
         'flush&project=..."}';
 
     } else {

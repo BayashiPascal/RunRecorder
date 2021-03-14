@@ -864,13 +864,13 @@ void RunRecorderAddProjectAPI(
   char const* const name) {
 
   // Create the request to the Web API
-  char* cmdBase = "action=add_project&label=";
+  // '-2' in the malloc for the replaced '%s'
+  char* cmdBase = "action=add_project&label=%s";
   free(that->cmd);
-  that->cmd = malloc(strlen(cmdBase) + strlen(name) + 1);
+  that->cmd = malloc(strlen(cmdBase) + strlen(name) - 2 + 1);
   if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
   sprintf(
     that->cmd,
-    "%s%s",
     cmdBase,
     name);
   RunRecorderSetAPIReqPostVal(
@@ -1439,10 +1439,10 @@ struct RunRecorderPairsRefVal* RunRecorderGetMetricsAPI(
           char const* const project) {
 
   // Create the request to the Web API
-  // Create the request
+  // '-2' in the malloc for the replaced '%s'
   char* cmdBase = "action=metrics&project=%s";
   free(that->cmd);
-  that->cmd = malloc(strlen(cmdBase) + strlen(project) + 1);
+  that->cmd = malloc(strlen(cmdBase) + strlen(project) - 2 + 1);
   if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
   sprintf(
     that->cmd,
@@ -1595,11 +1595,12 @@ void RunRecorderAddMetricAPI(
           char const* const defaultVal) {
 
   // Create the request to the Web API
+  // '-2' in the malloc for the replaced '%s'
   char* cmdBase = "action=add_metric&project=%s&label=%s&default=%s";
   free(that->cmd);
   that->cmd = malloc(
-    strlen(cmdBase) + strlen(label) + strlen(project) +
-    strlen(defaultVal) + 1);
+    strlen(cmdBase) + strlen(label) - 2 + strlen(project) - 2 +
+    strlen(defaultVal) - 2 + 1);
   if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
   sprintf(
     that->cmd,
@@ -1999,11 +2000,16 @@ void RunRecorderAddMeasureAPI(
                struct RunRecorder* const that,
                        char const* const project,
   struct RunRecorderMeasure const* const measure) {
+/*
+  // Format of the command for one value
+  char* cmdBaseVal = "&%s=%s";
+
 
   // Create the request to the Web API
 
 
-  char* cmdBase = "action=add_measure&project=%s&";
+  char* cmdBase = "action=add_measure&project=%s";
+
   free(that->cmd);
   that->cmd = malloc(
     strlen(cmdBase) + strlen(project) + 1);
@@ -2028,7 +2034,7 @@ void RunRecorderAddMeasureAPI(
     RunRecoderGetJSONValOfKey(
       that->curlReply,
       "refMeasure");
-
+*/
 }
 
 // Add a measure to a project
