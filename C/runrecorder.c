@@ -747,7 +747,8 @@ char* RunRecorderGetAPIRetCode(
 // Raise:
 //   RunRecorderExc_CurlRequestFailed
 void RunRecorderSendAPIReq(
-  struct RunRecorder* const that) {
+  struct RunRecorder* const that,
+                 bool const isJsonReq) {
 
   // Send the request
   RunRecorderResetCurlReply(that);
@@ -760,21 +761,26 @@ void RunRecorderSendAPIReq(
 
   }
 
-  // Check the return code from the JSON reply
-  char* retCode = RunRecorderGetAPIRetCode(that);
-  int cmpRet =
-    strcmp(
-      retCode,
-      "0");
-  free(retCode);
-  if (cmpRet != 0) {
+  // If 
+  if (isJsonReq == true) {
 
-    free(that->errMsg);
-    that->errMsg =
-      RunRecoderGetJSONValOfKey(
-        that->curlReply,
-        "errMsg");
-    Raise(RunRecorderExc_ApiRequestFailed);
+    // Check the return code from the JSON reply
+    char* retCode = RunRecorderGetAPIRetCode(that);
+    int cmpRet =
+      strcmp(
+        retCode,
+        "0");
+    free(retCode);
+    if (cmpRet != 0) {
+
+      free(that->errMsg);
+      that->errMsg =
+        RunRecoderGetJSONValOfKey(
+          that->curlReply,
+          "errMsg");
+      Raise(RunRecorderExc_ApiRequestFailed);
+
+    }
 
   }
 
@@ -799,7 +805,9 @@ char* RunRecorderGetVersionAPI(
     "action=version");
 
   // Send the request to the API
-  RunRecorderSendAPIReq(that);
+  RunRecorderSendAPIReq(
+    that,
+    true);
 
   // Extract the version number from the JSON reply
   char* version =
@@ -882,7 +890,9 @@ void RunRecorderAddProjectAPI(
     that->cmd);
 
   // Send the request to the API
-  RunRecorderSendAPIReq(that);
+  RunRecorderSendAPIReq(
+    that,
+    true);
 
 }
 
@@ -1262,7 +1272,9 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjectsAPI(
     "action=projects");
 
   // Send the request to the API
-  RunRecorderSendAPIReq(that);
+  RunRecorderSendAPIReq(
+    that,
+    true);
 
   // Get the projects list in the JSON reply
   char* json =
@@ -1458,7 +1470,9 @@ struct RunRecorderPairsRefVal* RunRecorderGetMetricsAPI(
     that->cmd);
 
   // Send the request to the API
-  RunRecorderSendAPIReq(that);
+  RunRecorderSendAPIReq(
+    that,
+    true);
 
   // Get the projects list in the JSON reply
   char* json =
@@ -1619,7 +1633,9 @@ void RunRecorderAddMetricAPI(
     that->cmd);
 
   // Send the request to the API
-  RunRecorderSendAPIReq(that);
+  RunRecorderSendAPIReq(
+    that,
+    true);
 
 }
 
@@ -2070,7 +2086,9 @@ void RunRecorderAddMeasureAPI(
     that->cmd);
 
   // Send the request to the API
-  RunRecorderSendAPIReq(that);
+  RunRecorderSendAPIReq(
+    that,
+    true);
 
   // Extract the reference of the measure from the JSON reply
   char* version =
@@ -2223,7 +2241,9 @@ void RunRecorderDeleteMeasureAPI(
     that->cmd);
 
   // Send the request to the API
-  RunRecorderSendAPIReq(that);
+  RunRecorderSendAPIReq(
+    that,
+    true);
 
 }
 
@@ -2334,10 +2354,13 @@ void RunRecorderGetMeasuresStrAPI(
     that->cmd);
 
   // Send the request to the API
-  RunRecorderSendAPIReq(that);
+  RunRecorderSendAPIReq(
+    that,
+    false);
 
-  // Extract the version number from the JSON reply
-  *target = strdup(that->curlReply);
+  // Move the returned data to the target
+  *target = that->curlReply;
+  that->curlReply = NULL;
 
 }
 

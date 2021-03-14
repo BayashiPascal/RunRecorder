@@ -409,12 +409,12 @@ int main() {
   char* measures = NULL;
   Try {
 
-    RunRecorderGetMeasuresStr(
+    RunRecorderGetMeasures(
       recorder,
       "RoomTemperature",
       &measures);
     printf(
-      "measures:\%s\n",
+      "measures:\n\%s",
       measures);
 
     char* testGetMeasuresCSV = "./testGetMeasures.csv";
@@ -431,7 +431,7 @@ int main() {
 
     }
 
-    RunRecorderGetMeasuresStr(
+    RunRecorderGetMeasures(
       recorder,
       "RoomTemperature",
       fp);
