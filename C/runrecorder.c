@@ -29,6 +29,7 @@ char* RunRecorderExceptionStr[RunRecorderExc_LastID] = {
   "RunRecorderExc_MetricNameAlreadyUsed",
   "RunRecorderExc_AddMeasureFailed",
   "RunRecorderExc_DeleteMeasureFailed",
+  "RunRecorderExc_IOError",
   "RunRecorderExc_InvalidJSON",
 };
 
@@ -2253,6 +2254,165 @@ void RunRecorderDeleteMeasure(
     RunRecorderDeleteMeasureAPI(
       that,
       measure);
+
+  }
+
+}
+
+// Get the measures of a project in a local database as a CSV formatted
+// string and memorise it in a string or write it on a stream
+// Inputs:
+//      that: the struct RunRecorder
+//   project: the project's name
+//    target: pointer to the string (freed and dynamically allocated)
+//            or the stream to write on
+// Raise:
+
+void RunRecorderGetMeasuresStrLocal(
+  struct RunRecorder* const that,
+          char const* const project,
+                     char** target) {
+
+}
+
+void RunRecorderGetMeasuresStreamLocal(
+  struct RunRecorder* const that,
+          char const* const project,
+                      FILE* target) {
+
+  // Get the measurements as a string
+  char* measures = NULL;
+  RunRecorderGetMeasuresStrLocal(
+    that,
+    project,
+    &measures);
+
+  // Write the measures on the stream
+  int ret =
+    fprintf(
+      target,
+      "%s",
+      measures);
+  if (ret < 0) {
+
+    free(measures);
+    Raise(RunRecorderExc_IOError);
+
+  }
+
+  // Free memory
+  free(measures);
+
+}
+
+// Get the measures of a project through the Web API as a CSV formatted
+// string and memorise it in a string or write it on a stream
+// Inputs:
+//      that: the struct RunRecorder
+//   project: the project's name
+//    target: pointer to the string (freed and dynamically allocated)
+//            or the stream to write on
+// Raise:
+
+void RunRecorderGetMeasuresStrAPI(
+  struct RunRecorder* const that,
+          char const* const project,
+                     char** target) {
+
+}
+
+void RunRecorderGetMeasuresStreamAPI(
+  struct RunRecorder* const that,
+          char const* const project,
+                      FILE* target) {
+
+  // Get the measurements as a string
+  char* measures = NULL;
+  RunRecorderGetMeasuresStrAPI(
+    that,
+    project,
+    &measures);
+
+  // Write the measures on the stream
+  int ret =
+    fprintf(
+      target,
+      "%s",
+      measures);
+  if (ret < 0) {
+
+    free(measures);
+    Raise(RunRecorderExc_IOError);
+
+  }
+
+  // Free memory
+  free(measures);
+
+}
+
+// Get the measures of a project as a CSV formatted string and memorise it
+// in a string or write it on a stream
+// Inputs:
+//      that: the struct RunRecorder
+//   project: the project's name
+//    target: pointer to the string (freed and dynamically allocated)
+//            or the stream to write on
+// Raise:
+
+void RunRecorderGetMeasuresStr(
+  struct RunRecorder* const that,
+          char const* const project,
+                     char** target) {
+
+  // Ensure errMsg is freed
+  sqlite3_free(that->sqliteErrMsg);
+  free(that->errMsg);
+
+  // If the RunRecorder uses a local database
+  if (RunRecorderUsesAPI(that) == false) {
+
+    RunRecorderGetMeasuresStrLocal(
+      that,
+      project,
+      target);
+
+  // Else, the RunRecorder uses the Web API
+  } else {
+
+    RunRecorderGetMeasuresStrAPI(
+      that,
+      project,
+      target);
+
+  }
+
+}
+
+void RunRecorderGetMeasuresStream(
+  struct RunRecorder* const that,
+          char const* const project,
+                      FILE* target) {
+
+  // Ensure errMsg is freed
+  sqlite3_free(that->sqliteErrMsg);
+  free(that->errMsg);
+
+  // If the RunRecorder uses a local database
+  if (RunRecorderUsesAPI(that) == false) {
+
+    RunRecorderGetMeasuresStreamLocal(
+      that,
+      project,
+      target);
+
+  // Else, the RunRecorder uses the Web API
+  } else {
+
+    RunRecorderGetMeasuresStreamAPI(
+      that,
+      project,
+      target);
 
   }
 
