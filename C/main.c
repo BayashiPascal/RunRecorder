@@ -373,8 +373,7 @@ int main() {
       recorder,
       recorder->refLastAddedMeasure);
 
-  } Catch (RunRecorderExc_MallocFailed)
-    CatchAlso (RunRecorderExc_DeleteMeasureFailed) {
+  } CatchDefault {
 
     fprintf(
       stderr,
@@ -404,7 +403,74 @@ int main() {
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTry;
+  } EndTryWithDefault;
+
+  // Get the measures
+  char* measures = NULL;
+  Try {
+
+    RunRecorderGetMeasuresStr(
+      recorder,
+      "RoomTemperature",
+      &measures);
+    printf(
+      "measures:\%s\n",
+      measures);
+
+    char* testGetMeasuresCSV = "./testGetMeasures.csv";
+    FILE* fp =
+      fopen(
+        testGetMeasuresCSV,
+        "w");
+    if (fp == NULL) {
+
+      fprintf(
+        stderr,
+        "Couldn't open %s\n",
+        testGetMeasuresCSV);
+
+    }
+
+    RunRecorderGetMeasuresStr(
+      recorder,
+      "RoomTemperature",
+      fp);
+    printf(
+      "Saved measures to %s\n",
+      testGetMeasuresCSV);
+    fclose(fp);
+
+  } CatchDefault {
+
+    fprintf(
+      stderr,
+      "Caught exception %s during RunRecorderGetMeasures.\n",
+      RunRecorderExceptionStr[TryCatchGetLastExc()]);
+    if (recorder->errMsg != NULL) {
+
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->errMsg);
+
+    }
+
+    if (recorder->sqliteErrMsg != NULL) {
+
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->sqliteErrMsg);
+
+    }
+
+    RunRecorderMeasureFree(&measure);
+    RunRecorderPairsRefValFree(&metrics);
+    RunRecorderPairsRefValFree(&projects);
+    RunRecorderFree(&recorder);
+    exit(EXIT_FAILURE);
+
+  } EndTryWithDefault;
 
   // Free memory
   RunRecorderMeasureFree(&measure);

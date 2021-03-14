@@ -2319,6 +2319,26 @@ void RunRecorderGetMeasuresStrAPI(
           char const* const project,
                      char** target) {
 
+  // Create the request to the Web API
+  // '-2' in the malloc for the replaced '%s'
+  char* cmdFormat = "action=csv&project=%s";
+  free(that->cmd);
+  that->cmd = malloc(strlen(cmdFormat) + strlen(project) - 2 + 1);
+  if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
+  sprintf(
+    that->cmd,
+    cmdFormat,
+    project);
+  RunRecorderSetAPIReqPostVal(
+    that,
+    that->cmd);
+
+  // Send the request to the API
+  RunRecorderSendAPIReq(that);
+
+  // Extract the version number from the JSON reply
+  *target = strdup(that->curlReply);
+
 }
 
 void RunRecorderGetMeasuresStreamAPI(
@@ -2352,7 +2372,7 @@ void RunRecorderGetMeasuresStreamAPI(
 }
 
 // Get the measures of a project as a CSV formatted string and memorise it
-// in a string or write it on a stream
+// in a string
 // Inputs:
 //      that: the struct RunRecorder
 //   project: the project's name
@@ -2368,6 +2388,9 @@ void RunRecorderGetMeasuresStr(
   // Ensure errMsg is freed
   sqlite3_free(that->sqliteErrMsg);
   free(that->errMsg);
+
+  // Free the string to memorise the measures
+  free(*target);
 
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {
