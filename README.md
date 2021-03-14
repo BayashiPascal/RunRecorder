@@ -210,7 +210,7 @@ When using th Web API, if you have forgotten the list of available command, you 
 Example using the shell script:
 ```
 > runrecorder.sh help
-{"ret":"0","actions":"version, add_project&label=..., projects, add_metric&project=...&label=...&default=..., metrics&project=..., add_measure&project=...&...=...&..., measures&project=..., flush&project=..."}
+{"ret":"0","actions":"version, add_project&label=..., projects, add_metric&project=...&label=...&default=..., metrics&project=..., add_measure&project=...&...=...&..., delete_measure&measure=..., csv&project=..., flush&project=..."}
 ```
 
 ### Create a new project
@@ -515,6 +515,51 @@ int main() {
 // Added measure ref. 1
 // Added measure ref. 2
 ```
+
+#### Delete a measure
+
+If you've mistakenly added a measure and want to delete it, you can do so as long as you have memorised its reference (returned when you add it). Also, if an error occured when addind a measure, it may be partially saved in the database, depending on the error. RunRecorder ensures the database stays coherent even if there is an error, you can then use the partially saved data. In the other hand if you don't want to keep potentially incomplete measurement, in case of error during addition of measurement you should always try to delete it with the returned reference.
+
+Example using the shell script:
+```
+> runrecorder.sh delete_measure "project=RoomTemperature&Measure=1"
+{"ret":"0"}
+```
+
+Example using the C library:
+```
+#include <stdio.h>
+#include "runrecorder.h"
+
+int main() {
+
+  char const* pathDb = "./runrecorder.db";
+  char const* pathApi = "https://localhost/RunRecorder/api.php";
+
+  // Create the RunRecorder instance
+  // Give pathApi in argument if you want to use the Web API instead
+  // of a local file
+  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  RunRecorderInit(recorder);
+
+  printf(
+    "Delete the last added measure %lld\n",
+    recorder->refLastAddedMeasure);
+  RunRecorderDeleteMeasure(
+    recorder,
+    recorder->refLastAddedMeasure);
+
+  // Free memory
+  RunRecorderMeasureFree(&measure);
+  RunRecorderFree(&recorder);
+  return EXIT_SUCCESS;
+
+}
+
+// Result
+// Delete the last added measure 0
+```
+
 
 #### Retrieve measurements from a project
 

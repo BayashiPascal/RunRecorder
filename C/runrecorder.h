@@ -187,18 +187,6 @@ void RunRecorderAddMetric(
           char const* const label,
           char const* const defaultVal);
 
-// Add a measure to a project
-// Inputs:
-//         that: the struct RunRecorder
-//      project: the project to add the measure to
-//      measure: the measure to add
-// Raise:
-
-void RunRecorderAddMeasure(
-               struct RunRecorder* const that,
-                       char const* const project,
-  struct RunRecorderMeasure const* const measure);
-
 // Get the list of metrics for a project
 // Input:
 //      that: the struct RunRecorder
@@ -215,6 +203,28 @@ void RunRecorderAddMeasure(
 struct RunRecorderPairsRefVal* RunRecorderGetMetrics(
   struct RunRecorder* const that,
           char const* const project);
+
+// Add a measure to a project
+// Inputs:
+//       that: the struct RunRecorder
+//    project: the project to add the measure to
+//    measure: the measure to add
+// Raise:
+
+void RunRecorderAddMeasure(
+               struct RunRecorder* const that,
+                       char const* const project,
+  struct RunRecorderMeasure const* const measure);
+
+// Delete a measure
+// Inputs:
+//       that: the struct RunRecorder
+//    measure: the measure to delete
+// Raise:
+
+void RunRecorderDeleteMeasure(
+  struct RunRecorder* const that,
+        sqlite3_int64 const measure);
 
 // Create a static struct RunRecorderPairsRefVal
 // Output:

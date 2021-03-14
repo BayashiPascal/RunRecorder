@@ -386,6 +386,40 @@ function AddMeasure($db, $project, $values) {
 
 }
 
+// Delete a measure
+function DeleteMeasure($db, $measure) {
+
+  $res = array();
+
+  try {
+
+    // Delete the values of the measure in the database
+    $cmd = 'DELETE FROM _Value WHERE RefMeasure = ' . $measure;
+    $success = $db->exec($cmd);
+    if ($success === false) {
+      throw new Exception("exec() failed for " . $cmd);
+    }
+
+    // Delete the measure in the database
+    $cmd = 'DELETE FROM _Measure WHERE Ref = ' . $measure;
+    $success = $db->exec($cmd);
+    if ($success === false) {
+      throw new Exception("exec() failed for " . $cmd);
+    }
+
+    $res["ret"] = "0";
+
+  } catch (Exception $e) {
+
+    $res["ret"] = "1";
+    $res["errMsg"] = "line " . $e->getLine() . ": " . $e->getMessage();
+
+  }
+
+  return $res;
+
+}
+
 // Get the list measures for a project
 function GetMeasures($db, $project) {
 

@@ -28,6 +28,7 @@ char* RunRecorderExceptionStr[RunRecorderExc_LastID] = {
   "RunRecorderExc_AddProjectFailed",
   "RunRecorderExc_MetricNameAlreadyUsed",
   "RunRecorderExc_AddMeasureFailed",
+  "RunRecorderExc_DeleteMeasureFailed",
   "RunRecorderExc_InvalidJSON",
 };
 
@@ -253,6 +254,10 @@ struct RunRecorder* RunRecorderCreate(
 void RunRecorderInit(
   struct RunRecorder* const that) {
 
+  // Ensure errMsg is freed
+  sqlite3_free(that->sqliteErrMsg);
+  free(that->errMsg);
+
   // If the recorder doesn't use the API
   if (RunRecorderUsesAPI(that) == false) {
 
@@ -399,14 +404,14 @@ void RunRecorderCreateDbLocal(
 
   };
 
+  // Ensure errMsg is freed
+  sqlite3_free(that->sqliteErrMsg);
+
   // Loop on the commands
   for (
     int iCmd = 0;
     iCmd < RUNRECORDER_NB_TABLE + 1;
     ++iCmd) {
-
-    // Ensure errMsg is freed
-    sqlite3_free(that->sqliteErrMsg);
 
     // Execute the command to create the table
     int retExec =
@@ -448,6 +453,10 @@ void RunRecorderUpgradeDb(
 //   RunRecorderExc_MallocFailed
 char* RunRecorderGetVersion(
   struct RunRecorder* const that) {
+
+  // Ensure errMsg is freed
+  sqlite3_free(that->sqliteErrMsg);
+  free(that->errMsg);
 
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {
@@ -505,9 +514,6 @@ static int RunRecorderGetVersionLocalCb(
 //   RunRecorderExc_SQLRequestFailed
 char* RunRecorderGetVersionLocal(
   struct RunRecorder* const that) {
-
-  // Ensure errMsg is freed
-  sqlite3_free(that->sqliteErrMsg);
 
   // Declare a variable to memeorise the version
   char* version = NULL;
@@ -818,9 +824,6 @@ void RunRecorderAddProjectLocal(
   struct RunRecorder* const that,
   char const* const name) {
 
-  // Ensure errMsg is freed
-  sqlite3_free(that->sqliteErrMsg);
-
   // Create the SQL command
   char* cmdFormat =
     "INSERT INTO _Project (Ref, Label) VALUES (NULL, \"%s\")";
@@ -969,6 +972,10 @@ void RunRecorderAddProject(
   struct RunRecorder* const that,
   char const* const name) {
 
+  // Ensure errMsg is freed
+  sqlite3_free(that->sqliteErrMsg);
+  free(that->errMsg);
+
   // Check the name
   bool isValidName = RunRecorderIsValidLabel(name);
   if (isValidName == false) Raise(RunRecorderExc_InvalidProjectName);
@@ -1111,9 +1118,6 @@ static int RunRecorderGetPairsLocalCb(
 //   RunRecorderExc_MallocFailed
 struct RunRecorderPairsRefVal* RunRecorderGetProjectsLocal(
   struct RunRecorder* const that) {
-
-  // Ensure errMsg is freed
-  sqlite3_free(that->sqliteErrMsg);
 
   // Declare a variable to memorise the projects
   struct RunRecorderPairsRefVal* projects = RunRecorderPairsRefValCreate();
@@ -1499,6 +1503,10 @@ struct RunRecorderPairsRefVal* RunRecorderGetMetrics(
   struct RunRecorder* const that,
           char const* const project) {
 
+  // Ensure errMsg is freed
+  sqlite3_free(that->sqliteErrMsg);
+  free(that->errMsg);
+
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {
 
@@ -1538,9 +1546,6 @@ void RunRecorderAddMetricLocal(
           char const* const project,
           char const* const label,
           char const* const defaultVal) {
-
-  // Ensure errMsg is freed
-  sqlite3_free(that->sqliteErrMsg);
 
   // Create the SQL command
   char* cmdFormat =
@@ -1640,6 +1645,10 @@ void RunRecorderAddMetric(
           char const* const project,
           char const* const label,
           char const* const defaultVal) {
+
+  // Ensure errMsg is freed
+  sqlite3_free(that->sqliteErrMsg);
+  free(that->errMsg);
 
   // Check the label
   bool isValidLabel = RunRecorderIsValidLabel(label);
@@ -1881,15 +1890,14 @@ void RunRecorderAddMeasureLocal(
                        char const* const project,
   struct RunRecorderMeasure const* const measure) {
 
-  // Ensure errMsg is freed
-  sqlite3_free(that->sqliteErrMsg);
-
   // Reset the reference of the last added measure
   that->refLastAddedMeasure = 0;
 
   // Get the date of the record (use the current local date)
   time_t mytime = time(NULL);
   char* dateStr = ctime(&mytime);
+
+  // Remove the line return at the end
   dateStr[strlen(dateStr)-1] = '\0';
 
   // Create the SQL command
@@ -2005,9 +2013,6 @@ void RunRecorderAddMeasureAPI(
                        char const* const project,
   struct RunRecorderMeasure const* const measure) {
 
-  // Ensure errMsg is freed
-  free(that->errMsg);
-
   // Reset the reference of the last added measure
   that->refLastAddedMeasure = 0;
 
@@ -2078,6 +2083,7 @@ void RunRecorderAddMeasureAPI(
       version,
       NULL,
       10);
+  free(version);
   if (errno != 0) Raise(RunRecorderExc_ApiRequestFailed);
 
 }
@@ -2097,6 +2103,10 @@ void RunRecorderAddMeasure(
   // Reset the reference of the last added measure
   that->refLastAddedMeasure = 0;
 
+  // Ensure errMsg is freed
+  sqlite3_free(that->sqliteErrMsg);
+  free(that->errMsg);
+
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {
 
@@ -2111,6 +2121,137 @@ void RunRecorderAddMeasure(
     RunRecorderAddMeasureAPI(
       that,
       project,
+      measure);
+
+  }
+
+}
+
+// Delete a measure in a local database
+// Inputs:
+//       that: the struct RunRecorder
+//    measure: the measure to delete
+// Raise:
+
+void RunRecorderDeleteMeasureLocal(
+  struct RunRecorder* const that,
+        sqlite3_int64 const measure) {
+
+  // Create the SQL command to delete the measure's values
+  // '-4' for the replaced '%lld'
+  size_t lenMeasureStr =
+    snprintf(
+      NULL,
+      0,
+      "%lld",
+      measure);
+  char* cmdFormatVal = "DELETE FROM _Value WHERE RefMeasure = %lld";
+  free(that->cmd);
+  that->cmd = malloc(strlen(cmdFormatVal) + lenMeasureStr - 4 + 1);
+  if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
+  sprintf(
+    that->cmd,
+    cmdFormatVal,
+    measure);
+
+  // Execute the command to delete the measure's values
+  int retExec =
+    sqlite3_exec(
+      that->db,
+      that->cmd,
+      // No callback
+      NULL,
+      // No user data
+      NULL,
+      &(that->sqliteErrMsg));
+  if (retExec != SQLITE_OK) Raise(RunRecorderExc_DeleteMeasureFailed);
+
+  // Create the SQL command to delete the measure
+  // '-4' for the replaced '%lld'
+  char* cmdFormat = "DELETE FROM _Measure WHERE Ref = %lld";
+  free(that->cmd);
+  that->cmd = malloc(strlen(cmdFormat) + lenMeasureStr - 2 + 1);
+  if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
+  sprintf(
+    that->cmd,
+    cmdFormat,
+    measure);
+
+  // Execute the command to delete the measure
+  retExec =
+    sqlite3_exec(
+      that->db,
+      that->cmd,
+      // No callback
+      NULL,
+      // No user data
+      NULL,
+      &(that->sqliteErrMsg));
+  if (retExec != SQLITE_OK) Raise(RunRecorderExc_DeleteMeasureFailed);
+
+}
+
+// Delete a measure through the Web API
+// Inputs:
+//       that: the struct RunRecorder
+//    measure: the measure to delete
+// Raise:
+
+void RunRecorderDeleteMeasureAPI(
+  struct RunRecorder* const that,
+        sqlite3_int64 const measure) {
+
+  // Create the request to the Web API
+  // '-4' in the malloc for the replaced '%lld'
+  size_t lenMeasureStr =
+    snprintf(
+      NULL,
+      0,
+      "%lld",
+      measure);
+  char* cmdFormat = "action=delete_measure&measure=%lld";
+  free(that->cmd);
+  that->cmd = malloc(strlen(cmdFormat) + lenMeasureStr - 4 + 1);
+  if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
+  sprintf(
+    that->cmd,
+    cmdFormat,
+    measure);
+  RunRecorderSetAPIReqPostVal(
+    that,
+    that->cmd);
+
+  // Send the request to the API
+  RunRecorderSendAPIReq(that);
+
+}
+
+// Delete a measure
+// Inputs:
+//       that: the struct RunRecorder
+//    measure: the measure to delete
+// Raise:
+
+void RunRecorderDeleteMeasure(
+  struct RunRecorder* const that,
+        sqlite3_int64 const measure) {
+
+  // Ensure errMsg is freed
+  sqlite3_free(that->sqliteErrMsg);
+  free(that->errMsg);
+
+  // If the RunRecorder uses a local database
+  if (RunRecorderUsesAPI(that) == false) {
+
+    RunRecorderDeleteMeasureLocal(
+      that,
+      measure);
+
+  // Else, the RunRecorder uses the Web API
+  } else {
+
+    RunRecorderDeleteMeasureAPI(
+      that,
       measure);
 
   }

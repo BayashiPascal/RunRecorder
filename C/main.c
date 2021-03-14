@@ -402,12 +402,15 @@ int main() {
   // Delete measurement
   Try {
 
+    printf(
+      "Delete measure %lld\n",
+      recorder->refLastAddedMeasure);
     RunRecorderDeleteMeasure(
       recorder,
       recorder->refLastAddedMeasure);
 
   } Catch (RunRecorderExc_MallocFailed)
-    CatchAlso (RunRecorderExc_ApiRequestFailed) {
+    CatchAlso (RunRecorderExc_DeleteMeasureFailed) {
 
     fprintf(
       stderr,
