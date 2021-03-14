@@ -21,14 +21,7 @@ int main() {
     // Initialise the struct RunRecorder
     RunRecorderInit(recorder);
 
-  } Catch(RunRecorderExc_CreateTableFailed)
-    CatchAlso(RunRecorderExc_OpenDbFailed)
-    CatchAlso(RunRecorderExc_CreateCurlFailed)
-    CatchAlso(RunRecorderExc_CurlSetOptFailed)
-    CatchAlso(RunRecorderExc_CurlRequestFailed)
-    CatchAlso(RunRecorderExc_SQLRequestFailed)
-    CatchAlso(RunRecorderExc_ApiRequestFailed)
-    CatchAlso(RunRecorderExc_MallocFailed) {
+  } CatchDefault {
 
     fprintf(
       stderr,
@@ -55,7 +48,7 @@ int main() {
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTry;
+  } EndTryWithDefault;
 
   // Get the version of the database
   Try {
@@ -66,11 +59,7 @@ int main() {
       version);
     free(version);
 
-  } Catch(RunRecorderExc_SQLRequestFailed)
-    CatchAlso(RunRecorderExc_CurlSetOptFailed)
-    CatchAlso(RunRecorderExc_CurlRequestFailed)
-    CatchAlso(RunRecorderExc_ApiRequestFailed)
-    CatchAlso(RunRecorderExc_MallocFailed) {
+  } CatchDefault {
 
     fprintf(
       stderr,
@@ -97,7 +86,7 @@ int main() {
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTry;
+  } EndTryWithDefault;
 
   // Create a new project
   Try {
@@ -114,13 +103,7 @@ int main() {
 
     } EndTry;
 
-  } Catch(RunRecorderExc_SQLRequestFailed)
-    CatchAlso(RunRecorderExc_CurlSetOptFailed)
-    CatchAlso(RunRecorderExc_CurlRequestFailed)
-    CatchAlso(RunRecorderExc_ApiRequestFailed)
-    CatchAlso(RunRecorderExc_InvalidProjectName)
-    CatchAlso(RunRecorderExc_AddProjectFailed)
-    CatchAlso(RunRecorderExc_MallocFailed) {
+  } CatchDefault {
 
     fprintf(
       stderr,
@@ -147,8 +130,7 @@ int main() {
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTry;
-
+  } EndTryWithDefault;
 
   // Get the list of projects
   struct RunRecorderPairsRefVal* projects = NULL;
@@ -167,12 +149,7 @@ int main() {
 
     }
 
-  } Catch(RunRecorderExc_SQLRequestFailed)
-    CatchAlso(RunRecorderExc_ApiRequestFailed)
-    CatchAlso(RunRecorderExc_CurlRequestFailed)
-    CatchAlso(RunRecorderExc_CurlSetOptFailed)
-    CatchAlso(RunRecorderExc_InvalidJSON)
-    CatchAlso(RunRecorderExc_MallocFailed) {
+  } CatchDefault {
 
     fprintf(
       stderr,
@@ -200,7 +177,7 @@ int main() {
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTry;
+  } EndTryWithDefault;
 
   // Create new metrics
   Try {
@@ -233,13 +210,7 @@ int main() {
 
     } EndTry;
 
-  } Catch(RunRecorderExc_SQLRequestFailed)
-    CatchAlso(RunRecorderExc_CurlSetOptFailed)
-    CatchAlso(RunRecorderExc_CurlRequestFailed)
-    CatchAlso(RunRecorderExc_ApiRequestFailed)
-    CatchAlso(RunRecorderExc_InvalidProjectName)
-    CatchAlso(RunRecorderExc_AddProjectFailed)
-    CatchAlso(RunRecorderExc_MallocFailed) {
+  } CatchDefault {
 
     fprintf(
       stderr,
@@ -266,7 +237,7 @@ int main() {
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTry;
+  } EndTryWithDefault;
 
   // Get the list of metrics
   struct RunRecorderPairsRefVal* metrics = NULL;
@@ -288,12 +259,7 @@ int main() {
 
     }
 
-  } Catch(RunRecorderExc_SQLRequestFailed)
-    CatchAlso(RunRecorderExc_ApiRequestFailed)
-    CatchAlso(RunRecorderExc_CurlRequestFailed)
-    CatchAlso(RunRecorderExc_CurlSetOptFailed)
-    CatchAlso(RunRecorderExc_InvalidJSON)
-    CatchAlso(RunRecorderExc_MallocFailed) {
+  } CatchDefault {
 
     fprintf(
       stderr,
@@ -322,7 +288,7 @@ int main() {
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTry;
+  } EndTryWithDefault;
 
   // Add measurements
   struct RunRecorderMeasure* measure = NULL;
@@ -363,7 +329,7 @@ int main() {
       "Added measure ref. %lld\n",
       recorder->refLastAddedMeasure);
 
-  } Catch (RunRecorderExc_MallocFailed) {
+  } CatchDefault {
 
     fprintf(
       stderr,
@@ -395,7 +361,7 @@ int main() {
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTry;
+  } EndTryWithDefault;
 
   // Free memory
   RunRecorderMeasureFree(&measure);
