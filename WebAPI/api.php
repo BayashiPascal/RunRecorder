@@ -367,9 +367,9 @@ function AddMeasure($db, $project, $values) {
    
     }
 
-    $res["refMeasure"] = $refMeasure;
+    $res["refMeasure"] = "" . $refMeasure;
 
-    if ($hasFailed == false) {
+    if ($hasFailed == true) {
       throw new Exception("exec() failed for INSERT INTO _Value");
     }
 
@@ -586,6 +586,12 @@ try {
       $res = AddMeasure($db, $_POST["project"], $_POST);
       echo json_encode($res);
 
+    } else if ($_POST["action"] == "delete_measure" and 
+               isset($_POST["measure"])) {
+
+      $res = DeleteMeasure($db, $_POST["measure"]);
+      echo json_encode($res);
+
     } else if ($_POST["action"] == "csv" and 
                isset($_POST["project"])) {
 
@@ -606,6 +612,7 @@ try {
         'add_metric&project=...&label=...&default=..., ' .
         'metrics&project=..., ' .
         'add_measure&project=...&...=...&..., ' .
+        'delete_measure&measure=..., ' .
         'csv&project=..., ' .
         'flush&project=..."}';
 

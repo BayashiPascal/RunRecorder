@@ -822,14 +822,14 @@ void RunRecorderAddProjectLocal(
   sqlite3_free(that->sqliteErrMsg);
 
   // Create the SQL command
-  char* cmdBase =
+  char* cmdFormat =
     "INSERT INTO _Project (Ref, Label) VALUES (NULL, \"%s\")";
   free(that->cmd);
-  that->cmd = malloc(strlen(cmdBase) + strlen(name) - 1);
+  that->cmd = malloc(strlen(cmdFormat) + strlen(name) - 1);
   if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
   sprintf(
     that->cmd,
-    cmdBase,
+    cmdFormat,
     name);
 
   // Execute the command to add the project
@@ -865,13 +865,13 @@ void RunRecorderAddProjectAPI(
 
   // Create the request to the Web API
   // '-2' in the malloc for the replaced '%s'
-  char* cmdBase = "action=add_project&label=%s";
+  char* cmdFormat = "action=add_project&label=%s";
   free(that->cmd);
-  that->cmd = malloc(strlen(cmdBase) + strlen(name) - 2 + 1);
+  that->cmd = malloc(strlen(cmdFormat) + strlen(name) - 2 + 1);
   if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
   sprintf(
     that->cmd,
-    cmdBase,
+    cmdFormat,
     name);
   RunRecorderSetAPIReqPostVal(
     that,
@@ -1387,16 +1387,16 @@ struct RunRecorderPairsRefVal* RunRecorderGetMetricsLocal(
           char const* const project) {
 
   // Create the request
-  char* cmdBase =
+  char* cmdFormat =
     "SELECT _Metric.Ref, _Metric.Label FROM _Metric, _Project "
     "WHERE _Metric.RefProject = _Project.Ref AND "
     "_Project.Label = \"%s\"";
   free(that->cmd);
-  that->cmd = malloc(strlen(cmdBase) + strlen(project) + 1);
+  that->cmd = malloc(strlen(cmdFormat) + strlen(project) + 1);
   if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
   sprintf(
     that->cmd,
-    cmdBase,
+    cmdFormat,
     project);
 
   // Declare a struct RunRecorderPairsRefVal to memorise the metrics
@@ -1440,13 +1440,13 @@ struct RunRecorderPairsRefVal* RunRecorderGetMetricsAPI(
 
   // Create the request to the Web API
   // '-2' in the malloc for the replaced '%s'
-  char* cmdBase = "action=metrics&project=%s";
+  char* cmdFormat = "action=metrics&project=%s";
   free(that->cmd);
-  that->cmd = malloc(strlen(cmdBase) + strlen(project) - 2 + 1);
+  that->cmd = malloc(strlen(cmdFormat) + strlen(project) - 2 + 1);
   if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
   sprintf(
     that->cmd,
-    cmdBase,
+    cmdFormat,
     project);
   RunRecorderSetAPIReqPostVal(
     that,
@@ -1543,18 +1543,18 @@ void RunRecorderAddMetricLocal(
   sqlite3_free(that->sqliteErrMsg);
 
   // Create the SQL command
-  char* cmdBase =
+  char* cmdFormat =
     "INSERT INTO _Metric (Ref, RefProject, Label, DefaultValue) "
     "SELECT NULL, _Project.Ref, \"%s\", \"%s\" FROM _Project "
     "WHERE _Project.Label = \"%s\"";
   free(that->cmd);
   that->cmd = malloc(
-    strlen(cmdBase) + strlen(label) +
+    strlen(cmdFormat) + strlen(label) +
     strlen(defaultVal) + strlen(project) + 1);
   if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
   sprintf(
     that->cmd,
-    cmdBase,
+    cmdFormat,
     label,
     defaultVal,
     project);
@@ -1596,15 +1596,15 @@ void RunRecorderAddMetricAPI(
 
   // Create the request to the Web API
   // '-2' in the malloc for the replaced '%s'
-  char* cmdBase = "action=add_metric&project=%s&label=%s&default=%s";
+  char* cmdFormat = "action=add_metric&project=%s&label=%s&default=%s";
   free(that->cmd);
   that->cmd = malloc(
-    strlen(cmdBase) + strlen(label) - 2 + strlen(project) - 2 +
+    strlen(cmdFormat) + strlen(label) - 2 + strlen(project) - 2 +
     strlen(defaultVal) - 2 + 1);
   if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
   sprintf(
     that->cmd,
-    cmdBase,
+    cmdFormat,
     project,
     label,
     defaultVal);
@@ -1884,23 +1884,26 @@ void RunRecorderAddMeasureLocal(
   // Ensure errMsg is freed
   sqlite3_free(that->sqliteErrMsg);
 
+  // Reset the reference of the last added measure
+  that->refLastAddedMeasure = 0;
+
   // Get the date of the record (use the current local date)
   time_t mytime = time(NULL);
   char* dateStr = ctime(&mytime);
   dateStr[strlen(dateStr)-1] = '\0';
 
   // Create the SQL command
-  char* cmdBase =
+  char* cmdFormat =
     "INSERT INTO _Measure (RefProject, DateMeasure) "
     "SELECT _Project.Ref, \"%s\" FROM _Project "
     "WHERE _Project.Label = \"%s\"";
   free(that->cmd);
   that->cmd = malloc(
-    strlen(cmdBase) + strlen(dateStr) + strlen(project) + 1);
+    strlen(cmdFormat) + strlen(dateStr) + strlen(project) + 1);
   if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
   sprintf(
     that->cmd,
-    cmdBase,
+    cmdFormat,
     dateStr,
     project);
 
@@ -1960,7 +1963,7 @@ void RunRecorderAddMeasureLocal(
 
       sprintf(
         that->cmd,
-        cmdBase,
+        cmdFormat,
         refMeasureStr,
         measure->vals[iVal],
         measure->metrics[iVal]);
@@ -1995,33 +1998,67 @@ void RunRecorderAddMeasureLocal(
 //      project: the project to add the measure to
 //      measure: the measure to add
 // Raise:
-
+//   RunRecorderExc_MallocFailed
+//   RunRecorderExc_ApiRequestFailed
 void RunRecorderAddMeasureAPI(
                struct RunRecorder* const that,
                        char const* const project,
   struct RunRecorderMeasure const* const measure) {
-/*
-  // Format of the command for one value
-  char* cmdBaseVal = "&%s=%s";
 
+  // Ensure errMsg is freed
+  free(that->errMsg);
+
+  // Reset the reference of the last added measure
+  that->refLastAddedMeasure = 0;
+
+  // Format of the command for one value
+  char* cmdFormatVal = "&%s=%s";
+
+  // Variable to memorise the size of the values in the command string
+  size_t lenStrValues = 0;
+
+  // Loop on the values
+  for (
+    long iVal = 0;
+    iVal < measure->nbVal;
+    ++iVal) {
+
+    // Add the size necessary for this value and its header
+    // '-2' for the replaced '%s'
+    lenStrValues += strlen(cmdFormatVal) +
+      strlen(measure->metrics[iVal]) - 2 +
+      strlen(measure->vals[iVal]) - 2;
+
+  }
 
   // Create the request to the Web API
-
-
-  char* cmdBase = "action=add_measure&project=%s";
-
+    // '-2' for the replaced '%s'
+  char* cmdFormat = "action=add_measure&project=%s";
   free(that->cmd);
   that->cmd = malloc(
-    strlen(cmdBase) + strlen(project) + 1);
-
-
+    strlen(cmdFormat) + strlen(project) - 2 + lenStrValues + 1);
   if (that->cmd == NULL) Raise(RunRecorderExc_MallocFailed);
   sprintf(
     that->cmd,
-    cmdBase,
-    project,
-    label,
-    defaultVal);
+    cmdFormat,
+    project);
+  for (
+    long iVal = 0;
+    iVal < measure->nbVal;
+    ++iVal) {
+
+    char* ptrEnd =
+      strchr(
+        that->cmd,
+        '\0');
+    sprintf(
+      ptrEnd,
+      cmdFormatVal,
+      measure->metrics[iVal],
+      measure->vals[iVal]);
+
+  }
+
   RunRecorderSetAPIReqPostVal(
     that,
     that->cmd);
@@ -2034,7 +2071,15 @@ void RunRecorderAddMeasureAPI(
     RunRecoderGetJSONValOfKey(
       that->curlReply,
       "refMeasure");
-*/
+  if (version == NULL) Raise(RunRecorderExc_ApiRequestFailed);
+  errno = 0;
+  that->refLastAddedMeasure = 
+    strtol(
+      version,
+      NULL,
+      10);
+  if (errno != 0) Raise(RunRecorderExc_ApiRequestFailed);
+
 }
 
 // Add a measure to a project

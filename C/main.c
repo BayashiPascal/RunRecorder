@@ -15,8 +15,8 @@ int main() {
 
     // Give pathApi in argument if you want to use the Web API instead
     // of a local file
-    recorder = RunRecorderCreate(pathDb);
-    //recorder = RunRecorderCreate(pathApi);
+    //recorder = RunRecorderCreate(pathDb);
+    recorder = RunRecorderCreate(pathApi);
 
     // Initialise the struct RunRecorder
     RunRecorderInit(recorder);
@@ -363,7 +363,9 @@ int main() {
       "Added measure ref. %lld\n",
       recorder->refLastAddedMeasure);
 
-  } Catch (RunRecorderExc_MallocFailed) {
+  } Catch (RunRecorderExc_MallocFailed)
+    CatchAlso (RunRecorderExc_AddMeasureFailed)
+    CatchAlso (RunRecorderExc_ApiRequestFailed) {
 
     fprintf(
       stderr,
@@ -371,6 +373,46 @@ int main() {
       "last measure reference is %lld\n",
       RunRecorderExceptionStr[TryCatchGetLastExc()],
       recorder->refLastAddedMeasure);
+    if (recorder->errMsg != NULL) {
+
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->errMsg);
+
+    }
+
+    if (recorder->sqliteErrMsg != NULL) {
+
+      fprintf(
+        stderr,
+        "%s\n",
+        recorder->sqliteErrMsg);
+
+    }
+
+    RunRecorderMeasureFree(&measure);
+    RunRecorderPairsRefValFree(&metrics);
+    RunRecorderPairsRefValFree(&projects);
+    RunRecorderFree(&recorder);
+    exit(EXIT_FAILURE);
+
+  } EndTry;
+
+  // Delete measurement
+  Try {
+
+    RunRecorderDeleteMeasure(
+      recorder,
+      recorder->refLastAddedMeasure);
+
+  } Catch (RunRecorderExc_MallocFailed)
+    CatchAlso (RunRecorderExc_ApiRequestFailed) {
+
+    fprintf(
+      stderr,
+      "Caught exception %s during RunRecorderDeleteMeasure.\n",
+      RunRecorderExceptionStr[TryCatchGetLastExc()]);
     if (recorder->errMsg != NULL) {
 
       fprintf(

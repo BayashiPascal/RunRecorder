@@ -453,7 +453,67 @@ Example using the shell script:
 
 Example using the C library:
 ```
-TODO
+#include <stdio.h>
+#include "runrecorder.h"
+
+int main() {
+
+  char const* pathDb = "./runrecorder.db";
+  char const* pathApi = "https://localhost/RunRecorder/api.php";
+
+  // Create the RunRecorder instance
+  // Give pathApi in argument if you want to use the Web API instead
+  // of a local file
+  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  RunRecorderInit(recorder);
+
+  // Add one measure
+  measure = RunRecorderMeasureCreate();
+  RunRecorderMeasureAddValue(
+    measure,
+    "Date",
+    "2021-03-08 15:45:00");
+  RunRecorderMeasureAddValue(
+    measure,
+    "Temperature",
+    18.5);
+  RunRecorderAddMeasure(
+    recorder,
+    "RoomTemperature",
+    measure);
+  printf(
+    "Added measure ref. %lld\n",
+    recorder->refLastAddedMeasure);
+
+  // Add another measure
+  RunRecorderMeasureFree(&measure);
+  measure = RunRecorderMeasureCreate();
+  RunRecorderMeasureAddValue(
+    measure,
+    "Date",
+    "2021-03-08 16:19:00");
+  RunRecorderMeasureAddValue(
+    measure,
+    "Temperature",
+    19.1);
+  RunRecorderAddMeasure(
+    recorder,
+    "RoomTemperature",
+    measure);
+  printf(
+    "Added measure ref. %lld\n",
+    recorder->refLastAddedMeasure);
+
+  // Free memory
+  RunRecorderMeasureFree(&measure);
+  RunRecorderFree(&recorder);
+  return EXIT_SUCCESS;
+
+}
+
+// Result:
+// Added measure ref. 1
+// Added measure ref. 2
 ```
 
 #### Retrieve measurements from a project
