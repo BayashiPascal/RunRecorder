@@ -18,9 +18,6 @@
 // Include own modules header
 #include "trycatch.h"
 
-// Labels for the exception
-char* RunRecorderExceptionStr[RunRecorderExc_LastID];
-
 // Structure of a RunRecorder
 struct RunRecorder {
 
@@ -91,7 +88,7 @@ struct RunRecorderMeasure {
 // Output:
 //  Return a new struct RunRecorder
 // Raise:
-//   RunRecorderExc_MallocFailed
+//   TryCatchExc_MallocFailed
 struct RunRecorder* RunRecorderCreate(
   char const* const url);
 
@@ -99,13 +96,13 @@ struct RunRecorder* RunRecorderCreate(
 // Input:
 //   that: The struct RunRecorder
 // Raise: 
-//   RunRecorderExc_CreateTableFailed
-//   RunRecorderExc_OpenDbFailed
-//   RunRecorderExc_CreateCurlFailed
-//   RunRecorderExc_CurlSetOptFailed
-//   RunRecorderExc_SQLRequestFailed
-//   RunRecorderExc_ApiRequestFailed
-//   RunRecorderExc_MallocFailed
+//   TryCatchExc_CreateTableFailed
+//   TryCatchExc_OpenDbFailed
+//   TryCatchExc_CreateCurlFailed
+//   TryCatchExc_CurlSetOptFailed
+//   TryCatchExc_SQLRequestFailed
+//   TryCatchExc_ApiRequestFailed
+//   TryCatchExc_MallocFailed
 void RunRecorderInit(
   struct RunRecorder* const that);
 
@@ -121,11 +118,11 @@ void RunRecorderFree(
 // Output:
 //   Return a new string
 // Raise:
-//   RunRecorderExc_SQLRequestFailed
-//   RunRecorderExc_CurlSetOptFailed
-//   RunRecorderExc_CurlRequestFailed
-//   RunRecorderExc_ApiRequestFailed
-//   RunRecorderExc_MallocFailed
+//   TryCatchExc_SQLRequestFailed
+//   TryCatchExc_CurlSetOptFailed
+//   TryCatchExc_CurlRequestFailed
+//   TryCatchExc_ApiRequestFailed
+//   TryCatchExc_MallocFailed
 char* RunRecorderGetVersion(
   struct RunRecorder* const that);
 
@@ -136,14 +133,14 @@ char* RunRecorderGetVersion(
 // The project's name must respect the following pattern: 
 // /^[a-zA-Z][a-zA-Z0-9_]*$/ .
 // Raise:
-//   RunRecorderExc_SQLRequestFailed
-//   RunRecorderExc_CurlSetOptFailed
-//   RunRecorderExc_CurlRequestFailed
-//   RunRecorderExc_ApiRequestFailed
-//   RunRecorderExc_MallocFailed
-//   RunRecorderExc_InvalidProjectName
-//   RunRecorderExc_ProjectNameAlreadyUsed
-//   RunRecorderExc_AddProjectFailed
+//   TryCatchExc_SQLRequestFailed
+//   TryCatchExc_CurlSetOptFailed
+//   TryCatchExc_CurlRequestFailed
+//   TryCatchExc_ApiRequestFailed
+//   TryCatchExc_MallocFailed
+//   TryCatchExc_InvalidProjectName
+//   TryCatchExc_ProjectNameAlreadyUsed
+//   TryCatchExc_AddProjectFailed
 void RunRecorderAddProject(
   struct RunRecorder* const that,
   char const* const name);
@@ -154,12 +151,12 @@ void RunRecorderAddProject(
 // Output:
 //   Return the projects' reference/label
 // Raise:
-//   RunRecorderExc_SQLRequestFailed
-//   RunRecorderExc_CurlSetOptFailed
-//   RunRecorderExc_CurlRequestFailed
-//   RunRecorderExc_MallocFailed
-//   RunRecorderExc_ApiRequestFailed
-//   RunRecorderExc_InvalidJSON
+//   TryCatchExc_SQLRequestFailed
+//   TryCatchExc_CurlSetOptFailed
+//   TryCatchExc_CurlRequestFailed
+//   TryCatchExc_MallocFailed
+//   TryCatchExc_ApiRequestFailed
+//   TryCatchExc_InvalidJSON
 struct RunRecorderPairsRefVal* RunRecorderGetProjects(
   struct RunRecorder* const that);
 
@@ -177,10 +174,10 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjects(
 // the same project. A metric label can't be 'action' or 'project' (case
 //  sensitive, so 'Action' is fine).
 // Raise:
-//   RunRecorderExc_SQLRequestFailed
-//   RunRecorderExc_MallocFailed
-//   RunRecorderExc_InvalidMetricName
-//   RunRecorderExc_MetricNameAlreadyUsed
+//   TryCatchExc_SQLRequestFailed
+//   TryCatchExc_MallocFailed
+//   TryCatchExc_InvalidMetricName
+//   TryCatchExc_MetricNameAlreadyUsed
 void RunRecorderAddMetric(
   struct RunRecorder* const that,
           char const* const project,
@@ -194,12 +191,12 @@ void RunRecorderAddMetric(
 // Output:
 //   Return the metrics' reference/label
 // Raise:
-//   RunRecorderExc_SQLRequestFailed
-//   RunRecorderExc_CurlSetOptFailed
-//   RunRecorderExc_CurlRequestFailed
-//   RunRecorderExc_MallocFailed
-//   RunRecorderExc_ApiRequestFailed
-//   RunRecorderExc_InvalidJSON
+//   TryCatchExc_SQLRequestFailed
+//   TryCatchExc_CurlSetOptFailed
+//   TryCatchExc_CurlRequestFailed
+//   TryCatchExc_MallocFailed
+//   TryCatchExc_ApiRequestFailed
+//   TryCatchExc_InvalidJSON
 struct RunRecorderPairsRefVal* RunRecorderGetMetrics(
   struct RunRecorder* const that,
           char const* const project);
@@ -277,7 +274,7 @@ void RunRecorderMeasureFree(
 //   metric: the value's metric
 //      val: the value
 // Raise:
-//   RunRecorderExc_MallocFailed
+//   TryCatchExc_MallocFailed
 void RunRecorderMeasureAddValueStr(
   struct RunRecorderMeasure* that,
            char const* const metric,

@@ -3,4 +3,4 @@ C/main
 C/runrecorder.db
 C/sqlite*
 C/curl*
-testGetMeasures.csv
+C/testGetMeasures.csv

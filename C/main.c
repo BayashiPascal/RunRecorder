@@ -26,7 +26,7 @@ int main() {
     fprintf(
       stderr,
       "Caught exception %s during RunRecorderInit.\n",
-      RunRecorderExceptionStr[TryCatchGetLastExc()]);
+      TryCatchExceptionToStr(TryCatchGetLastExc()));
     if (recorder->errMsg != NULL) {
 
       fprintf(
@@ -64,7 +64,7 @@ int main() {
     fprintf(
       stderr,
       "Caught exception %s during RunRecorderGetVersion.\n",
-      RunRecorderExceptionStr[TryCatchGetLastExc()]);
+      TryCatchExceptionToStr(TryCatchGetLastExc()));
     if (recorder->errMsg != NULL) {
 
       fprintf(
@@ -97,7 +97,7 @@ int main() {
         recorder,
         "RoomTemperature");
 
-    } Catch (RunRecorderExc_ProjectNameAlreadyUsed) {
+    } Catch (TryCatchExc_ProjectNameAlreadyUsed) {
 
       printf("Project RoomTemperature already in the database\n");
 
@@ -108,7 +108,7 @@ int main() {
     fprintf(
       stderr,
       "Caught exception %s during RunRecorderAddProject.\n",
-      RunRecorderExceptionStr[TryCatchGetLastExc()]);
+      TryCatchExceptionToStr(TryCatchGetLastExc()));
     if (recorder->errMsg != NULL) {
 
       fprintf(
@@ -154,7 +154,7 @@ int main() {
     fprintf(
       stderr,
       "Caught exception %s during RunRecorderGetProjects.\n",
-      RunRecorderExceptionStr[TryCatchGetLastExc()]);
+      TryCatchExceptionToStr(TryCatchGetLastExc()));
     if (recorder->errMsg != NULL) {
 
       fprintf(
@@ -190,7 +190,7 @@ int main() {
         "Date",
         "-");
 
-    } Catch (RunRecorderExc_MetricNameAlreadyUsed) {
+    } Catch (TryCatchExc_MetricNameAlreadyUsed) {
 
       printf("Metric Date already exists in RoomTemperature\n");
 
@@ -204,7 +204,7 @@ int main() {
         "Temperature",
         "0.0");
 
-    } Catch (RunRecorderExc_MetricNameAlreadyUsed) {
+    } Catch (TryCatchExc_MetricNameAlreadyUsed) {
 
       printf("Metric Temperature already exists in RoomTemperature\n");
 
@@ -215,7 +215,7 @@ int main() {
     fprintf(
       stderr,
       "Caught exception %s during RunRecorderAddMetric.\n",
-      RunRecorderExceptionStr[TryCatchGetLastExc()]);
+      TryCatchExceptionToStr(TryCatchGetLastExc()));
     if (recorder->errMsg != NULL) {
 
       fprintf(
@@ -264,7 +264,7 @@ int main() {
     fprintf(
       stderr,
       "Caught exception %s during RunRecorderGetMetrics.\n",
-      RunRecorderExceptionStr[TryCatchGetLastExc()]);
+      TryCatchExceptionToStr(TryCatchGetLastExc()));
     if (recorder->errMsg != NULL) {
 
       fprintf(
@@ -335,7 +335,7 @@ int main() {
       stderr,
       "Caught exception %s during RunRecorderAddMeasure.\n"
       "last measure reference is %lld\n",
-      RunRecorderExceptionStr[TryCatchGetLastExc()],
+      TryCatchExceptionToStr(TryCatchGetLastExc()),
       recorder->refLastAddedMeasure);
     if (recorder->errMsg != NULL) {
 
@@ -378,7 +378,7 @@ int main() {
     fprintf(
       stderr,
       "Caught exception %s during RunRecorderDeleteMeasure.\n",
-      RunRecorderExceptionStr[TryCatchGetLastExc()]);
+      TryCatchExceptionToStr(TryCatchGetLastExc()));
     if (recorder->errMsg != NULL) {
 
       fprintf(
@@ -445,7 +445,7 @@ int main() {
     fprintf(
       stderr,
       "Caught exception %s during RunRecorderGetMeasures.\n",
-      RunRecorderExceptionStr[TryCatchGetLastExc()]);
+      TryCatchExceptionToStr(TryCatchGetLastExc()));
     if (recorder->errMsg != NULL) {
 
       fprintf(

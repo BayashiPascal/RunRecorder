@@ -17,37 +17,37 @@
 // as follows:
 // enum UserDefinedExceptions {
 //
-//   myUserExceptionA = RunRecorderExc_LastID,
+//   myUserExceptionA = TryCatchExc_LastID,
 //   myUserExceptionB,
 //   myUserExceptionC
 //
 // };
-// RunRecorderExc_LastID is not an exception but a convenience to
+// TryCatchExc_LastID is not an exception but a convenience to
 // create new exceptions (as in the example above) while ensuring
-// their ID doesn't collide with the ID of exceptions in RunRecorderException.
+// their ID doesn't collide with the ID of exceptions in TryCatchException.
 // Exception defined here are only examples, one should create a list of
 // default exceptions according to the planned use of this trycatch module.
-enum RunRecorderException {
+enum TryCatchException {
 
-  RunRecorderExc_Segv = 1,
-  RunRecorderExc_CreateTableFailed,
-  RunRecorderExc_OpenDbFailed,
-  RunRecorderExc_CreateCurlFailed,
-  RunRecorderExc_CurlRequestFailed,
-  RunRecorderExc_CurlSetOptFailed,
-  RunRecorderExc_SQLRequestFailed,
-  RunRecorderExc_ApiRequestFailed,
-  RunRecorderExc_MallocFailed,
-  RunRecorderExc_InvalidProjectName,
-  RunRecorderExc_ProjectNameAlreadyUsed,
-  RunRecorderExc_AddProjectFailed,
-  RunRecorderExc_InvalidJSON,
-  RunRecorderExc_InvalidMetricName,
-  RunRecorderExc_MetricNameAlreadyUsed,
-  RunRecorderExc_AddMeasureFailed,
-  RunRecorderExc_DeleteMeasureFailed,
-  RunRecorderExc_IOError,
-  RunRecorderExc_LastID
+  TryCatchExc_Segv = 1,
+  TryCatchExc_CreateTableFailed,
+  TryCatchExc_OpenDbFailed,
+  TryCatchExc_CreateCurlFailed,
+  TryCatchExc_CurlRequestFailed,
+  TryCatchExc_CurlSetOptFailed,
+  TryCatchExc_SQLRequestFailed,
+  TryCatchExc_ApiRequestFailed,
+  TryCatchExc_MallocFailed,
+  TryCatchExc_InvalidProjectName,
+  TryCatchExc_ProjectNameAlreadyUsed,
+  TryCatchExc_AddProjectFailed,
+  TryCatchExc_InvalidJSON,
+  TryCatchExc_InvalidMetricName,
+  TryCatchExc_MetricNameAlreadyUsed,
+  TryCatchExc_AddMeasureFailed,
+  TryCatchExc_DeleteMeasureFailed,
+  TryCatchExc_IOError,
+  TryCatchExc_LastID
 
 };
 
@@ -95,7 +95,7 @@ void TryCatchEnd(
 
 // Catch segment in the TryCatch block, to be used as
 //
-// Catch (/*... one of RunRecorderException or user-defined exception ...*/) {
+// Catch (/*... one of TryCatchException or user-defined exception ...*/) {
 //   /*... code executed if the exception has been raised in the
 //     TryCatch block ...*/
 //
@@ -111,7 +111,7 @@ void TryCatchEnd(
 // Macro to assign several exceptions to one Catch segment in the TryCatch
 // block, to be used as
 //
-// Catch (/*... one of RunRecorderException or user-defined exception ...*/)
+// Catch (/*... one of TryCatchException or user-defined exception ...*/)
 // CatchAlso (/*... another one ...*/) {
 // /*... as many CatchAlso statement as your need ...*/
 //   /*... code executed if one of the exception has been raised in the
@@ -179,11 +179,11 @@ void TryCatchEnd(
   } \
   TryCatchEnd()
 
-// Function called to raise the RunRecorderException 'exc'
+// Function called to raise the TryCatchException 'exc'
 void Raise(
-  // The RunRecorderException to raise. Do not use the type enum
-  // RunRecorderException to allow the user to extend the list of exceptions
-  // with user-defined exception outside of enum RunRecorderException.
+  // The TryCatchException to raise. Do not use the type enum
+  // TryCatchException to allow the user to extend the list of exceptions
+  // with user-defined exception outside of enum TryCatchException.
   int exc);
 
 // The struct siginfo_t used to handle the SIGSEV is not defined in
@@ -191,8 +191,8 @@ void Raise(
 #ifndef __STRICT_ANSI__
 
 // Function to set the handler function of the signal SIGSEV and raise
-// RunRecorderExc_Segv upon reception of this signal. Must have been
-// called before using Catch(RunRecorderExc_Segv)
+// TryCatchExc_Segv upon reception of this signal. Must have been
+// called before using Catch(TryCatchExc_Segv)
 void TryCatchInitHandlerSigSegv(
   // No arguments
   void);
@@ -206,5 +206,10 @@ int TryCatchGetLastExc(
 
 // End of the guard against multiple inclusion
 #endif
+
+// Function to convert from enum TryCatchException to char*
+char const* TryCatchExceptionToStr(
+  // The exception ID
+  enum TryCatchException exc);
 
 // ------------------ trycatch.h ------------------

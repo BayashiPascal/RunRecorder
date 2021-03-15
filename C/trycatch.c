@@ -22,10 +22,32 @@ int tryCatchExcLvl = 0;
 // ID of the last raised exception
 // To avoid exposing this variable to the user, implement any code using
 // it as functions here instead of in the #define-s of trycatch.h
-// Do not use the type enum RunRecorderException to allow the user to extend
+// Do not use the type enum TryCatchException to allow the user to extend
 // the list of exceptions with user-defined exceptions outside of enum
-// RunRecorderException.
+// TryCatchException.
 int tryCatchExc = 0;
+
+// Label for the exceptions
+char* TryCatchExceptionStr[TryCatchExc_LastID] = {
+  "",
+  "TryCatchExc_Segv",
+  "TryCatchExc_CreateTableFailed",
+  "TryCatchExc_OpenDbFailed",
+  "TryCatchExc_CreateCurlFailed",
+  "TryCatchExc_CurlRequestFailed",
+  "TryCatchExc_CurlSetOptFailed",
+  "TryCatchExc_SQLRequestFailed",
+  "TryCatchExc_ApiRequestFailed",
+  "TryCatchExc_MallocFailed",
+  "TryCatchExc_InvalidProjectName",
+  "TryCatchExc_ProjectNameAlreadyUsed",
+  "TryCatchExc_AddProjectFailed",
+  "TryCatchExc_MetricNameAlreadyUsed",
+  "TryCatchExc_AddMeasureFailed",
+  "TryCatchExc_DeleteMeasureFailed",
+  "TryCatchExc_IOError",
+  "TryCatchExc_InvalidJSON",
+};
 
 // Function called at the beginning of a TryCatch block to guard against
 // overflow of the stack of jump_buf
@@ -69,11 +91,11 @@ jmp_buf* TryCatchGetJmpBufOnStackTop(
 
 }
 
-// Function called to raise the RunRecorderException 'exc'
+// Function called to raise the TryCatchException 'exc'
 void Raise(
-  // The RunRecorderException to raise. Do not use the type enum
-  // RunRecorderException to allow the user to extend the list of exceptions
-  // with user-defined exception outside of enum RunRecorderException.
+  // The TryCatchException to raise. Do not use the type enum
+  // TryCatchException to allow the user to extend the list of exceptions
+  // with user-defined exception outside of enum TryCatchException.
   int exc) {
 
   // If we are in a TryCatch block
@@ -88,7 +110,7 @@ void Raise(
     tryCatchExcLvl--;
 
     // Call longjmp with the appropriate jmp_buf in the stack and the
-    // raised RunRecorderException.
+    // raised TryCatchException.
     longjmp(
       tryCatchExcJmp[tryCatchExcLvl],
       exc);
@@ -154,7 +176,7 @@ void TryCatchEnd(
 // ANSI C, guard against this.
 #ifndef __STRICT_ANSI__
 
-// Handler function to raise the exception RunRecorderExc_Segv when
+// Handler function to raise the exception TryCatchExc_Segv when
 // receiving the signal SIGSEV.
 void TryCatchSigSegvHandler(
   // Received signal, will always be SIGSEV, unused
@@ -165,13 +187,13 @@ void TryCatchSigSegvHandler(
   void *arg) {
 
   // Raise the exception
-  Raise(RunRecorderExc_Segv);
+  Raise(TryCatchExc_Segv);
 
 }
 
 // Function to set the handler function of the signal SIGSEV and raise
-// RunRecorderExc_Segv upon reception of this signal. Must have been
-// called before using Catch(RunRecorderExc_Segv)
+// TryCatchExc_Segv upon reception of this signal. Must have been
+// called before using Catch(TryCatchExc_Segv)
 void TryCatchInitHandlerSigSegv(
   // No arugments
   void) {
@@ -205,5 +227,14 @@ int TryCatchGetLastExc(
 }
 
 #endif
+
+// Function to convert from enum TryCatchException to char*
+char const* TryCatchExceptionToStr(
+  // The exception ID
+  enum TryCatchException exc) {
+
+  return TryCatchExceptionStr[exc];
+
+}
 
 // ------------------ trycatch.c ------------------
