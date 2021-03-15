@@ -186,6 +186,9 @@ void TryCatchSigSegvHandler(
   // Optional arguments, unused
   void *arg) {
 
+  // Unused parameters
+  (void)signal; (void)si; (void)arg;
+
   // Raise the exception
   Raise(TryCatchExc_Segv);
 
