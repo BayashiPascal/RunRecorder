@@ -1716,7 +1716,7 @@ void RunRecorderUpdateViewProject(
     ptrEnd,
     "%s",
     cmdAddFormatTail);
-printf("%s\n",that->cmd);
+
   // Execute the command to add the view
   retExec =
     sqlite3_exec(
@@ -2480,6 +2480,71 @@ void RunRecorderDeleteMeasure(
 
 }
 
+// Callback to receive the measures from sqlite3
+// Input:
+//      data: The measures
+//     nbCol: Number of columns in the returned rows
+//    colVal: Row values
+//   colName: Columns name
+// Output:
+//   Return 0 if successfull, else 1
+// Raise:
+//   TryCatchExc_MallocFailed
+static int RunRecorderGetMeasuresLocalCb(
+   void* data,
+     int nbCol,
+  char** colVal,
+  char** colName) {
+
+  // Unused argument
+  (void)colName;
+
+  // Cast the data
+  char** measures = (char**)data;
+
+  // If the arguments are invalid
+  // Return non zero to trigger SQLITE_ABORT in the calling function
+  if (nbCol == 0 || colVal == NULL) return 1;
+
+  // Add the measure to the measures
+  Try {
+
+    for (
+      int iCol = 0;
+      iCol < nbCol;
+      ++iCol) {
+
+      char* measure =
+        realloc(
+          *measures,
+          strlen(*measures) + strlen(colVal[iCol]) + 2);
+      if (measure == NULL) Raise(TryCatchExc_MallocFailed);
+      *measures = measure;
+      char* ptrEnd =
+        strchr(
+          *measures,
+          '\0');
+      char sep = '&';
+      if (iCol == nbCol -1) sep = '\n';
+      sprintf(
+        ptrEnd,
+        "%s%c",
+        colVal[iCol],
+        sep);
+
+    }
+
+  } CatchDefault {
+
+    return 1;
+
+  } EndTryWithDefault;
+
+  // Return success code
+  return 0;
+
+}
+
 // Get the measures of a project in a local database as a CSV formatted
 // string and memorise it in a string formatted as:
 // Metric1&Metric2&...
@@ -2496,6 +2561,116 @@ void RunRecorderGetMeasuresStrLocal(
   struct RunRecorder* const that,
           char const* const project,
                      char** str) {
+
+  // Get the list of metrics for the project
+  struct RunRecorderPairsRefVal* metrics =
+    RunRecorderGetMetrics(
+      that,
+      project);
+
+  // Create the request and the header of the result
+  free(that->cmd);
+  Try {
+
+    char* cmdFormatHead = "SELECT ";
+    that->cmd = malloc(strlen(cmdFormatHead) + 1);
+    if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
+    sprintf(
+      that->cmd,
+      "%s",
+      cmdFormatHead);
+
+    for (
+      long iMetric = 0;
+      iMetric < metrics->nb;
+      ++iMetric) {
+
+      size_t len = strlen(metrics->vals[iMetric]) + 2;
+      if (*str != NULL) len += strlen(*str);
+      char* measures =
+        realloc(
+          *str,
+          len);
+      if (measures == NULL) Raise(TryCatchExc_MallocFailed);
+      char* ptrEnd = measures;
+      if (*str != NULL) {
+
+        ptrEnd =
+          strchr(
+            measures,
+            '\0');
+
+      }
+
+      *str = measures;
+
+      char sep = '&';
+      if (iMetric == metrics->nb - 1) sep = '\n';
+      sprintf(
+        ptrEnd,
+        "%s%c",
+        metrics->vals[iMetric],
+        sep);
+
+      len = strlen(metrics->vals[iMetric]) + 2;
+      if (that->cmd != NULL) len += strlen(that->cmd);
+      char* cmd =
+        realloc(
+          that->cmd,
+          len);
+      if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
+      that->cmd = cmd;
+      ptrEnd = 
+        strchr(
+          that->cmd,
+          '\0');
+
+      sep = ',';
+      if (iMetric == metrics->nb - 1) sep = '\0';
+      sprintf(
+        ptrEnd,
+        "%s%c",
+        metrics->vals[iMetric],
+        sep);
+
+    }
+
+    char* cmdFormatTail = " FROM %s";
+    char* cmd =
+      realloc(
+        that->cmd,
+        strlen(that->cmd) +
+        strlen(cmdFormatTail) - 2 + strlen(project) + 1);
+    if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
+    that->cmd = cmd;
+    char* ptrEnd =
+      strchr(
+        that->cmd,
+        '\0');
+    sprintf(
+      ptrEnd,
+      cmdFormatTail,
+      project);
+
+  } CatchDefault {
+
+    RunRecorderPairsRefValFree(&metrics);
+    Raise(TryCatchGetLastExc());
+
+  } EndTryWithDefault;
+
+  // Free memory
+  RunRecorderPairsRefValFree(&metrics);
+
+  // Execute the request
+  int retExec =
+    sqlite3_exec(
+      that->db,
+      that->cmd,
+      RunRecorderGetMeasuresLocalCb,
+      str,
+      &(that->sqliteErrMsg));
+  if (retExec != SQLITE_OK) Raise(TryCatchExc_SQLRequestFailed);
 
 }
 
@@ -2647,6 +2822,7 @@ void RunRecorderGetMeasuresStr(
 
   // Free the string to memorise the measures
   free(*str);
+  *str = NULL;
 
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {
