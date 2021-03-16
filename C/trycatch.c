@@ -124,8 +124,8 @@ void Raise(
     // exception
     fprintf(
       stderr,
-      "Unhandled exception (%d).\n",
-      exc);
+      "Unhandled exception (%s).\n",
+      TryCatchExceptionToStr(exc));
 
   }
 
@@ -146,8 +146,8 @@ void TryCatchDefault(
     // print a message on the standard error stream and ignore it
     fprintf(
       stderr,
-      "Unhandled exception (%d) in %s, line %d.\n",
-      tryCatchExc,
+      "Unhandled exception (%s) in %s, line %d.\n",
+      TryCatchExceptionToStr(tryCatchExc),
       filename,
       line);
 
@@ -200,7 +200,7 @@ void TryCatchSigSegvHandler(
 // TryCatchExc_Segv upon reception of this signal. Must have been
 // called before using Catch(TryCatchExc_Segv)
 void TryCatchInitHandlerSigSegv(
-  // No arugments
+  // No arguments
   void) {
 
   // Create a struct sigaction to set the handler
@@ -221,6 +221,8 @@ void TryCatchInitHandlerSigSegv(
 
 }
 
+#endif
+
 // Function to get the ID of the last raised exception
 int TryCatchGetLastExc(
   // No parameters
@@ -230,8 +232,6 @@ int TryCatchGetLastExc(
   return tryCatchExc;
 
 }
-
-#endif
 
 // Function to convert from enum TryCatchException to char*
 char const* TryCatchExceptionToStr(

@@ -1561,9 +1561,10 @@ void RunRecorderUpdateViewProject(
   char* cmdAddFormatBody = ") AS SELECT _Measure.Ref ";
   char* cmdAddFormatVal =
     ",IFNULL((SELECT Value FROM _Value "
-    "WHERE RefMeasure=_Measure.Ref AND RefMetric=%s),(select DefaultValue from _Metric where Ref=%s)) ";
+    "WHERE RefMeasure=_Measure.Ref AND RefMetric=%s),"
+    "(SELECT DefaultValue FROM _Metric WHERE Ref=%s)) ";
   char* cmdAddFormatTail =
-    "from _Measure order by _Measure.DateMeasure, _Measure.Ref";
+    "FROM _Measure ORDER BY _Measure.DateMeasure, _Measure.Ref";
 
   // Free the command string
   free(that->cmd);

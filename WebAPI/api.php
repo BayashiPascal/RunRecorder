@@ -223,6 +223,62 @@ function GetRefProject($db, $project) {
 
 }
 
+// Function to update the view for a project
+function UpdateViewProject($db, $project) {
+
+  // Ensure the view doesn't exist
+  $cmd = "DROP VIEW IF EXISTS " . $project;
+  $success = $db->exec($cmd);
+  if ($success === false) {
+    throw new Exception("exec() failed for " . $cmd);
+  }
+
+  // Get the project reference
+  $refProject = GetRefProject($db, $project);
+
+  // Get the metrics for the project
+  $cmd = 'SELECT Ref, Label FROM _Metric WHERE RefProject = ' .
+    $refProject . ' ORDER BY Label';
+  $rows = $db->query($cmd);
+  if ($rows === false) {
+    throw new Exception("query(" . $cmd . ") failed");
+  }
+  $labels = array();
+  $refs = array();
+  $defs = array();
+  while ($row = $rows->fetchArray()) {
+
+    array_push($labels, $row["Label"]);
+    array_push($refs, $row["Ref"]);
+
+  }
+
+  // Create the command for the view
+  $cmd = "CREATE VIEW " . $project . " (Ref";
+  foreach($labels as $label) {
+
+    $cmd .= "," . $label;
+
+  }
+  $cmd .= ") AS SELECT _Measure.Ref ";
+  foreach($refs as $ref) {
+
+    $cmd .= ",IFNULL((SELECT Value FROM _Value ";
+    $cmd .= "WHERE RefMeasure=_Measure.Ref AND RefMetric=";
+    $cmd .= $ref;
+    $cmd .= "),(SELECT DefaultValue FROM _Metric WHERE Ref=";
+    $cmd .= $ref . ")) ";
+
+  }
+  $cmd .= "FROM _Measure ORDER BY _Measure.DateMeasure, _Measure.Ref";
+
+  // Create the view
+  $success = $db->exec($cmd);
+  if ($success === false) {
+    throw new Exception("exec() failed for " . $cmd);
+  }
+
+}
 
 // Add a new metric to a project
 function AddMetric($db, $project, $label, $default) {
@@ -263,6 +319,9 @@ function AddMetric($db, $project, $label, $default) {
       }
 
     }
+
+    // Update the view for the project
+    UpdateViewProject($db, $project);
 
     $res["ret"] = "0";
 
