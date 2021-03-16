@@ -453,7 +453,7 @@ function GetMeasures($db, $project) {
     // Get the measures for the project
     $rows = $db->query(
       'SELECT Ref FROM _Measure WHERE RefProject = ' .
-      $refProject . ' ORDER BY DateMeasure');
+      $refProject . ' ORDER BY DateMeasure, Ref');
     if ($rows === false) {
       throw new Exception("query() failed");
     }
