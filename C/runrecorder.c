@@ -1518,6 +1518,223 @@ struct RunRecorderPairsRefVal* RunRecorderGetMetrics(
 
 }
 
+// Update the view for a project
+// Input:
+//         that: the struct RunRecorder
+//      project: the name of the project
+// Raise:
+
+void RunRecorderUpdateViewProject(
+  struct RunRecorder* const that,
+          char const* const project) {
+
+  // Create the SQL command to delete the view
+  char* cmdDelFormat = "DROP VIEW IF EXISTS %s";
+  free(that->cmd);
+  that->cmd = malloc(strlen(cmdDelFormat) + strlen(project) + 1);
+  if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
+  sprintf(
+    that->cmd,
+    cmdDelFormat,
+    project);
+
+  // Execute the command to delete the view
+  int retExec =
+    sqlite3_exec(
+      that->db,
+      that->cmd,
+      // No callback
+      NULL,
+      // No user data
+      NULL,
+      &(that->sqliteErrMsg));
+  if (retExec != SQLITE_OK) Raise(TryCatchExc_UpdateViewFailed);
+
+  // Get the list of metrics for the project
+  struct RunRecorderPairsRefVal* metrics =
+    RunRecorderGetMetrics(
+      that,
+      project);
+
+  // Declare the format strings to create the SQL command to add the view
+  char* cmdAddFormatHead = "CREATE VIEW %s (Ref";
+  char* cmdAddFormatBody = ") AS SELECT _Measure.Ref ";
+  char* cmdAddFormatVal =
+    ",IFNULL((SELECT Value FROM _Value "
+    "WHERE RefMeasure=_Measure.Ref AND RefMetric=%s),(select DefaultValue from _Metric where Ref=%s)) ";
+  char* cmdAddFormatTail =
+    "from _Measure order by _Measure.DateMeasure, _Measure.Ref";
+
+  // Free the command string
+  free(that->cmd);
+
+  // Create the head of the command
+  that->cmd = malloc(
+    strlen(cmdAddFormatHead) - 2 +
+    strlen(project) +
+    strlen(cmdAddFormatBody) + 1);
+  if (that->cmd == NULL) {
+
+    RunRecorderPairsRefValFree(&metrics);
+    Raise(TryCatchExc_MallocFailed);
+
+  }
+
+  sprintf(
+    that->cmd,
+    cmdAddFormatHead,
+    project);
+
+  // Loop on the metrics
+  for (
+    long iMetric = 0;
+    iMetric < metrics->nb;
+    ++iMetric) {
+
+    // Extend the command with the metric label
+    char* cmd =
+      realloc(
+        that->cmd,
+        strlen(that->cmd) + strlen(metrics->vals[iMetric]) + 2);
+    if (cmd == NULL) {
+
+      RunRecorderPairsRefValFree(&metrics);
+      Raise(TryCatchExc_MallocFailed);
+
+    }
+
+    that->cmd = cmd;
+    char* ptrEnd =
+      strchr(
+        that->cmd,
+        '\0');
+    sprintf(
+      ptrEnd,
+      ",%s",
+      metrics->vals[iMetric]);
+
+  }
+
+  // Extend the command with the body
+  char* cmd =
+    realloc(
+      that->cmd,
+      strlen(that->cmd) + strlen(cmdAddFormatBody) + 1);
+  if (cmd == NULL) {
+
+    RunRecorderPairsRefValFree(&metrics);
+    Raise(TryCatchExc_MallocFailed);
+
+  }
+
+  that->cmd = cmd;
+  char* ptrEnd =
+    strchr(
+      that->cmd,
+      '\0');
+  sprintf(
+    ptrEnd,
+    "%s",
+    cmdAddFormatBody);
+
+  // Loop on the metrics
+  for (
+    long iMetric = 0;
+    iMetric < metrics->nb;
+    ++iMetric) {
+
+    // Get the metric reference as a string
+    size_t lenRefMetricStr =
+      snprintf(
+        NULL,
+        0,
+        "%ld",
+        metrics->refs[iMetric]);
+    char* refMetricStr = malloc(lenRefMetricStr);
+    if (refMetricStr == NULL) {
+
+      RunRecorderPairsRefValFree(&metrics);
+      Raise(TryCatchExc_MallocFailed);
+
+    }
+
+    sprintf(
+      refMetricStr,
+      "%ld",
+      metrics->refs[iMetric]);
+
+    // Extend the command with the metric related body part
+    cmd =
+      realloc(
+        that->cmd,
+        strlen(that->cmd) + strlen(cmdAddFormatVal) +
+        strlen(refMetricStr) - 4 + 1);
+    if (cmd == NULL) {
+
+      free(refMetricStr);
+      RunRecorderPairsRefValFree(&metrics);
+      Raise(TryCatchExc_MallocFailed);
+
+    }
+
+    that->cmd = cmd;
+    ptrEnd =
+      strchr(
+        that->cmd,
+        '\0');
+    sprintf(
+      ptrEnd,
+      cmdAddFormatVal,
+      refMetricStr,
+      refMetricStr);
+    free(refMetricStr);
+
+  }
+
+  // Free memory
+  RunRecorderPairsRefValFree(&metrics);
+
+  // Extend the command with the tail
+  cmd =
+    realloc(
+      that->cmd,
+      strlen(that->cmd) + strlen(cmdAddFormatTail) + 1);
+  if (cmd == NULL) {
+
+    RunRecorderPairsRefValFree(&metrics);
+    Raise(TryCatchExc_MallocFailed);
+
+  }
+
+  that->cmd = cmd;
+  ptrEnd =
+    strchr(
+      that->cmd,
+      '\0');
+  sprintf(
+    ptrEnd,
+    "%s",
+    cmdAddFormatTail);
+printf("%s\n",that->cmd);
+  // Execute the command to add the view
+  retExec =
+    sqlite3_exec(
+      that->db,
+      that->cmd,
+      // No callback
+      NULL,
+      // No user data
+      NULL,
+      &(that->sqliteErrMsg));
+  if (retExec != SQLITE_OK) {
+
+    RunRecorderPairsRefValFree(&metrics);
+    Raise(TryCatchExc_UpdateViewFailed);
+
+  }
+
+}
+
 // Add a metric to a project to a local database
 // Input:
 //         that: the struct RunRecorder
@@ -1567,7 +1784,12 @@ void RunRecorderAddMetricLocal(
       // No user data
       NULL,
       &(that->sqliteErrMsg));
-  if (retExec != SQLITE_OK) Raise(TryCatchExc_AddProjectFailed);
+  if (retExec != SQLITE_OK) Raise(TryCatchExc_AddMetricFailed);
+
+  // Update the view for this project
+  RunRecorderUpdateViewProject(
+    that,
+    project);
 
 }
 
@@ -1966,7 +2188,7 @@ void RunRecorderAddMeasureLocal(
 
       sprintf(
         that->cmd,
-        cmdFormat,
+        cmdValBase,
         refMeasureStr,
         measure->vals[iVal],
         measure->metrics[iVal]);
@@ -2165,7 +2387,7 @@ void RunRecorderDeleteMeasureLocal(
 
   // Create the SQL command to delete the measure
   // '-4' for the replaced '%lld'
-  char* cmdFormat = "DELETE FROM _Measure WHERE Ref = %lld";
+  char* cmdFormat = "DELETE FROM _Measure WHERE Ref = %lld ; VACUUM";
   free(that->cmd);
   that->cmd = malloc(strlen(cmdFormat) + lenMeasureStr - 2 + 1);
   if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
@@ -2258,7 +2480,11 @@ void RunRecorderDeleteMeasure(
 }
 
 // Get the measures of a project in a local database as a CSV formatted
-// string and memorise it in a string
+// string and memorise it in a string formatted as:
+// Metric1&Metric2&...
+// Value1_1&Value1_2&...
+// Value2_1&Value2_2&...
+// ...
 // Inputs:
 //      that: the struct RunRecorder
 //   project: the project's name
@@ -2273,7 +2499,11 @@ void RunRecorderGetMeasuresStrLocal(
 }
 
 // Get the measures of a project in a local database as a CSV formatted
-// string and write it on a stream
+// string and write it on a stream formatted as:
+// Metric1&Metric2&...
+// Value1_1&Value1_2&...
+// Value2_1&Value2_2&...
+// ...
 // Inputs:
 //      that: the struct RunRecorder
 //   project: the project's name
@@ -2311,7 +2541,11 @@ void RunRecorderGetMeasuresStreamLocal(
 }
 
 // Get the measures of a project through the Web API as a CSV formatted
-// string and memorise it in a string
+// string and memorise it in a string formatted as:
+// Metric1&Metric2&...
+// Value1_1&Value1_2&...
+// Value2_1&Value2_2&...
+// ...
 // Inputs:
 //      that: the struct RunRecorder
 //   project: the project's name
@@ -2349,7 +2583,11 @@ void RunRecorderGetMeasuresStrAPI(
 }
 
 // Get the measures of a project through the Web API as a CSV formatted
-// string and write it on a stream
+// string and write it on a stream formatted as:
+// Metric1&Metric2&...
+// Value1_1&Value1_2&...
+// Value2_1&Value2_2&...
+// ...
 // Inputs:
 //      that: the struct RunRecorder
 //   project: the project's name
@@ -2386,7 +2624,11 @@ void RunRecorderGetMeasuresStreamAPI(
 }
 
 // Get the measures of a project as a CSV formatted string through the Web
-// API or from a local database and memorise it in a string
+// API or from a local database and memorise it in a string formatted as:
+// Metric1&Metric2&...
+// Value1_1&Value1_2&...
+// Value2_1&Value2_2&...
+// ...
 // Inputs:
 //      that: the struct RunRecorder
 //   project: the project's name
@@ -2426,7 +2668,11 @@ void RunRecorderGetMeasuresStr(
 }
 
 // Get the measures of a project as a CSV formatted string through the Web
-// API or from a local database and write it on a stream
+// API or from a local database and write it on a stream formatted as:
+// Metric1&Metric2&...
+// Value1_1&Value1_2&...
+// Value2_1&Value2_2&...
+// ...
 // Inputs:
 //      that: the struct RunRecorder
 //   project: the project's name

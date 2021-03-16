@@ -41,6 +41,8 @@ enum TryCatchException {
   TryCatchExc_InvalidProjectName,
   TryCatchExc_ProjectNameAlreadyUsed,
   TryCatchExc_AddProjectFailed,
+  TryCatchExc_AddMetricFailed,
+  TryCatchExc_UpdateViewFailed,
   TryCatchExc_InvalidJSON,
   TryCatchExc_InvalidMetricName,
   TryCatchExc_MetricNameAlreadyUsed,

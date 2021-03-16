@@ -15,8 +15,8 @@ int main() {
 
     // Give pathApi in argument if you want to use the Web API instead
     // of a local file
-    //recorder = RunRecorderCreate(pathDb);
-    recorder = RunRecorderCreate(pathApi);
+    recorder = RunRecorderCreate(pathDb);
+    //recorder = RunRecorderCreate(pathApi);
 
     // Initialise the struct RunRecorder
     RunRecorderInit(recorder);
@@ -413,32 +413,40 @@ int main() {
       recorder,
       "RoomTemperature",
       &measures);
-    printf(
-      "measures:\n\%s",
-      measures);
+    if (measures == NULL) {
 
-    char* testGetMeasuresCSV = "./testGetMeasures.csv";
-    FILE* fp =
-      fopen(
-        testGetMeasuresCSV,
-        "w");
-    if (fp == NULL) {
+      printf("No measures\n");
 
-      fprintf(
-        stderr,
-        "Couldn't open %s\n",
+    } else {
+
+      printf(
+        "measures:\n\%s",
+        measures);
+
+      char* testGetMeasuresCSV = "./testGetMeasures.csv";
+      FILE* fp =
+        fopen(
+          testGetMeasuresCSV,
+          "w");
+      if (fp == NULL) {
+
+        fprintf(
+          stderr,
+          "Couldn't open %s\n",
+          testGetMeasuresCSV);
+
+      }
+
+      RunRecorderGetMeasures(
+        recorder,
+        "RoomTemperature",
+        fp);
+      printf(
+        "Saved measures to %s\n",
         testGetMeasuresCSV);
+      fclose(fp);
 
     }
-
-    RunRecorderGetMeasures(
-      recorder,
-      "RoomTemperature",
-      fp);
-    printf(
-      "Saved measures to %s\n",
-      testGetMeasuresCSV);
-    fclose(fp);
 
   } CatchDefault {
 

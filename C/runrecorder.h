@@ -224,22 +224,26 @@ void RunRecorderDeleteMeasure(
         sqlite3_int64 const measure);
 
 // Get the measures of a project as a CSV formatted string and memorise it
-// in a string or write it on a stream
+// in a string or write it on a stream formatted as:
+// Metric1&Metric2&...
+// Value1_1&Value1_2&...
+// Value2_1&Value2_2&...
+// ...
 // Inputs:
-//      that: the struct RunRecorder
-//   project: the project's name
-//    target: pointer to the string (freed and dynamically allocated)
-//            or the stream to write on
+//         that: the struct RunRecorder
+//      project: the project's name
+//   str/stream: pointer to the string (freed and dynamically allocated)
+//               or the stream to write on
 // Raise:
 
 void RunRecorderGetMeasuresStr(
   struct RunRecorder* const that,
           char const* const project,
-                     char** target);
+                     char** str);
 void RunRecorderGetMeasuresStream(
   struct RunRecorder* const that,
           char const* const project,
-                      FILE* target);
+                      FILE* stream);
 #define RunRecorderGetMeasures(R, P, T) _Generic(T, \
   char**: RunRecorderGetMeasuresStr, \
   FILE*: RunRecorderGetMeasuresStream)(R, P, T)
