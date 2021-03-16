@@ -491,63 +491,37 @@ function GetMeasures($db, $project) {
     $refProject = GetRefProject($db, $project);
 
     // Get the metrics for the project
-    $rows = $db->query(
-      'SELECT Ref, Label, DefaultValue FROM _Metric WHERE RefProject = ' .
-      $refProject . ' ORDER BY Label');
+    $cmd = 'SELECT Label FROM _Metric WHERE RefProject = ' .
+      $refProject . ' ORDER BY Label';
+    $rows = $db->query($cmd);
     if ($rows === false) {
-      throw new Exception("query() failed");
+      throw new Exception("query(" . $cmd . ") failed");
     }
     $labels = array();
-    $refs = array();
-    $defs = array();
     while ($row = $rows->fetchArray()) {
-
       array_push($labels, $row["Label"]);
-      array_push($refs, $row["Ref"]);
-      array_push($defs, $row["DefaultValue"]);
-
     }
     $csv = implode('&', $labels) . "\xA";
 
     // Get the measures for the project
-    $rows = $db->query(
-      'SELECT Ref FROM _Measure WHERE RefProject = ' .
-      $refProject . ' ORDER BY DateMeasure, Ref');
+    $cmd = 'SELECT Ref';
+    // Loop on the metrics
+    foreach ($labels as $label) {
+      $cmd .= ', ' . $label;
+    }
+    $cmd .= ' FROM ' . $project;
+
+    $rows = $db->query($cmd);
     if ($rows === false) {
-      throw new Exception("query() failed");
+      throw new Exception("query(" . $cmd . ") failed");
     }
     while ($row = $rows->fetchArray()) {
 
       // Loop on the metrics
-      $vals = array();
-      foreach ($refs as $iMetric => $refMetric) {
-
-        // Get the value of this measure for this metric
-        $rowsVal = $db->query(
-          'SELECT Value FROM _Value WHERE RefMeasure = ' .
-          $row["Ref"] . ' AND RefMetric = ' . $refMetric);
-        if ($rows === false) {
-          throw new Exception("query() failed");
-        }
-
-        // If there is a value for this metric
-        $rowVal = $rowsVal->fetchArray();
-        if ($row !== false) {
-
-          $val = $rowVal["Value"];
-
-        // Else, there is no value for this metric
-        } else {
-
-          // Use the default value instead
-          $val = $defs[$iMetric];
-
-        }
-
-        array_push($vals, $val);
-
+      $vals = [];
+      foreach ($labels as $label) {
+        array_push($vals, $row[$label]);
       }
-
       $csv .= implode('&', $vals) . "\xA";
 
     }
