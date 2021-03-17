@@ -63,7 +63,7 @@ struct RunRecorderPairsRefVal {
   long* refs;
 
   // Array of values
-  char** vals;
+  char** values;
 
 };
 
@@ -78,7 +78,24 @@ struct RunRecorderMeasure {
   char** metrics;
 
   // Array of values
-  char** vals;
+  char** values;
+
+};
+
+// Structure to memorise the data of one project
+struct RunRecorderData {
+
+  // Number of measures
+  long nbMeasure;
+
+  // Number of metrics
+  long nbMetric;
+
+  // Array of metrics label
+  char** metrics;
+
+  // Array of array of values, to be used as values[iMeasure][iMetric]
+  char*** values;
 
 };
 
@@ -223,30 +240,17 @@ void RunRecorderDeleteMeasure(
   struct RunRecorder* const that,
         sqlite3_int64 const measure);
 
-// Get the measures of a project as a CSV formatted string and memorise it
-// in a string or write it on a stream formatted as:
-// Metric1&Metric2&...
-// Value1_1&Value1_2&...
-// Value2_1&Value2_2&...
-// ...
+// Get the measures of a project
 // Inputs:
 //         that: the struct RunRecorder
 //      project: the project's name
-//   str/stream: pointer to the string (freed and dynamically allocated)
-//               or the stream to write on
+// Output:
+//   Return the measures as a struct RunRecorderData
 // Raise:
 
-void RunRecorderGetMeasuresStr(
+struct RunRecorderData* RunRecorderGetMeasures(
   struct RunRecorder* const that,
-          char const* const project,
-                     char** str);
-void RunRecorderGetMeasuresStream(
-  struct RunRecorder* const that,
-          char const* const project,
-                      FILE* stream);
-#define RunRecorderGetMeasures(R, P, T) _Generic(T, \
-  char**: RunRecorderGetMeasuresStr, \
-  FILE*: RunRecorderGetMeasuresStream)(R, P, T)
+          char const* const project);
 
 // Create a static struct RunRecorderPairsRefVal
 // Output:
@@ -302,6 +306,33 @@ void RunRecorderMeasureAddValueFloat(
   long: RunRecorderMeasureAddValueInt, \
   float: RunRecorderMeasureAddValueFloat, \
   double: RunRecorderMeasureAddValueFloat)(T, M, V)
+
+// Create a static struct RunRecorderData
+// Output:
+//   Return the new struct RunRecorderData
+struct RunRecorderData* RunRecorderDataCreate(
+  void);
+
+// Free a static struct RunRecorderData
+// Input:
+//   that: the struct RunRecorderData
+void RunRecorderDataFree(
+  struct RunRecorderData** that);
+
+// Print a struct RunRecorderData on a stream in CSV format as:
+// Metric1&Metric2&...
+// Value1_1&Value1_2&...
+// Value2_1&Value2_2&...
+// ...
+// Inputs:
+//     that: the struct RunRecorderData
+//   stream: the stream to write on
+// Raise:
+
+void RunRecorderDataPrintCSV(
+  struct RunRecorderData const* const that,
+                          FILE* const stream);
+
 
 // End of the guard against multiple inclusion
 #endif

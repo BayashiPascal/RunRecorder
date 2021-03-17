@@ -925,7 +925,7 @@ bool RunRecorderPairsRefValContainsVal(
     int retCmp =
       strcmp(
         val,
-        that->vals[iPair]);
+        that->values[iPair]);
     if (retCmp == 0) {
 
       // Return true
@@ -1018,11 +1018,11 @@ void RunRecorderPairsRefValAdd(
       pairs->refs,
       sizeof(long) * (pairs->nb + 1));
   if (refs == NULL) Raise(TryCatchExc_MallocFailed);
-  char** vals =
+  char** values =
     realloc(
-      pairs->vals,
+      pairs->values,
       sizeof(char*) * (pairs->nb + 1));
-  if (vals == NULL) {
+  if (values == NULL) {
 
     free(refs);
     Raise(TryCatchExc_MallocFailed);
@@ -1030,16 +1030,16 @@ void RunRecorderPairsRefValAdd(
   }
 
   pairs->refs = refs;
-  pairs->vals = vals;
-  pairs->vals[pairs->nb] = NULL;
+  pairs->values = values;
+  pairs->values[pairs->nb] = NULL;
 
   // Update the number of pairs
   ++(pairs->nb);
 
   // Set the reference and value of the pair
   pairs->refs[pairs->nb - 1] = ref;
-  pairs->vals[pairs->nb - 1] = strdup(val);
-  if (pairs->vals[pairs->nb - 1] == NULL) Raise(TryCatchExc_MallocFailed);
+  pairs->values[pairs->nb - 1] = strdup(val);
+  if (pairs->values[pairs->nb - 1] == NULL) Raise(TryCatchExc_MallocFailed);
 
 }
 
@@ -1327,7 +1327,7 @@ struct RunRecorderPairsRefVal* RunRecorderPairsRefValCreate(
   // Initialise properties
   pairs->nb = 0;
   pairs->refs = NULL;
-  pairs->vals = NULL;
+  pairs->values = NULL;
 
   // Return the new struct RunRecorderPairsRefVal
   return pairs;
@@ -1343,7 +1343,7 @@ void RunRecorderPairsRefValFree(
   // If the struct is not already freed
   if (that != NULL && *that != NULL) {
 
-    if ((*that)->vals != NULL) {
+    if ((*that)->values != NULL) {
 
       // Loop on the pairs
       for (
@@ -1352,14 +1352,14 @@ void RunRecorderPairsRefValFree(
         ++iPair) {
 
         // Free the value
-        free((*that)->vals[iPair]);
+        free((*that)->values[iPair]);
 
       }
 
     }
 
     // Free memory
-    free((*that)->vals);
+    free((*that)->values);
     free((*that)->refs);
     free(*that);
     *that = NULL;
@@ -1596,7 +1596,7 @@ void RunRecorderUpdateViewProject(
     char* cmd =
       realloc(
         that->cmd,
-        strlen(that->cmd) + strlen(metrics->vals[iMetric]) + 2);
+        strlen(that->cmd) + strlen(metrics->values[iMetric]) + 2);
     if (cmd == NULL) {
 
       RunRecorderPairsRefValFree(&metrics);
@@ -1612,7 +1612,7 @@ void RunRecorderUpdateViewProject(
     sprintf(
       ptrEnd,
       ",%s",
-      metrics->vals[iMetric]);
+      metrics->values[iMetric]);
 
   }
 
@@ -1928,7 +1928,7 @@ struct RunRecorderMeasure* RunRecorderMeasureCreate(
   // Initialise properties
   measure->nbVal = 0;
   measure->metrics = NULL;
-  measure->vals = NULL;
+  measure->values = NULL;
 
   // Return the new struct RunRecorderMeasure
   return measure;
@@ -1959,7 +1959,7 @@ void RunRecorderMeasureFree(
 
     }
 
-    if ((*that)->vals != NULL) {
+    if ((*that)->values != NULL) {
 
       // Loop on the measure
       for (
@@ -1968,7 +1968,7 @@ void RunRecorderMeasureFree(
         ++iVal) {
 
         // Free the value
-        free((*that)->vals[iVal]);
+        free((*that)->values[iVal]);
 
       }
 
@@ -1976,7 +1976,7 @@ void RunRecorderMeasureFree(
 
     // Free memory
     free((*that)->metrics);
-    free((*that)->vals);
+    free((*that)->values);
     free(*that);
     *that = NULL;
 
@@ -2002,11 +2002,11 @@ void RunRecorderMeasureAddValueStr(
       that->metrics,
       sizeof(char*) * (that->nbVal + 1));
   if (metrics == NULL) Raise(TryCatchExc_MallocFailed);
-  char** vals =
+  char** values =
     realloc(
-      that->vals,
+      that->values,
       sizeof(char*) * (that->nbVal + 1));
-  if (vals == NULL) {
+  if (values == NULL) {
 
     free(metrics);
     Raise(TryCatchExc_MallocFailed);
@@ -2014,9 +2014,9 @@ void RunRecorderMeasureAddValueStr(
   }
 
   that->metrics = metrics;
-  that->vals = vals;
+  that->values = values;
   that->metrics[that->nbVal] = NULL;
-  that->vals[that->nbVal] = NULL;
+  that->values[that->nbVal] = NULL;
 
   // Update the number of values
   ++(that->nbVal);
@@ -2024,8 +2024,8 @@ void RunRecorderMeasureAddValueStr(
   // Set the reference and value of the measure
   that->metrics[that->nbVal - 1] = strdup(metric);
   if (that->metrics[that->nbVal - 1] == NULL) Raise(TryCatchExc_MallocFailed);
-  that->vals[that->nbVal - 1] = strdup(val);
-  if (that->vals[that->nbVal - 1] == NULL) Raise(TryCatchExc_MallocFailed);
+  that->values[that->nbVal - 1] = strdup(val);
+  if (that->values[that->nbVal - 1] == NULL) Raise(TryCatchExc_MallocFailed);
 
 }
 
@@ -2180,7 +2180,7 @@ void RunRecorderAddMeasureLocal(
     free(that->cmd);
     that->cmd = malloc(
       strlen(cmdValBase) + strlen(refMeasureStr) +
-      strlen(measure->vals[iVal]) + strlen(measure->metrics[iVal]) + 1);
+      strlen(measure->values[iVal]) + strlen(measure->metrics[iVal]) + 1);
     if (that->cmd == NULL) {
 
       hasFailed = true;
@@ -2191,7 +2191,7 @@ void RunRecorderAddMeasureLocal(
         that->cmd,
         cmdValBase,
         refMeasureStr,
-        measure->vals[iVal],
+        measure->values[iVal],
         measure->metrics[iVal]);
 
       // Execute the command to add the value
@@ -2250,7 +2250,7 @@ void RunRecorderAddMeasureAPI(
     // '-2' for the replaced '%s'
     lenStrValues += strlen(cmdFormatVal) +
       strlen(measure->metrics[iVal]) - 2 +
-      strlen(measure->vals[iVal]) - 2;
+      strlen(measure->values[iVal]) - 2;
 
   }
 
@@ -2278,7 +2278,7 @@ void RunRecorderAddMeasureAPI(
       ptrEnd,
       cmdFormatVal,
       measure->metrics[iVal],
-      measure->vals[iVal]);
+      measure->values[iVal]);
 
   }
 
@@ -2500,39 +2500,64 @@ static int RunRecorderGetMeasuresLocalCb(
   (void)colName;
 
   // Cast the data
-  char** measures = (char**)data;
+  struct RunRecorderData** measures = (char**)data;
 
   // If the arguments are invalid
   // Return non zero to trigger SQLITE_ABORT in the calling function
-  if (nbCol == 0 || colVal == NULL) return 1;
+  if (nbCol == 0 || colVal == NULL || colName == NULL) return 1;
 
-  // Add the measure to the measures
   Try {
 
+    // If the measures are not allocated yet
+    if (*measures == NULL) {
+
+      // Allocate memory for the measures
+      *measures = RunRecorderDataCreate();
+      if (*measures == NULL) Raise(TryCatchExc_MallocFailed);
+
+      // Copy the metrics label
+      (*measures)->nbMetric = nbCol;
+      (*measures)->metrics = malloc(sizeof(char*) * nbCol);
+      if ((*measures)->metrics == NULL) Raise(TryCatchExc_MallocFailed);
+      for (
+        int iCol = 0;
+        iCol < nbCol;
+        ++iCol) {
+
+        (*measures)->metrics[iCol] = strdup(colName[iCol]);
+        if ((*measures)->metrics[iCol] == NULL) Raise(TryCatchExc_MallocFailed);
+
+      }
+
+    }
+
+    // Allocate memory for the received measure's values
+    char*** values =
+      realloc(
+        (*measures)->values,
+        sizeof(char**) * ((*measures)->nbMeasure + 1));
+    if (values == NULL) Raise(TryCatchExc_MallocFailed);
+    (*measures)->values = values;
+    (*measures)->values[(*measures)->nbMeasure] = malloc(sizeof(char*) * nbCol);
+    for (
+      int iCol = 0;
+      iCol < nbCol;
+      ++iCol) (*measures)->values[(*measures)->nbMeasure][iCol] = NULL;
+
+    // Add the values of the received measure
     for (
       int iCol = 0;
       iCol < nbCol;
       ++iCol) {
 
-      char* measure =
-        realloc(
-          *measures,
-          strlen(*measures) + strlen(colVal[iCol]) + 2);
-      if (measure == NULL) Raise(TryCatchExc_MallocFailed);
-      *measures = measure;
-      char* ptrEnd =
-        strchr(
-          *measures,
-          '\0');
-      char sep = '&';
-      if (iCol == nbCol -1) sep = '\n';
-      sprintf(
-        ptrEnd,
-        "%s%c",
-        colVal[iCol],
-        sep);
+      (*measures)->values[(*measures)->nbMeasure][iCol] = strdup(colVal[iCol]);
+      if ((*measures)->values[(*measures)->nbMeasure][iCol] == NULL)
+        Raise(TryCatchExc_MallocFailed);
 
     }
+
+    // Update the number of measure
+    ++((*measures)->nbMeasure);
 
   } CatchDefault {
 
@@ -2545,22 +2570,20 @@ static int RunRecorderGetMeasuresLocalCb(
 
 }
 
-// Get the measures of a project in a local database as a CSV formatted
-// string and memorise it in a string formatted as:
-// Metric1&Metric2&...
-// Value1_1&Value1_2&...
-// Value2_1&Value2_2&...
-// ...
+// Get the measures of a project from a local database
 // Inputs:
-//      that: the struct RunRecorder
-//   project: the project's name
-//       str: pointer to the string (freed and dynamically allocated)
+//         that: the struct RunRecorder
+//      project: the project's name
+// Output:
+//   Return the measures as a struct RunRecorderData
 // Raise:
 
-void RunRecorderGetMeasuresStrLocal(
+struct RunRecorderData* RunRecorderGetMeasuresLocal(
   struct RunRecorder* const that,
-          char const* const project,
-                     char** str) {
+          char const* const project) {
+
+  // Declate the struct RunRecorderData to memorise the measures
+  struct RunRecorderData* measures = NULL;
 
   // Get the list of metrics for the project
   struct RunRecorderPairsRefVal* metrics =
@@ -2568,11 +2591,11 @@ void RunRecorderGetMeasuresStrLocal(
       that,
       project);
 
-  // Create the request and the header of the result
-  free(that->cmd);
+  // Create the request
   Try {
 
     char* cmdFormatHead = "SELECT ";
+    free(that->cmd);
     that->cmd = malloc(strlen(cmdFormatHead) + 1);
     if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
     sprintf(
@@ -2585,57 +2608,32 @@ void RunRecorderGetMeasuresStrLocal(
       iMetric < metrics->nb;
       ++iMetric) {
 
-      size_t len = strlen(metrics->vals[iMetric]) + 2;
-      if (*str != NULL) len += strlen(*str);
-      char* measures =
-        realloc(
-          *str,
-          len);
-      if (measures == NULL) Raise(TryCatchExc_MallocFailed);
-      char* ptrEnd = measures;
-      if (*str != NULL) {
-
-        ptrEnd =
-          strchr(
-            measures,
-            '\0');
-
-      }
-
-      *str = measures;
-
-      char sep = '&';
-      if (iMetric == metrics->nb - 1) sep = '\n';
-      sprintf(
-        ptrEnd,
-        "%s%c",
-        metrics->vals[iMetric],
-        sep);
-
-      len = strlen(metrics->vals[iMetric]) + 2;
-      if (that->cmd != NULL) len += strlen(that->cmd);
+      size_t len = strlen(metrics->values[iMetric]) + 2 + strlen(that->cmd);
       char* cmd =
         realloc(
           that->cmd,
           len);
       if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
       that->cmd = cmd;
-      ptrEnd = 
+      char* ptrEnd = 
         strchr(
           that->cmd,
           '\0');
 
-      sep = ',';
-      if (iMetric == metrics->nb - 1) sep = '\0';
+      char sep = ',';
+      if (iMetric == metrics->nb - 1) sep = ' ';
       sprintf(
         ptrEnd,
         "%s%c",
-        metrics->vals[iMetric],
+        metrics->values[iMetric],
         sep);
 
     }
 
-    char* cmdFormatTail = " FROM %s";
+    // Free memory
+    RunRecorderPairsRefValFree(&metrics);
+
+    char* cmdFormatTail = "FROM %s";
     char* cmd =
       realloc(
         that->cmd,
@@ -2659,79 +2657,39 @@ void RunRecorderGetMeasuresStrLocal(
 
   } EndTryWithDefault;
 
-  // Free memory
-  RunRecorderPairsRefValFree(&metrics);
-
   // Execute the request
   int retExec =
     sqlite3_exec(
       that->db,
       that->cmd,
       RunRecorderGetMeasuresLocalCb,
-      str,
+      &measures,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(TryCatchExc_SQLRequestFailed);
 
-}
-
-// Get the measures of a project in a local database as a CSV formatted
-// string and write it on a stream formatted as:
-// Metric1&Metric2&...
-// Value1_1&Value1_2&...
-// Value2_1&Value2_2&...
-// ...
-// Inputs:
-//      that: the struct RunRecorder
-//   project: the project's name
-//    stream: the stream
-// Raise:
-
-void RunRecorderGetMeasuresStreamLocal(
-  struct RunRecorder* const that,
-          char const* const project,
-                      FILE* stream) {
-
-  // Get the measurements as a string
-  char* measures = NULL;
-  RunRecorderGetMeasuresStrLocal(
-    that,
-    project,
-    &measures);
-
-  // Write the measures on the stream
-  int ret =
-    fprintf(
-      stream,
-      "%s",
-      measures);
-  if (ret < 0) {
-
-    free(measures);
-    Raise(TryCatchExc_IOError);
-
-  }
-
-  // Free memory
-  free(measures);
+  // Return the measures
+  return measures;
 
 }
 
-// Get the measures of a project through the Web API as a CSV formatted
-// string and memorise it in a string formatted as:
-// Metric1&Metric2&...
-// Value1_1&Value1_2&...
-// Value2_1&Value2_2&...
-// ...
+struct RunRecorder* RunRecorderCSVToData(
+  char const* const csv) {
+
+  return NULL;
+
+}
+
+// Get the measures of a project through the Web API
 // Inputs:
-//      that: the struct RunRecorder
-//   project: the project's name
-//    target: pointer to the string (freed and dynamically allocated)
+//         that: the struct RunRecorder
+//      project: the project's name
+// Output:
+//   Return the measures as a struct RunRecorderData
 // Raise:
 
-void RunRecorderGetMeasuresStrAPI(
+struct RunRecorderData* RunRecorderGetMeasuresAPI(
   struct RunRecorder* const that,
-          char const* const project,
-                     char** str) {
+          char const* const project) {
 
   // Create the request to the Web API
   // '-2' in the malloc for the replaced '%s'
@@ -2752,134 +2710,181 @@ void RunRecorderGetMeasuresStrAPI(
     that,
     false);
 
-  // Move the returned data to the target
-  *str = that->curlReply;
-  that->curlReply = NULL;
+  // Convert the CSV data into a struct RunRecorderData
+  struct RunRecorder* data = RunRecorderCSVToData(that->curlReply);
+
+  // Return the struct RunRecorderData
+  return data;
 
 }
 
-// Get the measures of a project through the Web API as a CSV formatted
-// string and write it on a stream formatted as:
-// Metric1&Metric2&...
-// Value1_1&Value1_2&...
-// Value2_1&Value2_2&...
-// ...
+// Get the measures of a project
 // Inputs:
-//      that: the struct RunRecorder
-//   project: the project's name
-//    stream: the stream to write on
+//         that: the struct RunRecorder
+//      project: the project's name
+// Output:
+//   Return the measures as a struct RunRecorderData
 // Raise:
-void RunRecorderGetMeasuresStreamAPI(
+
+struct RunRecorderData* RunRecorderGetMeasures(
   struct RunRecorder* const that,
-          char const* const project,
-                      FILE* stream) {
+          char const* const project) {
 
-  // Get the measurements as a string
-  char* measures = NULL;
-  RunRecorderGetMeasuresStrAPI(
-    that,
-    project,
-    &measures);
+  // Ensure errMsg is freed
+  sqlite3_free(that->sqliteErrMsg);
+  free(that->errMsg);
 
-  // Write the measures on the stream
-  int ret =
-    fprintf(
-      stream,
-      "%s",
-      measures);
-  if (ret < 0) {
+  // If the RunRecorder uses a local database
+  if (RunRecorderUsesAPI(that) == false) {
 
-    free(measures);
-    Raise(TryCatchExc_IOError);
+    return
+      RunRecorderGetMeasuresLocal(
+        that,
+        project);
+
+  // Else, the RunRecorder uses the Web API
+  } else {
+
+    return
+      RunRecorderGetMeasuresAPI(
+        that,
+        project);
+
+  }
+
+}
+
+// Create a static struct RunRecorderData
+// Output:
+//   Return the new struct RunRecorderData
+struct RunRecorderData* RunRecorderDataCreate(
+  void) {
+
+  // Declare the new struct RunRecorderData
+  struct RunRecorderData* that = malloc(sizeof(struct RunRecorderData));
+
+  // Init properties
+  that->nbMetric = 0;
+  that->nbMeasure = 0;
+  that->metrics = NULL;
+  that->values = NULL;
+
+  // Return the new struct RunRecorderData
+  return that;
+
+}
+
+// Free a static struct RunRecorderData
+// Input:
+//   that: the struct RunRecorderData
+void RunRecorderDataFree(
+  struct RunRecorderData** that) {
+
+  // Free the metrics label
+  if ((*that)->metrics != NULL) {
+
+    for (
+      long iMetric = 0;
+      iMetric < (*that)->nbMetric;
+      ++iMetric) {
+
+      free((*that)->metrics[iMetric]);
+
+    }
+
+    free((*that)->metrics);
+
+  }
+
+  // Free the values
+  if ((*that)->values != NULL) {
+
+    for (
+      long iMeasure = 0;
+      iMeasure < (*that)->nbMeasure;
+      ++iMeasure) {
+
+      for (
+        long iMetric = 0;
+        iMetric < (*that)->nbMetric;
+        ++iMetric) {
+
+        free((*that)->values[iMeasure][iMetric]);
+
+      }
+
+      free((*that)->values[iMeasure]);
+
+    }
+
+    free((*that)->values);
 
   }
 
   // Free memory
-  free(measures);
+  free(*that);
+  *that = NULL;
 
 }
 
-// Get the measures of a project as a CSV formatted string through the Web
-// API or from a local database and memorise it in a string formatted as:
+// Print a struct RunRecorderData on a stream in CSV format as:
 // Metric1&Metric2&...
 // Value1_1&Value1_2&...
 // Value2_1&Value2_2&...
 // ...
 // Inputs:
-//      that: the struct RunRecorder
-//   project: the project's name
-//       str: pointer to the string (freed and dynamically allocated)
+//     that: the struct RunRecorderData
+//   stream: the stream to write on
 // Raise:
 
-void RunRecorderGetMeasuresStr(
-  struct RunRecorder* const that,
-          char const* const project,
-                     char** str) {
+void RunRecorderDataPrintCSV(
+  struct RunRecorderData const* const that,
+                          FILE* const stream) {
 
-  // Ensure errMsg is freed
-  sqlite3_free(that->sqliteErrMsg);
-  free(that->errMsg);
+  // Print the metrics label
+  if (that->metrics != NULL) {
 
-  // Free the string to memorise the measures
-  free(*str);
-  *str = NULL;
+    char sep = '&';
+    for (
+      long iMetric = 0;
+      iMetric < that->nbMetric;
+      ++iMetric) {
 
-  // If the RunRecorder uses a local database
-  if (RunRecorderUsesAPI(that) == false) {
+      if (iMetric == that->nbMetric - 1) sep = '\n';
+      fprintf(
+        stream,
+        "%s%c",
+        that->metrics[iMetric],
+        sep);
 
-    RunRecorderGetMeasuresStrLocal(
-      that,
-      project,
-      str);
-
-  // Else, the RunRecorder uses the Web API
-  } else {
-
-    RunRecorderGetMeasuresStrAPI(
-      that,
-      project,
-      str);
+    }
 
   }
 
-}
+  // Print the values
+  if (that->values != NULL) {
 
-// Get the measures of a project as a CSV formatted string through the Web
-// API or from a local database and write it on a stream formatted as:
-// Metric1&Metric2&...
-// Value1_1&Value1_2&...
-// Value2_1&Value2_2&...
-// ...
-// Inputs:
-//      that: the struct RunRecorder
-//   project: the project's name
-//    stream: the stream
-// Raise:
+    for (
+      long iMeasure = 0;
+      iMeasure < that->nbMeasure;
+      ++iMeasure) {
 
-void RunRecorderGetMeasuresStream(
-  struct RunRecorder* const that,
-          char const* const project,
-                      FILE* stream) {
+      char sep = '&';
+      for (
+        long iMetric = 0;
+        iMetric < that->nbMetric;
+        ++iMetric) {
 
-  // Ensure errMsg is freed
-  sqlite3_free(that->sqliteErrMsg);
-  free(that->errMsg);
+        if (iMetric == that->nbMetric - 1) sep = '\n';
+        fprintf(
+          stream,
+          "%s%c",
+          that->values[iMeasure][iMetric],
+          sep);
 
-  // If the RunRecorder uses a local database
-  if (RunRecorderUsesAPI(that) == false) {
+      }
 
-    RunRecorderGetMeasuresStreamLocal(
-      that,
-      project,
-      stream);
-
-  // Else, the RunRecorder uses the Web API
-  } else {
-
-    RunRecorderGetMeasuresStreamAPI(
-      that,
-      project,
-      stream);
+    }
 
   }
 

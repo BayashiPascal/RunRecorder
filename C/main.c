@@ -2,7 +2,12 @@
 #include "runrecorder.h"
 
 // Main function
-int main() {
+int main(
+     int argc,
+  char** argv) {
+
+  // Unused parameters
+  (void)argc; (void)argv;
 
   // Path to the SQLite database local file or Web API
   char const* pathDb = "./runrecorder.db";
@@ -145,9 +150,12 @@ int main() {
       printf(
         "ref: %ld label: %s\n",
         projects->refs[iProject],
-        projects->vals[iProject]);
+        projects->values[iProject]);
 
     }
+
+    // Free memory
+    RunRecorderPairsRefValFree(&projects);
 
   } CatchDefault {
 
@@ -178,6 +186,7 @@ int main() {
     exit(EXIT_FAILURE);
 
   } EndTryWithDefault;
+
 
   // Create new metrics
   Try {
@@ -255,9 +264,12 @@ int main() {
       printf(
         "ref: %ld label: %s\n",
         metrics->refs[iMetric],
-        metrics->vals[iMetric]);
+        metrics->values[iMetric]);
 
     }
+
+    // Free memory
+    RunRecorderPairsRefValFree(&metrics);
 
   } CatchDefault {
 
@@ -284,7 +296,6 @@ int main() {
     }
 
     RunRecorderPairsRefValFree(&metrics);
-    RunRecorderPairsRefValFree(&projects);
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
@@ -310,8 +321,8 @@ int main() {
     printf(
       "Added measure ref. %lld\n",
       recorder->refLastAddedMeasure);
-
     RunRecorderMeasureFree(&measure);
+
     measure = RunRecorderMeasureCreate();
     RunRecorderMeasureAddValue(
       measure,
@@ -328,6 +339,7 @@ int main() {
     printf(
       "Added measure ref. %lld\n",
       recorder->refLastAddedMeasure);
+    RunRecorderMeasureFree(&measure);
 
   } CatchDefault {
 
@@ -356,8 +368,6 @@ int main() {
     }
 
     RunRecorderMeasureFree(&measure);
-    RunRecorderPairsRefValFree(&metrics);
-    RunRecorderPairsRefValFree(&projects);
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
@@ -397,55 +407,25 @@ int main() {
 
     }
 
-    RunRecorderMeasureFree(&measure);
-    RunRecorderPairsRefValFree(&metrics);
-    RunRecorderPairsRefValFree(&projects);
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
   } EndTryWithDefault;
 
   // Get the measures
-  char* measures = NULL;
+  struct RunRecorderData* measures = NULL;
   Try {
 
-    RunRecorderGetMeasures(
-      recorder,
-      "RoomTemperature",
-      &measures);
-    if (measures == NULL) {
-
-      printf("No measures\n");
-
-    } else {
-
-      printf(
-        "measures:\n\%s",
-        measures);
-      free(measures);
-
-      char* testGetMeasuresCSV = "./testGetMeasures.csv";
-      FILE* fp =
-        fopen(
-          testGetMeasuresCSV,
-          "w");
-      if (fp == NULL) {
-
-        fprintf(
-          stderr,
-          "Couldn't open %s\n",
-          testGetMeasuresCSV);
-
-      }
-
+    measures =
       RunRecorderGetMeasures(
         recorder,
-        "RoomTemperature",
-        fp);
-      printf(
-        "Saved measures to %s\n",
-        testGetMeasuresCSV);
-      fclose(fp);
+        "RoomTemperature");
+    if (measures != NULL) {
+
+      RunRecorderDataPrintCSV(
+        measures,
+        stdout);
+      RunRecorderDataFree(&measures);
 
     }
 
@@ -473,19 +453,14 @@ int main() {
 
     }
 
-    RunRecorderMeasureFree(&measure);
-    RunRecorderPairsRefValFree(&metrics);
-    RunRecorderPairsRefValFree(&projects);
+    RunRecorderDataFree(&measures);
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
   } EndTryWithDefault;
 
   // Free memory
-  RunRecorderMeasureFree(&measure);
   RunRecorderFree(&recorder);
-  RunRecorderPairsRefValFree(&projects);
-  RunRecorderPairsRefValFree(&metrics);
 
   return EXIT_SUCCESS;
 
