@@ -41,6 +41,7 @@ char* TryCatchExceptionStr[TryCatchExc_LastID] = {
   "TryCatchExc_MallocFailed",
   "TryCatchExc_InvalidProjectName",
   "TryCatchExc_ProjectNameAlreadyUsed",
+  "TryCatchExc_FlushProjectFailed",
   "TryCatchExc_AddProjectFailed",
   "TryCatchExc_AddMetricFailed",
   "TryCatchExc_UpdateViewFailed",

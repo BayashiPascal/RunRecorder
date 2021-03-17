@@ -2,6 +2,10 @@
 #include "runrecorder.h"
 
 // Helper function to commonalize code during exception management
+// Inputs:
+//     caller: string to identify the calling portion of code
+//   recorder: the struct RunRecorder used to print info related to the
+//             exception
 void PrintCaughtException(
                 char const* const caller,
   struct RunRecorder const* const recorder) {
@@ -10,7 +14,7 @@ void PrintCaughtException(
     stderr,
     "Caught exception %s during %s.\n",
     TryCatchExceptionToStr(TryCatchGetLastExc()),
-    recorder);
+    caller);
   if (recorder->errMsg != NULL) {
 
     fprintf(
@@ -50,8 +54,8 @@ int main(
 
     // Give pathApi in argument if you want to use the Web API instead
     // of a local file
-    //recorder = RunRecorderCreate(pathDb);
-    recorder = RunRecorderCreate(pathApi);
+    recorder = RunRecorderCreate(pathDb);
+    //recorder = RunRecorderCreate(pathApi);
 
     // Initialise the struct RunRecorder
     RunRecorderInit(recorder);

@@ -3089,6 +3089,107 @@ void RunRecorderFlushProjectLocal(
   struct RunRecorder* const that,
           char const* const project) {
 
+  // Create the SQL command to delete values
+  char* cmdFormatValue =
+    "DELETE FROM _Value WHERE RefMeasure IN "
+    "(SELECT _Measure.Ref FROM _Measure, _Project "
+    "WHERE _Measure.RefProject = _Project.Ref "
+    "AND _Project.Label = \"%s\")";
+  free(that->cmd);
+  that->cmd = malloc(strlen(cmdFormatValue) + strlen(project) - 1);
+  if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
+  sprintf(
+    that->cmd,
+    cmdFormatValue,
+    project);
+
+  // Execute the command to delete values
+  int retExec =
+    sqlite3_exec(
+      that->db,
+      that->cmd,
+      // No callback
+      NULL,
+      // No user data
+      NULL,
+      &(that->sqliteErrMsg));
+  if (retExec != SQLITE_OK) Raise(TryCatchExc_FlushProjectFailed);
+
+  // Create the SQL command to delete measures
+  char* cmdFormatMeasure =
+    "DELETE FROM _Measure WHERE Ref IN "
+    "(SELECT _Measure.Ref FROM _Measure, _Project "
+    "WHERE _Measure.RefProject = _Project.Ref "
+    "AND _Project.Label = \"%s\")";
+  free(that->cmd);
+  that->cmd = malloc(strlen(cmdFormatMeasure) + strlen(project) - 1);
+  if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
+  sprintf(
+    that->cmd,
+    cmdFormatMeasure,
+    project);
+
+  // Execute the command to delete measures
+  retExec =
+    sqlite3_exec(
+      that->db,
+      that->cmd,
+      // No callback
+      NULL,
+      // No user data
+      NULL,
+      &(that->sqliteErrMsg));
+  if (retExec != SQLITE_OK) Raise(TryCatchExc_FlushProjectFailed);
+
+  // Create the SQL command to delete metrics
+  char* cmdFormatMetric =
+    "DELETE FROM _Metric WHERE RefProject = "
+    "(SELECT Ref FROM _Project "
+    "WHERE _Project.Label = \"%s\")";
+  free(that->cmd);
+  that->cmd = malloc(strlen(cmdFormatMetric) + strlen(project) - 1);
+  if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
+  sprintf(
+    that->cmd,
+    cmdFormatMetric,
+    project);
+
+  // Execute the command to delete metrics
+  retExec =
+    sqlite3_exec(
+      that->db,
+      that->cmd,
+      // No callback
+      NULL,
+      // No user data
+      NULL,
+      &(that->sqliteErrMsg));
+  if (retExec != SQLITE_OK) Raise(TryCatchExc_FlushProjectFailed);
+
+  // Create the SQL command to delete the project
+  char* cmdFormatProject =
+    "DELETE FROM _Project "
+    "WHERE _Project.Label = \"%s\"";
+  free(that->cmd);
+  that->cmd = malloc(strlen(cmdFormatProject) + strlen(project) - 1);
+  if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
+  sprintf(
+    that->cmd,
+    cmdFormatProject,
+    project);
+
+  // Execute the command to delete the project
+  retExec =
+    sqlite3_exec(
+      that->db,
+      that->cmd,
+      // No callback
+      NULL,
+      // No user data
+      NULL,
+      &(that->sqliteErrMsg));
+  if (retExec != SQLITE_OK) Raise(TryCatchExc_FlushProjectFailed);
+
 }
 
 // Remove a project through the Web API
