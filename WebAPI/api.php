@@ -546,11 +546,11 @@ function GetMeasures($db, $project) {
     while ($row = $rows->fetchArray()) {
 
       // Loop on the metrics
-      $vals = [];
+      $values = [];
       foreach ($res["labels"] as $label) {
-        array_push($vals, $row[$label]);
+        array_push($values, $row[$label]);
       }
-      array_push($res["values"], $vals);
+      array_push($res["values"], $values);
 
     }
 

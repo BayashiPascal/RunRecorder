@@ -2513,12 +2513,15 @@ static int RunRecorderGetMeasuresLocalCb(
 
       // Allocate memory for the measures
       *measures = RunRecorderDataCreate();
-      if (*measures == NULL) Raise(TryCatchExc_MallocFailed);
 
       // Copy the metrics label
       (*measures)->nbMetric = nbCol;
       (*measures)->metrics = malloc(sizeof(char*) * nbCol);
       if ((*measures)->metrics == NULL) Raise(TryCatchExc_MallocFailed);
+      for (
+        int iCol = 0;
+        iCol < nbCol;
+        ++iCol) (*measures)->metrics[iCol] = NULL;
       for (
         int iCol = 0;
         iCol < nbCol;
@@ -2539,6 +2542,8 @@ static int RunRecorderGetMeasuresLocalCb(
     if (values == NULL) Raise(TryCatchExc_MallocFailed);
     (*measures)->values = values;
     (*measures)->values[(*measures)->nbMeasure] = malloc(sizeof(char*) * nbCol);
+    if ((*measures)->values[(*measures)->nbMeasure] == NULL)
+      Raise(TryCatchExc_MallocFailed);
     for (
       int iCol = 0;
       iCol < nbCol;
@@ -2672,10 +2677,169 @@ struct RunRecorderData* RunRecorderGetMeasuresLocal(
 
 }
 
-struct RunRecorder* RunRecorderCSVToData(
-  char const* const csv) {
+// Helper function to commonalize code in RunRecorderCSVToData
+// Inputs
+//   csv: Pointer to the start of the row in CSV data
+//   tgt: The array of char* where to copy the values
+//   sep: The separator character
+// Output:
+//   Return a pointer to the end of the row
+// Raise:
 
-  return NULL;
+char const* RunRecorderSplitCSVRowToData(
+   char const* csv,
+  char** const tgt,
+    char const sep) {
+
+  // Extract the metrics label
+  long iCol = 0;
+  char const* ptr = csv;
+  while (*ptr != '\n') {
+
+    // Get the next separator
+    char const* ptrSep = ptr;
+    if (ptr != csv) ++ptrSep;
+    while (*ptrSep != sep && *ptrSep != '\n' && *ptrSep != '\0') ++ptrSep;
+
+    // If the next separator is the current position or the next character
+    if (ptrSep == ptr || ptrSep == ptr + 1) {
+
+      // The column is empty
+      tgt[iCol] = malloc(1);
+      if (tgt[iCol] == NULL) Raise(TryCatchExc_MallocFailed);
+      tgt[iCol][0] = '\0';
+
+    // Else the next separator if more than 1 character away
+    } else {
+
+      // If the current position is still on the last separator, increment it
+      if (*ptr == sep || *ptr == '\n') ++ptr;
+
+      // Get the length of the column
+      size_t len = ptrSep - ptr;
+
+      // Allocate memory for the value
+      tgt[iCol] = malloc(len + 1);
+      if (tgt[iCol] == NULL) Raise(TryCatchExc_MallocFailed);
+
+      // Copy the value
+      memcpy(
+        tgt[iCol],
+        ptr,
+        len);
+      tgt[iCol][len] = '\0';
+
+    }
+
+    // Move to the next column
+    ++iCol;
+    ptr = ptrSep;
+
+    // To escape an empty first column
+    if (ptr == csv) ++ptr;
+
+  }
+
+  // Skip the line return
+  if (*ptr == '\n') ++ptr;
+
+  // Return the pointer to the end of the row
+  return ptr;
+
+}
+
+
+// Convert CSV data to a new struct RunRecorderData. The CSV data are
+// expected to be formatted as:
+// Metric1&Metric2&...
+// Value1_1&Value1_2&...
+// Value2_1&Value2_2&...
+// ...
+// Inputs:
+//   csv: the CSV data
+//   sep: the separator between columns ('&' in the example above)
+// Output:
+//   Return a newly allocated RunRecorderData
+// Raise:
+
+struct RunRecorderData* RunRecorderCSVToData(
+  char const* const csv,
+         char const sep) {
+
+  // Calculate the number of columns
+  long nbCol = 1;
+  char const* ptr = csv;
+  while (*ptr != '\n' && *ptr != '\0') {
+
+    if (*ptr == sep) ++nbCol;
+    ++ptr;
+
+  }
+
+  // Skip the line return of the header
+  if (*ptr == '\n') ++ptr;
+
+  // Calculate the number of measures
+  long nbMeasure = 0;
+  do {
+
+    if (*ptr == '\n') ++nbMeasure;
+    ++ptr;
+
+  } while (*ptr != '\0');
+
+  // Allocate memory for the result struct RunRecorderData
+  struct RunRecorderData* measures = RunRecorderDataCreate();
+  measures->nbMetric = nbCol;
+  measures->nbMeasure = nbMeasure;
+  measures->metrics = malloc(sizeof(char*) * nbCol);
+  if (measures->metrics == NULL) Raise(TryCatchExc_MallocFailed);
+  for (
+    long iCol = 0;
+    iCol < nbCol;
+    ++iCol) measures->metrics[iCol] = NULL;
+  measures->values = malloc(sizeof(char**) * nbMeasure);
+  if (measures->values == NULL) Raise(TryCatchExc_MallocFailed);
+  for (
+    long iCol = 0;
+    iCol < nbCol;
+    ++iCol) measures->values[iCol] = NULL;
+  for (
+    long iMeasure = 0;
+    iMeasure < nbMeasure;
+    ++iMeasure) {
+
+    measures->values[iMeasure] = malloc(sizeof(char**) * nbCol);
+    if (measures->values[iMeasure] == NULL) Raise(TryCatchExc_MallocFailed);
+    for (
+      long iCol = 0;
+      iCol < nbCol;
+      ++iCol) measures->values[iMeasure][iCol] = NULL;
+
+  }
+
+  // Extract the metrics label
+  ptr =
+    RunRecorderSplitCSVRowToData(
+      csv,
+      measures->metrics,
+      sep);
+
+  // Extract the measures' values
+  long iMeasure = 0;
+  while (*ptr != '\0') {
+
+    ptr =
+      RunRecorderSplitCSVRowToData(
+        ptr,
+        measures->values[iMeasure],
+        sep);
+    ++iMeasure;
+
+  }
+
+  // Return the result struct RunRecorderData
+  return measures;
 
 }
 
@@ -2711,7 +2875,10 @@ struct RunRecorderData* RunRecorderGetMeasuresAPI(
     false);
 
   // Convert the CSV data into a struct RunRecorderData
-  struct RunRecorder* data = RunRecorderCSVToData(that->curlReply);
+  struct RunRecorderData* data =
+    RunRecorderCSVToData(
+      that->curlReply,
+      '&');
 
   // Return the struct RunRecorderData
   return data;
@@ -2804,16 +2971,20 @@ void RunRecorderDataFree(
       iMeasure < (*that)->nbMeasure;
       ++iMeasure) {
 
-      for (
-        long iMetric = 0;
-        iMetric < (*that)->nbMetric;
-        ++iMetric) {
+      if ((*that)->values[iMeasure] != NULL) {
 
-        free((*that)->values[iMeasure][iMetric]);
+        for (
+          long iMetric = 0;
+          iMetric < (*that)->nbMetric;
+          ++iMetric) {
+
+          free((*that)->values[iMeasure][iMetric]);
+
+        }
+
+        free((*that)->values[iMeasure]);
 
       }
-
-      free((*that)->values[iMeasure]);
 
     }
 
