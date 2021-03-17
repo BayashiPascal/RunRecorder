@@ -479,11 +479,39 @@ function DeleteMeasure($db, $measure) {
 
 }
 
+// Get the list measures for a project as CSV
+function GetMeasuresAsCSV($db, $project, $sep) {
+
+  $res = array();
+
+  try {
+
+    $measures = GetMeasures($db, $project);
+    if ($measures["ret"] != "0") {
+      return $measures;
+    } 
+    $csv = implode($sep, $measures["labels"]) . "\xA";
+    foreach ($measures["values"] as $measure) {
+      $csv .= implode('&', $measure) . "\xA";
+    }
+    $res = $csv;
+
+  } catch (Exception $e) {
+
+    $res["ret"] = "1";
+    $res["errMsg"] = "line " . $e->getLine() . ": " . $e->getMessage();
+    $res = json_encode($res);
+
+  }
+
+  return $res;
+
+}
+
 // Get the list measures for a project
 function GetMeasures($db, $project) {
 
   $res = array();
-  $csv = "";
 
   try {
 
@@ -497,16 +525,15 @@ function GetMeasures($db, $project) {
     if ($rows === false) {
       throw new Exception("query(" . $cmd . ") failed");
     }
-    $labels = array();
+    $res["labels"] = array();
     while ($row = $rows->fetchArray()) {
-      array_push($labels, $row["Label"]);
+      array_push($res["labels"], $row["Label"]);
     }
-    $csv = implode('&', $labels) . "\xA";
 
     // Get the measures for the project
     $cmd = 'SELECT Ref';
     // Loop on the metrics
-    foreach ($labels as $label) {
+    foreach ($res["labels"] as $label) {
       $cmd .= ', ' . $label;
     }
     $cmd .= ' FROM ' . $project;
@@ -515,24 +542,24 @@ function GetMeasures($db, $project) {
     if ($rows === false) {
       throw new Exception("query(" . $cmd . ") failed");
     }
+    $res["values"] = array();
     while ($row = $rows->fetchArray()) {
 
       // Loop on the metrics
       $vals = [];
-      foreach ($labels as $label) {
+      foreach ($res["labels"] as $label) {
         array_push($vals, $row[$label]);
       }
-      $csv .= implode('&', $vals) . "\xA";
+      array_push($res["values"], $vals);
 
     }
 
-    $res = $csv;
+    $res["ret"] = "0";
 
   } catch (Exception $e) {
 
     $res["ret"] = "1";
     $res["errMsg"] = "line " . $e->getLine() . ": " . $e->getMessage();
-    $res = json_encode($res);
 
   }
 
@@ -659,10 +686,16 @@ try {
       $res = DeleteMeasure($db, $_POST["measure"]);
       echo json_encode($res);
 
-    } else if ($_POST["action"] == "csv" and 
+    } else if ($_POST["action"] == "measures" and 
                isset($_POST["project"])) {
 
       $res = GetMeasures($db, $_POST["project"]);
+      echo json_encode($res);
+
+    } else if ($_POST["action"] == "csv" and 
+               isset($_POST["project"])) {
+
+      $res = GetMeasuresAsCSV($db, $_POST["project"], '&');
       echo $res;
 
     } else if ($_POST["action"] == "flush" and 
