@@ -252,6 +252,16 @@ struct RunRecorderData* RunRecorderGetMeasures(
   struct RunRecorder* const that,
           char const* const project);
 
+// Remove a project
+// Inputs:
+//         that: the struct RunRecorder
+//      project: the project's name
+// Raise:
+
+void RunRecorderFlushProject(
+  struct RunRecorder* const that,
+          char const* const project);
+
 // Create a static struct RunRecorderPairsRefVal
 // Output:
 //   Return the new struct RunRecorderPairsRefVal

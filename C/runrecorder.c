@@ -298,6 +298,20 @@ void RunRecorderFree(
 
 }
 
+// Free the error messages of a struct RunRecorder
+// Input:
+//   that: The struct RunRecorder to be freed
+void RunRecorderFreeErrMsg(
+  struct RunRecorder* const that) {
+
+  // Free the error messages
+  free(that->errMsg);
+  that->errMsg = NULL;
+  sqlite3_free(that->sqliteErrMsg);
+  that->sqliteErrMsg = NULL;
+
+}
+
 // Check if a struct RunRecorder uses a local SQLite database or the 
 // Web API
 // Input:
@@ -433,9 +447,9 @@ void RunRecorderUpgradeDb(
 char* RunRecorderGetVersion(
   struct RunRecorder* const that) {
 
-  // Ensure errMsg is freed
-  sqlite3_free(that->sqliteErrMsg);
-  free(that->errMsg);
+  // Ensure the error messages are freed to avoid confusion with
+  // eventual previous messages
+  RunRecorderFreeErrMsg(that);
 
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {
@@ -961,9 +975,9 @@ void RunRecorderAddProject(
   struct RunRecorder* const that,
   char const* const name) {
 
-  // Ensure errMsg is freed
-  sqlite3_free(that->sqliteErrMsg);
-  free(that->errMsg);
+  // Ensure the error messages are freed to avoid confusion with
+  // eventual previous messages
+  RunRecorderFreeErrMsg(that);
 
   // Check the name
   bool isValidName = RunRecorderIsValidLabel(name);
@@ -1297,6 +1311,10 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjectsAPI(
 struct RunRecorderPairsRefVal* RunRecorderGetProjects(
   struct RunRecorder* const that) {
 
+  // Ensure the error messages are freed to avoid confusion with
+  // eventual previous messages
+  RunRecorderFreeErrMsg(that);
+
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {
 
@@ -1496,9 +1514,9 @@ struct RunRecorderPairsRefVal* RunRecorderGetMetrics(
   struct RunRecorder* const that,
           char const* const project) {
 
-  // Ensure errMsg is freed
-  sqlite3_free(that->sqliteErrMsg);
-  free(that->errMsg);
+  // Ensure the error messages are freed to avoid confusion with
+  // eventual previous messages
+  RunRecorderFreeErrMsg(that);
 
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {
@@ -1864,9 +1882,9 @@ void RunRecorderAddMetric(
           char const* const label,
           char const* const defaultVal) {
 
-  // Ensure errMsg is freed
-  sqlite3_free(that->sqliteErrMsg);
-  free(that->errMsg);
+  // Ensure the error messages are freed to avoid confusion with
+  // eventual previous messages
+  RunRecorderFreeErrMsg(that);
 
   // Check the label
   bool isValidLabel = RunRecorderIsValidLabel(label);
@@ -2458,9 +2476,9 @@ void RunRecorderDeleteMeasure(
   struct RunRecorder* const that,
         sqlite3_int64 const measure) {
 
-  // Ensure errMsg is freed
-  sqlite3_free(that->sqliteErrMsg);
-  free(that->errMsg);
+  // Ensure the error messages are freed to avoid confusion with
+  // eventual previous messages
+  RunRecorderFreeErrMsg(that);
 
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {
@@ -2897,9 +2915,9 @@ struct RunRecorderData* RunRecorderGetMeasures(
   struct RunRecorder* const that,
           char const* const project) {
 
-  // Ensure errMsg is freed
-  sqlite3_free(that->sqliteErrMsg);
-  free(that->errMsg);
+  // Ensure the error messages are freed to avoid confusion with
+  // eventual previous messages
+  RunRecorderFreeErrMsg(that);
 
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {
@@ -3056,6 +3074,81 @@ void RunRecorderDataPrintCSV(
       }
 
     }
+
+  }
+
+}
+
+// Remove a project from a local database
+// Inputs:
+//         that: the struct RunRecorder
+//      project: the project's name
+// Raise:
+
+void RunRecorderFlushProjectLocal(
+  struct RunRecorder* const that,
+          char const* const project) {
+
+}
+
+// Remove a project through the Web API
+// Inputs:
+//         that: the struct RunRecorder
+//      project: the project's name
+// Raise:
+
+void RunRecorderFlushProjectAPI(
+  struct RunRecorder* const that,
+          char const* const project) {
+
+  // Create the request to the Web API
+  // '-2' in the malloc for the replaced '%s'
+  char* cmdFormat = "action=flush&project=%s";
+  free(that->cmd);
+  that->cmd = malloc(strlen(cmdFormat) + strlen(project) - 2 + 1);
+  if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
+  sprintf(
+    that->cmd,
+    cmdFormat,
+    project);
+  RunRecorderSetAPIReqPostVal(
+    that,
+    that->cmd);
+
+  // Send the request to the API
+  RunRecorderSendAPIReq(
+    that,
+    true);
+
+}
+
+// Remove a project
+// Inputs:
+//         that: the struct RunRecorder
+//      project: the project's name
+// Raise:
+
+void RunRecorderFlushProject(
+  struct RunRecorder* const that,
+          char const* const project) {
+
+  // Ensure the error messages are freed to avoid confusion with
+  // eventual previous messages
+  RunRecorderFreeErrMsg(that);
+
+  // If the RunRecorder uses a local database
+  if (RunRecorderUsesAPI(that) == false) {
+
+    RunRecorderFlushProjectLocal(
+      that,
+      project);
+
+  // Else, the RunRecorder uses the Web API
+  } else {
+
+    RunRecorderFlushProjectAPI(
+      that,
+      project);
 
   }
 

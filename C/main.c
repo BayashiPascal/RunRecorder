@@ -1,6 +1,36 @@
 #include <stdio.h>
 #include "runrecorder.h"
 
+// Helper function to commonalize code during exception management
+void PrintCaughtException(
+                char const* const caller,
+  struct RunRecorder const* const recorder) {
+
+  fprintf(
+    stderr,
+    "Caught exception %s during %s.\n",
+    TryCatchExceptionToStr(TryCatchGetLastExc()),
+    recorder);
+  if (recorder->errMsg != NULL) {
+
+    fprintf(
+      stderr,
+      "%s\n",
+      recorder->errMsg);
+
+  }
+
+  if (recorder->sqliteErrMsg != NULL) {
+
+    fprintf(
+      stderr,
+      "%s\n",
+      recorder->sqliteErrMsg);
+
+  }
+
+}
+
 // Main function
 int main(
      int argc,
@@ -28,28 +58,9 @@ int main(
 
   } CatchDefault {
 
-    fprintf(
-      stderr,
-      "Caught exception %s during RunRecorderInit.\n",
-      TryCatchExceptionToStr(TryCatchGetLastExc()));
-    if (recorder->errMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->errMsg);
-
-    }
-
-    if (recorder->sqliteErrMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->sqliteErrMsg);
-
-    }
-
+    PrintCaughtException(
+      "RunRecorderInit",
+      recorder);
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
@@ -66,28 +77,9 @@ int main(
 
   } CatchDefault {
 
-    fprintf(
-      stderr,
-      "Caught exception %s during RunRecorderGetVersion.\n",
-      TryCatchExceptionToStr(TryCatchGetLastExc()));
-    if (recorder->errMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->errMsg);
-
-    }
-
-    if (recorder->sqliteErrMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->sqliteErrMsg);
-
-    }
-
+    PrintCaughtException(
+      "RunRecorderGetVersion",
+      recorder);
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
@@ -110,28 +102,9 @@ int main(
 
   } CatchDefault {
 
-    fprintf(
-      stderr,
-      "Caught exception %s during RunRecorderAddProject.\n",
-      TryCatchExceptionToStr(TryCatchGetLastExc()));
-    if (recorder->errMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->errMsg);
-
-    }
-
-    if (recorder->sqliteErrMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->sqliteErrMsg);
-
-    }
-
+    PrintCaughtException(
+      "RunRecorderAddProject",
+      recorder);
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
@@ -159,28 +132,9 @@ int main(
 
   } CatchDefault {
 
-    fprintf(
-      stderr,
-      "Caught exception %s during RunRecorderGetProjects.\n",
-      TryCatchExceptionToStr(TryCatchGetLastExc()));
-    if (recorder->errMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->errMsg);
-
-    }
-
-    if (recorder->sqliteErrMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->sqliteErrMsg);
-
-    }
-
+    PrintCaughtException(
+      "RunRecorderGetProjects",
+      recorder);
     RunRecorderPairsRefValFree(&projects);
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
@@ -221,28 +175,9 @@ int main(
 
   } CatchDefault {
 
-    fprintf(
-      stderr,
-      "Caught exception %s during RunRecorderAddMetric.\n",
-      TryCatchExceptionToStr(TryCatchGetLastExc()));
-    if (recorder->errMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->errMsg);
-
-    }
-
-    if (recorder->sqliteErrMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->sqliteErrMsg);
-
-    }
-
+    PrintCaughtException(
+      "RunRecorderAddMetric",
+      recorder);
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
@@ -273,28 +208,9 @@ int main(
 
   } CatchDefault {
 
-    fprintf(
-      stderr,
-      "Caught exception %s during RunRecorderGetMetrics.\n",
-      TryCatchExceptionToStr(TryCatchGetLastExc()));
-    if (recorder->errMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->errMsg);
-
-    }
-
-    if (recorder->sqliteErrMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->sqliteErrMsg);
-
-    }
-
+    PrintCaughtException(
+      "RunRecorderGetMetrics",
+      recorder);
     RunRecorderPairsRefValFree(&metrics);
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
@@ -343,30 +259,9 @@ int main(
 
   } CatchDefault {
 
-    fprintf(
-      stderr,
-      "Caught exception %s during RunRecorderAddMeasure.\n"
-      "last measure reference is %lld\n",
-      TryCatchExceptionToStr(TryCatchGetLastExc()),
-      recorder->refLastAddedMeasure);
-    if (recorder->errMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->errMsg);
-
-    }
-
-    if (recorder->sqliteErrMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->sqliteErrMsg);
-
-    }
-
+    PrintCaughtException(
+      "RunRecorderAddMeasure",
+      recorder);
     RunRecorderMeasureFree(&measure);
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
@@ -385,28 +280,9 @@ int main(
 
   } CatchDefault {
 
-    fprintf(
-      stderr,
-      "Caught exception %s during RunRecorderDeleteMeasure.\n",
-      TryCatchExceptionToStr(TryCatchGetLastExc()));
-    if (recorder->errMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->errMsg);
-
-    }
-
-    if (recorder->sqliteErrMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->sqliteErrMsg);
-
-    }
-
+    PrintCaughtException(
+      "RunRecorderDeleteMeasure",
+      recorder);
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
@@ -431,29 +307,28 @@ int main(
 
   } CatchDefault {
 
-    fprintf(
-      stderr,
-      "Caught exception %s during RunRecorderGetMeasures.\n",
-      TryCatchExceptionToStr(TryCatchGetLastExc()));
-    if (recorder->errMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->errMsg);
-
-    }
-
-    if (recorder->sqliteErrMsg != NULL) {
-
-      fprintf(
-        stderr,
-        "%s\n",
-        recorder->sqliteErrMsg);
-
-    }
-
+    PrintCaughtException(
+      "RunRecorderGetMeasures",
+      recorder);
     RunRecorderDataFree(&measures);
+    RunRecorderFree(&recorder);
+    exit(EXIT_FAILURE);
+
+  } EndTryWithDefault;
+
+  // Delete the project
+  Try {
+
+    RunRecorderFlushProject(
+      recorder,
+      "RoomTemperature");
+    printf("Deleted project RoomTemperature\n");
+
+  } CatchDefault {
+
+    PrintCaughtException(
+      "RunRecorderFlushProject",
+      recorder);
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
