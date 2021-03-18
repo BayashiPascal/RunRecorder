@@ -1579,8 +1579,8 @@ void RunRecorderUpdateViewProject(
   char* cmdAddFormatBody = ") AS SELECT _Measure.Ref ";
   char* cmdAddFormatVal =
     ",IFNULL((SELECT Value FROM _Value "
-    "WHERE RefMeasure=_Measure.Ref AND RefMetric=%s),"
-    "(SELECT DefaultValue FROM _Metric WHERE Ref=%s)) ";
+    "WHERE RefMeasure=_Measure.Ref AND RefMetric=%ld),"
+    "(SELECT DefaultValue FROM _Metric WHERE Ref=%ld)) ";
   char* cmdAddFormatTail =
     "FROM _Measure ORDER BY _Measure.DateMeasure, _Measure.Ref";
 
@@ -1662,35 +1662,22 @@ void RunRecorderUpdateViewProject(
     iMetric < metrics->nb;
     ++iMetric) {
 
-    // Get the metric reference as a string
+    // Get the length of the metric reference as a string
     size_t lenRefMetricStr =
       snprintf(
         NULL,
         0,
         "%ld",
         metrics->refs[iMetric]);
-    char* refMetricStr = malloc(lenRefMetricStr);
-    if (refMetricStr == NULL) {
-
-      RunRecorderPairsRefValFree(&metrics);
-      Raise(TryCatchExc_MallocFailed);
-
-    }
-
-    sprintf(
-      refMetricStr,
-      "%ld",
-      metrics->refs[iMetric]);
 
     // Extend the command with the metric related body part
     cmd =
       realloc(
         that->cmd,
         strlen(that->cmd) + strlen(cmdAddFormatVal) +
-        strlen(refMetricStr) - 4 + 1);
+        lenRefMetricStr * 2 - 4 + 1);
     if (cmd == NULL) {
 
-      free(refMetricStr);
       RunRecorderPairsRefValFree(&metrics);
       Raise(TryCatchExc_MallocFailed);
 
@@ -1704,9 +1691,8 @@ void RunRecorderUpdateViewProject(
     sprintf(
       ptrEnd,
       cmdAddFormatVal,
-      refMetricStr,
-      refMetricStr);
-    free(refMetricStr);
+      metrics->refs[iMetric],
+      metrics->refs[iMetric]);
 
   }
 
@@ -2518,7 +2504,7 @@ static int RunRecorderGetMeasuresLocalCb(
   (void)colName;
 
   // Cast the data
-  struct RunRecorderData** measures = (char**)data;
+  struct RunRecorderData** measures = (struct RunRecorderData**)data;
 
   // If the arguments are invalid
   // Return non zero to trigger SQLITE_ABORT in the calling function
@@ -2593,20 +2579,22 @@ static int RunRecorderGetMeasuresLocalCb(
 
 }
 
-// Get the measures of a project from a local database
+// Helper function to commonalize code between GetMeasures and
+// GetLastMeasures
 // Inputs:
-//         that: the struct RunRecorder
-//      project: the project's name
+//        that: the struct RunRecorder
+//     project: the project's name
+//   nbMeasure: the number of measures returned, if 0 all measures are
+//              returned
 // Output:
-//   Return the measures as a struct RunRecorderData
+//   Set the SQL command in that->cmd to get measures as a struct
+//    RunRecorderData
 // Raise:
 
-struct RunRecorderData* RunRecorderGetMeasuresLocal(
+void RunRecorderSetCmdToGetMeasuresLocal(
   struct RunRecorder* const that,
-          char const* const project) {
-
-  // Declate the struct RunRecorderData to memorise the measures
-  struct RunRecorderData* measures = NULL;
+          char const* const project,
+                 long const nbMeasure) {
 
   // Get the list of metrics for the project
   struct RunRecorderPairsRefVal* metrics =
@@ -2673,12 +2661,85 @@ struct RunRecorderData* RunRecorderGetMeasuresLocal(
       cmdFormatTail,
       project);
 
+    // If there is a limit on the number of measures to be returned
+    if (nbMeasure > 0) {
+
+      // Get the length of nbMeasure converted as a string
+      size_t lenNbMeasureStr =
+        snprintf(
+          NULL,
+          0,
+          "%ld",
+          nbMeasure);
+
+      char* cmdLimit = " ORDER BY Ref DESC LIMIT %ld";
+      char* cmd =
+        realloc(
+          that->cmd,
+          strlen(that->cmd) +
+          strlen(cmdLimit) - 2 + lenNbMeasureStr + 1);
+      if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
+      that->cmd = cmd;
+      char* ptrEnd =
+        strchr(
+          that->cmd,
+          '\0');
+      sprintf(
+        ptrEnd,
+        cmdLimit,
+        nbMeasure);
+
+    // Else, there is no limit on the number of measures to be returned
+    } else {
+
+      char* cmdLimit = " ORDER BY Ref ASC";
+      char* cmd =
+        realloc(
+          that->cmd,
+          strlen(that->cmd) + strlen(cmdLimit) + 1);
+      if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
+      that->cmd = cmd;
+      char* ptrEnd =
+        strchr(
+          that->cmd,
+          '\0');
+      sprintf(
+        ptrEnd,
+        "%s",
+        cmdLimit);
+
+    }
+
   } CatchDefault {
 
     RunRecorderPairsRefValFree(&metrics);
     Raise(TryCatchGetLastExc());
 
   } EndTryWithDefault;
+
+}
+
+// Get the measures of a project from a local database
+// Inputs:
+//         that: the struct RunRecorder
+//      project: the project's name
+// Output:
+//   Return the measures as a struct RunRecorderData
+// Raise:
+
+struct RunRecorderData* RunRecorderGetMeasuresLocal(
+  struct RunRecorder* const that,
+          char const* const project) {
+
+  // Declate the struct RunRecorderData to memorise the measures
+  struct RunRecorderData* measures = NULL;
+
+  // Create the request with no limit on the number of returned measures
+  long nbMeasure = 0;
+  RunRecorderSetCmdToGetMeasuresLocal(
+    that,
+    project,
+    nbMeasure);
 
   // Execute the request
   int retExec =
@@ -2819,9 +2880,9 @@ struct RunRecorderData* RunRecorderCSVToData(
   measures->values = malloc(sizeof(char**) * nbMeasure);
   if (measures->values == NULL) Raise(TryCatchExc_MallocFailed);
   for (
-    long iCol = 0;
-    iCol < nbCol;
-    ++iCol) measures->values[iCol] = NULL;
+    long iMeasure = 0;
+    iMeasure < nbMeasure;
+    ++iMeasure) measures->values[iMeasure] = NULL;
   for (
     long iMeasure = 0;
     iMeasure < nbMeasure;
@@ -2934,6 +2995,141 @@ struct RunRecorderData* RunRecorderGetMeasures(
       RunRecorderGetMeasuresAPI(
         that,
         project);
+
+  }
+
+}
+
+// Get the most recent measures of a project from a local database
+// Inputs:
+//        that: the struct RunRecorder
+//     project: the project's name
+//   nbMeasure: the number of measures to be returned
+// Output:
+//   Return the measures as a struct RunRecorderData, ordered from the
+//   most recent to the oldest
+// Raise:
+
+struct RunRecorderData* RunRecorderGetLastMeasuresLocal(
+  struct RunRecorder* const that,
+          char const* const project,
+                 long const nbMeasure) {
+
+  // Declate the struct RunRecorderData to memorise the measures
+  struct RunRecorderData* measures = NULL;
+
+  // Create the request with no limit on the number of returned measures
+  RunRecorderSetCmdToGetMeasuresLocal(
+    that,
+    project,
+    nbMeasure);
+
+  // Execute the request
+  int retExec =
+    sqlite3_exec(
+      that->db,
+      that->cmd,
+      RunRecorderGetMeasuresLocalCb,
+      &measures,
+      &(that->sqliteErrMsg));
+  if (retExec != SQLITE_OK) Raise(TryCatchExc_SQLRequestFailed);
+
+  // Return the measures
+  return measures;
+
+}
+
+// Get the most recent measures of a project through the Web API
+// Inputs:
+//        that: the struct RunRecorder
+//     project: the project's name
+//   nbMeasure: the number of measures to be returned
+// Output:
+//   Return the measures as a struct RunRecorderData, ordered from the
+//   most recent to the oldest
+// Raise:
+
+struct RunRecorderData* RunRecorderGetLastMeasuresAPI(
+  struct RunRecorder* const that,
+          char const* const project,
+                 long const nbMeasure) {
+
+  // Get the length of nbMeasure converted as a string
+  size_t lenNbMeasureStr =
+    snprintf(
+      NULL,
+      0,
+      "%ld",
+      nbMeasure);
+
+  // Create the request to the Web API
+  // '-2' in the malloc for the replaced '%s' and '%ld'
+  char* cmdFormat = "action=csv&project=%s&last=%ld";
+  free(that->cmd);
+  that->cmd = malloc(strlen(cmdFormat) + strlen(project) - 2 + 
+    lenNbMeasureStr - 2 + 1);
+  if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
+  sprintf(
+    that->cmd,
+    cmdFormat,
+    project,
+    nbMeasure);
+  RunRecorderSetAPIReqPostVal(
+    that,
+    that->cmd);
+
+  // Send the request to the API
+  RunRecorderSendAPIReq(
+    that,
+    false);
+
+  // Convert the CSV data into a struct RunRecorderData
+  struct RunRecorderData* data =
+    RunRecorderCSVToData(
+      that->curlReply,
+      '&');
+
+  // Return the struct RunRecorderData
+  return data;
+
+}
+
+// Get the most recent measures of a project
+// Inputs:
+//        that: the struct RunRecorder
+//     project: the project's name
+//   nbMeasure: the number of measures to be returned
+// Output:
+//   Return the measures as a struct RunRecorderData, ordered from the
+//   most recent to the oldest
+// Raise:
+
+struct RunRecorderData* RunRecorderGetLastMeasures(
+  struct RunRecorder* const that,
+          char const* const project,
+                 long const nbMeasure) {
+
+  // Ensure the error messages are freed to avoid confusion with
+  // eventual previous messages
+  RunRecorderFreeErrMsg(that);
+
+  // If the RunRecorder uses a local database
+  if (RunRecorderUsesAPI(that) == false) {
+
+    return
+      RunRecorderGetLastMeasuresLocal(
+        that,
+        project,
+        nbMeasure);
+
+  // Else, the RunRecorder uses the Web API
+  } else {
+
+    return
+      RunRecorderGetLastMeasuresAPI(
+        that,
+        project,
+        nbMeasure);
 
   }
 

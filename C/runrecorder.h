@@ -252,6 +252,21 @@ struct RunRecorderData* RunRecorderGetMeasures(
   struct RunRecorder* const that,
           char const* const project);
 
+// Get the most recent measures of a project
+// Inputs:
+//        that: the struct RunRecorder
+//     project: the project's name
+//   nbMeasure: the number of measures to be returned
+// Output:
+//   Return the measures as a struct RunRecorderData, ordered from the
+//   most recent to the oldest
+// Raise:
+
+struct RunRecorderData* RunRecorderGetLastMeasures(
+  struct RunRecorder* const that,
+          char const* const project,
+                 long const nbMeasure);
+
 // Remove a project
 // Inputs:
 //         that: the struct RunRecorder

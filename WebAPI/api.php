@@ -486,7 +486,7 @@ function GetMeasuresAsCSV($db, $project, $sep) {
 
   try {
 
-    $measures = GetMeasures($db, $project);
+    $measures = GetMeasures($db, $project, 0);
     if ($measures["ret"] != "0") {
       return $measures;
     } 
@@ -509,7 +509,7 @@ function GetMeasuresAsCSV($db, $project, $sep) {
 }
 
 // Get the list measures for a project
-function GetMeasures($db, $project) {
+function GetMeasures($db, $project, $nbMeasure) {
 
   $res = array();
 
@@ -537,6 +537,14 @@ function GetMeasures($db, $project) {
       $cmd .= ', ' . $label;
     }
     $cmd .= ' FROM ' . $project;
+
+    // If there is a limit on the number of returned measures
+    if ($nbMeasure > 0) {
+      $cmd .= ' ORDER BY Ref DESC LIMIT ' . $nbMeasure;
+    // Else, there is no limit on the number of returned measures
+    } else {
+      $cmd .= ' ORDER BY Ref ASC';
+    }
 
     $rows = $db->query($cmd);
     if ($rows === false) {
@@ -689,7 +697,10 @@ try {
     } else if ($_POST["action"] == "measures" and 
                isset($_POST["project"])) {
 
-      $res = GetMeasures($db, $_POST["project"]);
+      // If the user hasn't specified a limit for the number of returned
+      // measure, set it by default to 0
+      if (!isset($_POST["last"])) $_POST["last"] = 0;
+      $res = GetMeasures($db, $_POST["project"], $_POST["last"]);
       echo json_encode($res);
 
     } else if ($_POST["action"] == "csv" and 
