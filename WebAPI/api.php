@@ -526,6 +526,7 @@ function GetMeasures($db, $project, $nbMeasure) {
       throw new Exception("query(" . $cmd . ") failed");
     }
     $res["labels"] = array();
+    array_push($res["labels"], "Ref");
     while ($row = $rows->fetchArray()) {
       array_push($res["labels"], $row["Label"]);
     }
@@ -541,9 +542,6 @@ function GetMeasures($db, $project, $nbMeasure) {
     // If there is a limit on the number of returned measures
     if ($nbMeasure > 0) {
       $cmd .= ' ORDER BY Ref DESC LIMIT ' . $nbMeasure;
-    // Else, there is no limit on the number of returned measures
-    } else {
-      $cmd .= ' ORDER BY Ref ASC';
     }
 
     $rows = $db->query($cmd);

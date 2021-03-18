@@ -82,8 +82,8 @@ struct RunRecorderMeasure {
 
 };
 
-// Structure to memorise the data of one project
-struct RunRecorderData {
+// Structure to memorise the measures of one project
+struct RunRecorderMeasures {
 
   // Number of measures
   long nbMeasure;
@@ -245,10 +245,10 @@ void RunRecorderDeleteMeasure(
 //         that: the struct RunRecorder
 //      project: the project's name
 // Output:
-//   Return the measures as a struct RunRecorderData
+//   Return the measures as a struct RunRecorderMeasures
 // Raise:
 
-struct RunRecorderData* RunRecorderGetMeasures(
+struct RunRecorderMeasures* RunRecorderGetMeasures(
   struct RunRecorder* const that,
           char const* const project);
 
@@ -258,11 +258,11 @@ struct RunRecorderData* RunRecorderGetMeasures(
 //     project: the project's name
 //   nbMeasure: the number of measures to be returned
 // Output:
-//   Return the measures as a struct RunRecorderData, ordered from the
+//   Return the measures as a struct RunRecorderMeasures, ordered from the
 //   most recent to the oldest
 // Raise:
 
-struct RunRecorderData* RunRecorderGetLastMeasures(
+struct RunRecorderMeasures* RunRecorderGetLastMeasures(
   struct RunRecorder* const that,
           char const* const project,
                  long const nbMeasure);
@@ -332,30 +332,30 @@ void RunRecorderMeasureAddValueFloat(
   float: RunRecorderMeasureAddValueFloat, \
   double: RunRecorderMeasureAddValueFloat)(T, M, V)
 
-// Create a static struct RunRecorderData
+// Create a static struct RunRecorderMeasures
 // Output:
-//   Return the new struct RunRecorderData
-struct RunRecorderData* RunRecorderDataCreate(
+//   Return the new struct RunRecorderMeasures
+struct RunRecorderMeasures* RunRecorderMeasuresCreate(
   void);
 
-// Free a static struct RunRecorderData
+// Free a static struct RunRecorderMeasures
 // Input:
-//   that: the struct RunRecorderData
-void RunRecorderDataFree(
-  struct RunRecorderData** that);
+//   that: the struct RunRecorderMeasures
+void RunRecorderMeasuresFree(
+  struct RunRecorderMeasures** that);
 
-// Print a struct RunRecorderData on a stream in CSV format as:
+// Print a struct RunRecorderMeasures on a stream in CSV format as:
 // Metric1&Metric2&...
 // Value1_1&Value1_2&...
 // Value2_1&Value2_2&...
 // ...
 // Inputs:
-//     that: the struct RunRecorderData
+//     that: the struct RunRecorderMeasures
 //   stream: the stream to write on
 // Raise:
 
-void RunRecorderDataPrintCSV(
-  struct RunRecorderData const* const that,
+void RunRecorderMeasuresPrintCSV(
+  struct RunRecorderMeasures const* const that,
                           FILE* const stream);
 
 

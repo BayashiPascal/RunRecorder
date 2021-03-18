@@ -269,32 +269,30 @@ void RunRecorderInit(
 void RunRecorderFree(
   struct RunRecorder** const that) {
 
-  // If the struct RunRecorder is not already freed
-  if (*that != NULL) {
+  // If it's already freed, nothing to do
+  if (that == NULL || *that == NULL) return;
 
-    // Free memory used by the properties
-    free((*that)->url);
-    free((*that)->errMsg);
-    sqlite3_free((*that)->sqliteErrMsg);
-    free((*that)->curlReply);
-    free((*that)->cmd);
+  // Free memory used by the properties
+  free((*that)->url);
+  free((*that)->errMsg);
+  sqlite3_free((*that)->sqliteErrMsg);
+  free((*that)->curlReply);
+  free((*that)->cmd);
 
-    // Close the connection to the local database if it was opened
-    if ((*that)->db != NULL) sqlite3_close((*that)->db);
+  // Close the connection to the local database if it was opened
+  if ((*that)->db != NULL) sqlite3_close((*that)->db);
 
-    // Clean up the curl instance if it was created
-    if ((*that)->curl != NULL) {
+  // Clean up the curl instance if it was created
+  if ((*that)->curl != NULL) {
 
-      curl_easy_cleanup((*that)->curl);
-      curl_global_cleanup();
-
-    }
-
-    // Free memory used by the RunRecorder
-    free(*that);
-    *that = NULL;
+    curl_easy_cleanup((*that)->curl);
+    curl_global_cleanup();
 
   }
+
+  // Free memory used by the RunRecorder
+  free(*that);
+  *that = NULL;
 
 }
 
@@ -1358,31 +1356,29 @@ struct RunRecorderPairsRefVal* RunRecorderPairsRefValCreate(
 void RunRecorderPairsRefValFree(
   struct RunRecorderPairsRefVal** that) {
 
-  // If the struct is not already freed
-  if (that != NULL && *that != NULL) {
+  // If it's already freed, nothing to do
+  if (that == NULL || *that == NULL) return;
 
-    if ((*that)->values != NULL) {
+  if ((*that)->values != NULL) {
 
-      // Loop on the pairs
-      for (
-        long iPair = 0;
-        iPair < (*that)->nb;
-        ++iPair) {
+    // Loop on the pairs
+    for (
+      long iPair = 0;
+      iPair < (*that)->nb;
+      ++iPair) {
 
-        // Free the value
-        free((*that)->values[iPair]);
-
-      }
+      // Free the value
+      free((*that)->values[iPair]);
 
     }
 
-    // Free memory
-    free((*that)->values);
-    free((*that)->refs);
-    free(*that);
-    *that = NULL;
-
   }
+
+  // Free memory
+  free((*that)->values);
+  free((*that)->refs);
+  free(*that);
+  *that = NULL;
 
 }
 
@@ -1945,46 +1941,44 @@ struct RunRecorderMeasure* RunRecorderMeasureCreate(
 void RunRecorderMeasureFree(
   struct RunRecorderMeasure** that) {
 
-  // If the struct is not already freed
-  if (that != NULL && *that != NULL) {
+  // If it's already freed, nothing to do
+  if (that == NULL || *that == NULL) return;
 
-    if ((*that)->metrics != NULL) {
+  if ((*that)->metrics != NULL) {
 
-      // Loop on the measure
-      for (
-        long iVal = 0;
-        iVal < (*that)->nbVal;
-        ++iVal) {
+    // Loop on the measure
+    for (
+      long iVal = 0;
+      iVal < (*that)->nbVal;
+      ++iVal) {
 
-        // Free the value
-        free((*that)->metrics[iVal]);
-
-      }
+      // Free the value
+      free((*that)->metrics[iVal]);
 
     }
-
-    if ((*that)->values != NULL) {
-
-      // Loop on the measure
-      for (
-        long iVal = 0;
-        iVal < (*that)->nbVal;
-        ++iVal) {
-
-        // Free the value
-        free((*that)->values[iVal]);
-
-      }
-
-    }
-
-    // Free memory
-    free((*that)->metrics);
-    free((*that)->values);
-    free(*that);
-    *that = NULL;
 
   }
+
+  if ((*that)->values != NULL) {
+
+    // Loop on the measure
+    for (
+      long iVal = 0;
+      iVal < (*that)->nbVal;
+      ++iVal) {
+
+      // Free the value
+      free((*that)->values[iVal]);
+
+    }
+
+  }
+
+  // Free memory
+  free((*that)->metrics);
+  free((*that)->values);
+  free(*that);
+  *that = NULL;
 
 }
 
@@ -2504,7 +2498,7 @@ static int RunRecorderGetMeasuresLocalCb(
   (void)colName;
 
   // Cast the data
-  struct RunRecorderData** measures = (struct RunRecorderData**)data;
+  struct RunRecorderMeasures** measures = (struct RunRecorderMeasures**)data;
 
   // If the arguments are invalid
   // Return non zero to trigger SQLITE_ABORT in the calling function
@@ -2516,7 +2510,7 @@ static int RunRecorderGetMeasuresLocalCb(
     if (*measures == NULL) {
 
       // Allocate memory for the measures
-      *measures = RunRecorderDataCreate();
+      *measures = RunRecorderMeasuresCreate();
 
       // Copy the metrics label
       (*measures)->nbMetric = nbCol;
@@ -2588,7 +2582,7 @@ static int RunRecorderGetMeasuresLocalCb(
 //              returned
 // Output:
 //   Set the SQL command in that->cmd to get measures as a struct
-//    RunRecorderData
+//    RunRecorderMeasures
 // Raise:
 
 void RunRecorderSetCmdToGetMeasuresLocal(
@@ -2605,7 +2599,7 @@ void RunRecorderSetCmdToGetMeasuresLocal(
   // Create the request
   Try {
 
-    char* cmdFormatHead = "SELECT ";
+    char* cmdFormatHead = "SELECT Ref,";
     free(that->cmd);
     that->cmd = malloc(strlen(cmdFormatHead) + 1);
     if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
@@ -2689,25 +2683,6 @@ void RunRecorderSetCmdToGetMeasuresLocal(
         cmdLimit,
         nbMeasure);
 
-    // Else, there is no limit on the number of measures to be returned
-    } else {
-
-      char* cmdLimit = " ORDER BY Ref ASC";
-      char* cmd =
-        realloc(
-          that->cmd,
-          strlen(that->cmd) + strlen(cmdLimit) + 1);
-      if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
-      that->cmd = cmd;
-      char* ptrEnd =
-        strchr(
-          that->cmd,
-          '\0');
-      sprintf(
-        ptrEnd,
-        "%s",
-        cmdLimit);
-
     }
 
   } CatchDefault {
@@ -2724,15 +2699,15 @@ void RunRecorderSetCmdToGetMeasuresLocal(
 //         that: the struct RunRecorder
 //      project: the project's name
 // Output:
-//   Return the measures as a struct RunRecorderData
+//   Return the measures as a struct RunRecorderMeasures
 // Raise:
 
-struct RunRecorderData* RunRecorderGetMeasuresLocal(
+struct RunRecorderMeasures* RunRecorderGetMeasuresLocal(
   struct RunRecorder* const that,
           char const* const project) {
 
-  // Declate the struct RunRecorderData to memorise the measures
-  struct RunRecorderData* measures = NULL;
+  // Declate the struct RunRecorderMeasures to memorise the measures
+  struct RunRecorderMeasures* measures = NULL;
 
   // Create the request with no limit on the number of returned measures
   long nbMeasure = 0;
@@ -2783,12 +2758,26 @@ char const* RunRecorderSplitCSVRowToData(
     // If the next separator is the current position or the next character
     if (ptrSep == ptr || ptrSep == ptr + 1) {
 
-      // The column is empty
-      tgt[iCol] = malloc(1);
-      if (tgt[iCol] == NULL) Raise(TryCatchExc_MallocFailed);
-      tgt[iCol][0] = '\0';
+      // If the current position is a separator
+      if (*ptr == sep) {
 
-    // Else the next separator if more than 1 character away
+        // The column is empty
+        tgt[iCol] = malloc(1);
+        if (tgt[iCol] == NULL) Raise(TryCatchExc_MallocFailed);
+        tgt[iCol][0] = '\0';
+
+      // Else, the current position if not a separator 
+      } else {
+
+        // The column is one character wide
+        tgt[iCol] = malloc(2);
+        if (tgt[iCol] == NULL) Raise(TryCatchExc_MallocFailed);
+        tgt[iCol][0] = *ptr;
+        tgt[iCol][1] = '\0';
+
+      }
+
+    // Else the next separator is more than 1 character away
     } else {
 
       // If the current position is still on the last separator, increment it
@@ -2828,20 +2817,20 @@ char const* RunRecorderSplitCSVRowToData(
 }
 
 
-// Convert CSV data to a new struct RunRecorderData. The CSV data are
+// Convert CSV data to a new struct RunRecorderMeasures. The CSV data are
 // expected to be formatted as:
-// Metric1&Metric2&...
-// Value1_1&Value1_2&...
-// Value2_1&Value2_2&...
+// Ref&Metric1&Metric2&...
+// Ref1&Value1_1&Value1_2&...
+// Ref2&Value2_1&Value2_2&...
 // ...
 // Inputs:
 //   csv: the CSV data
 //   sep: the separator between columns ('&' in the example above)
 // Output:
-//   Return a newly allocated RunRecorderData
+//   Return a newly allocated RunRecorderMeasures
 // Raise:
 
-struct RunRecorderData* RunRecorderCSVToData(
+struct RunRecorderMeasures* RunRecorderCSVToData(
   char const* const csv,
          char const sep) {
 
@@ -2867,15 +2856,15 @@ struct RunRecorderData* RunRecorderCSVToData(
 
   } while (*ptr != '\0');
 
-  // Allocate memory for the result struct RunRecorderData
-  struct RunRecorderData* measures = RunRecorderDataCreate();
+  // Allocate memory for the result struct RunRecorderMeasures
+  struct RunRecorderMeasures* measures = RunRecorderMeasuresCreate();
   measures->nbMetric = nbCol;
   measures->nbMeasure = nbMeasure;
-  measures->metrics = malloc(sizeof(char*) * nbCol);
+  measures->metrics = malloc(sizeof(char*) * measures->nbMetric);
   if (measures->metrics == NULL) Raise(TryCatchExc_MallocFailed);
   for (
     long iCol = 0;
-    iCol < nbCol;
+    iCol < measures->nbMetric;
     ++iCol) measures->metrics[iCol] = NULL;
   measures->values = malloc(sizeof(char**) * nbMeasure);
   if (measures->values == NULL) Raise(TryCatchExc_MallocFailed);
@@ -2892,7 +2881,7 @@ struct RunRecorderData* RunRecorderCSVToData(
     if (measures->values[iMeasure] == NULL) Raise(TryCatchExc_MallocFailed);
     for (
       long iCol = 0;
-      iCol < nbCol;
+      iCol < measures->nbMetric;
       ++iCol) measures->values[iMeasure][iCol] = NULL;
 
   }
@@ -2917,7 +2906,7 @@ struct RunRecorderData* RunRecorderCSVToData(
 
   }
 
-  // Return the result struct RunRecorderData
+  // Return the result struct RunRecorderMeasures
   return measures;
 
 }
@@ -2927,10 +2916,10 @@ struct RunRecorderData* RunRecorderCSVToData(
 //         that: the struct RunRecorder
 //      project: the project's name
 // Output:
-//   Return the measures as a struct RunRecorderData
+//   Return the measures as a struct RunRecorderMeasures
 // Raise:
 
-struct RunRecorderData* RunRecorderGetMeasuresAPI(
+struct RunRecorderMeasures* RunRecorderGetMeasuresAPI(
   struct RunRecorder* const that,
           char const* const project) {
 
@@ -2953,13 +2942,13 @@ struct RunRecorderData* RunRecorderGetMeasuresAPI(
     that,
     false);
 
-  // Convert the CSV data into a struct RunRecorderData
-  struct RunRecorderData* data =
+  // Convert the CSV data into a struct RunRecorderMeasures
+  struct RunRecorderMeasures* data =
     RunRecorderCSVToData(
       that->curlReply,
       '&');
 
-  // Return the struct RunRecorderData
+  // Return the struct RunRecorderMeasures
   return data;
 
 }
@@ -2969,10 +2958,10 @@ struct RunRecorderData* RunRecorderGetMeasuresAPI(
 //         that: the struct RunRecorder
 //      project: the project's name
 // Output:
-//   Return the measures as a struct RunRecorderData
+//   Return the measures as a struct RunRecorderMeasures
 // Raise:
 
-struct RunRecorderData* RunRecorderGetMeasures(
+struct RunRecorderMeasures* RunRecorderGetMeasures(
   struct RunRecorder* const that,
           char const* const project) {
 
@@ -3006,17 +2995,17 @@ struct RunRecorderData* RunRecorderGetMeasures(
 //     project: the project's name
 //   nbMeasure: the number of measures to be returned
 // Output:
-//   Return the measures as a struct RunRecorderData, ordered from the
+//   Return the measures as a struct RunRecorderMeasures, ordered from the
 //   most recent to the oldest
 // Raise:
 
-struct RunRecorderData* RunRecorderGetLastMeasuresLocal(
+struct RunRecorderMeasures* RunRecorderGetLastMeasuresLocal(
   struct RunRecorder* const that,
           char const* const project,
                  long const nbMeasure) {
 
-  // Declate the struct RunRecorderData to memorise the measures
-  struct RunRecorderData* measures = NULL;
+  // Declate the struct RunRecorderMeasures to memorise the measures
+  struct RunRecorderMeasures* measures = NULL;
 
   // Create the request with no limit on the number of returned measures
   RunRecorderSetCmdToGetMeasuresLocal(
@@ -3045,11 +3034,11 @@ struct RunRecorderData* RunRecorderGetLastMeasuresLocal(
 //     project: the project's name
 //   nbMeasure: the number of measures to be returned
 // Output:
-//   Return the measures as a struct RunRecorderData, ordered from the
+//   Return the measures as a struct RunRecorderMeasures, ordered from the
 //   most recent to the oldest
 // Raise:
 
-struct RunRecorderData* RunRecorderGetLastMeasuresAPI(
+struct RunRecorderMeasures* RunRecorderGetLastMeasuresAPI(
   struct RunRecorder* const that,
           char const* const project,
                  long const nbMeasure) {
@@ -3083,13 +3072,13 @@ struct RunRecorderData* RunRecorderGetLastMeasuresAPI(
     that,
     false);
 
-  // Convert the CSV data into a struct RunRecorderData
-  struct RunRecorderData* data =
+  // Convert the CSV data into a struct RunRecorderMeasures
+  struct RunRecorderMeasures* data =
     RunRecorderCSVToData(
       that->curlReply,
       '&');
 
-  // Return the struct RunRecorderData
+  // Return the struct RunRecorderMeasures
   return data;
 
 }
@@ -3100,11 +3089,11 @@ struct RunRecorderData* RunRecorderGetLastMeasuresAPI(
 //     project: the project's name
 //   nbMeasure: the number of measures to be returned
 // Output:
-//   Return the measures as a struct RunRecorderData, ordered from the
+//   Return the measures as a struct RunRecorderMeasures, ordered from the
 //   most recent to the oldest
 // Raise:
 
-struct RunRecorderData* RunRecorderGetLastMeasures(
+struct RunRecorderMeasures* RunRecorderGetLastMeasures(
   struct RunRecorder* const that,
           char const* const project,
                  long const nbMeasure) {
@@ -3135,14 +3124,14 @@ struct RunRecorderData* RunRecorderGetLastMeasures(
 
 }
 
-// Create a static struct RunRecorderData
+// Create a static struct RunRecorderMeasures
 // Output:
-//   Return the new struct RunRecorderData
-struct RunRecorderData* RunRecorderDataCreate(
+//   Return the new struct RunRecorderMeasures
+struct RunRecorderMeasures* RunRecorderMeasuresCreate(
   void) {
 
-  // Declare the new struct RunRecorderData
-  struct RunRecorderData* that = malloc(sizeof(struct RunRecorderData));
+  // Declare the new struct RunRecorderMeasures
+  struct RunRecorderMeasures* that = malloc(sizeof(struct RunRecorderMeasures));
 
   // Init properties
   that->nbMetric = 0;
@@ -3150,16 +3139,19 @@ struct RunRecorderData* RunRecorderDataCreate(
   that->metrics = NULL;
   that->values = NULL;
 
-  // Return the new struct RunRecorderData
+  // Return the new struct RunRecorderMeasures
   return that;
 
 }
 
-// Free a static struct RunRecorderData
+// Free a static struct RunRecorderMeasures
 // Input:
-//   that: the struct RunRecorderData
-void RunRecorderDataFree(
-  struct RunRecorderData** that) {
+//   that: the struct RunRecorderMeasures
+void RunRecorderMeasuresFree(
+  struct RunRecorderMeasures** that) {
+
+  // If it's already freed, nothing to do
+  if (that == NULL || *that == NULL) return;
 
   // Free the metrics label
   if ((*that)->metrics != NULL) {
@@ -3212,18 +3204,18 @@ void RunRecorderDataFree(
 
 }
 
-// Print a struct RunRecorderData on a stream in CSV format as:
+// Print a struct RunRecorderMeasures on a stream in CSV format as:
 // Metric1&Metric2&...
 // Value1_1&Value1_2&...
 // Value2_1&Value2_2&...
 // ...
 // Inputs:
-//     that: the struct RunRecorderData
+//     that: the struct RunRecorderMeasures
 //   stream: the stream to write on
 // Raise:
 
-void RunRecorderDataPrintCSV(
-  struct RunRecorderData const* const that,
+void RunRecorderMeasuresPrintCSV(
+  struct RunRecorderMeasures const* const that,
                           FILE* const stream) {
 
   // Print the metrics label

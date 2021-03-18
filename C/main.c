@@ -54,8 +54,8 @@ int main(
 
     // Give pathApi in argument if you want to use the Web API instead
     // of a local file
-    recorder = RunRecorderCreate(pathDb);
-    //recorder = RunRecorderCreate(pathApi);
+    //recorder = RunRecorderCreate(pathDb);
+    recorder = RunRecorderCreate(pathApi);
 
     // Initialise the struct RunRecorder
     RunRecorderInit(recorder);
@@ -293,7 +293,7 @@ int main(
   } EndTryWithDefault;
 
   // Get the measures
-  struct RunRecorderData* measures = NULL;
+  struct RunRecorderMeasures* measures = NULL;
   Try {
 
     measures =
@@ -302,10 +302,10 @@ int main(
         "RoomTemperature");
     if (measures != NULL) {
 
-      RunRecorderDataPrintCSV(
+      RunRecorderMeasuresPrintCSV(
         measures,
         stdout);
-      RunRecorderDataFree(&measures);
+      RunRecorderMeasuresFree(&measures);
 
     }
 
@@ -314,7 +314,7 @@ int main(
     PrintCaughtException(
       "RunRecorderGetMeasures",
       recorder);
-    RunRecorderDataFree(&measures);
+    RunRecorderMeasuresFree(&measures);
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
