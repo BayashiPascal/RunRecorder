@@ -49,7 +49,7 @@ struct RunRecorder {
   char* cmd;
 
   // Reference of the last added measure
-  sqlite3_int64 refLastAddedMeasure;
+  long refLastAddedMeasure;
 
 };
 
@@ -238,7 +238,7 @@ void RunRecorderAddMeasure(
 
 void RunRecorderDeleteMeasure(
   struct RunRecorder* const that,
-        sqlite3_int64 const measure);
+        long const measure);
 
 // Get the measures of a project
 // Inputs:

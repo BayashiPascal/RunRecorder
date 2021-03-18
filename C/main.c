@@ -239,7 +239,7 @@ int main(
       "RoomTemperature",
       measure);
     printf(
-      "Added measure ref. %lld\n",
+      "Added measure ref. %ld\n",
       recorder->refLastAddedMeasure);
     RunRecorderMeasureFree(&measure);
 
@@ -257,7 +257,7 @@ int main(
       "RoomTemperature",
       measure);
     printf(
-      "Added measure ref. %lld\n",
+      "Added measure ref. %ld\n",
       recorder->refLastAddedMeasure);
     RunRecorderMeasureFree(&measure);
 
@@ -276,7 +276,7 @@ int main(
   Try {
 
     printf(
-      "Delete measure %lld\n",
+      "Delete measure %ld\n",
       recorder->refLastAddedMeasure);
     RunRecorderDeleteMeasure(
       recorder,

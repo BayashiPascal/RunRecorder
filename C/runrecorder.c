@@ -605,12 +605,15 @@ char* RunRecoderGetJSONValOfKey(
   size_t lenKey = strlen(key);
 
   // Create the key decorated with it's syntax
-  char* keyDecorated = malloc(lenKey + 4);
+  size_t lenKeyDecorated = lenKey + 4;
+  char* keyDecorated = malloc(lenKeyDecorated);
+  if (keyDecorated == NULL) Raise(TryCatchExc_MallocFailed);
   sprintf(
     keyDecorated,
     "\"%s\":",
     key);
-  if (keyDecorated == NULL) Raise(TryCatchExc_MallocFailed);
+  if (strlen(keyDecorated) >= lenKeyDecorated)
+    Raise(TryCatchExc_BufferOverflow);
 
   // Search the key in the JSON encoded string
   char const* ptrKey =
@@ -827,7 +830,8 @@ void RunRecorderAddProjectLocal(
   char* cmdFormat =
     "INSERT INTO _Project (Ref, Label) VALUES (NULL, \"%s\")";
   free(that->cmd);
-  that->cmd = malloc(strlen(cmdFormat) + strlen(name) - 1);
+  size_t lenCmd = strlen(cmdFormat) + strlen(name) - 2 + 1;
+  that->cmd = malloc(lenCmd);
   if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
   sprintf(
     that->cmd,
@@ -869,7 +873,8 @@ void RunRecorderAddProjectAPI(
   // '-2' in the malloc for the replaced '%s'
   char* cmdFormat = "action=add_project&label=%s";
   free(that->cmd);
-  that->cmd = malloc(strlen(cmdFormat) + strlen(name) - 2 + 1);
+  size_t lenCmd = strlen(cmdFormat) + strlen(name) - 2 + 1;
+  that->cmd = malloc(lenCmd);
   if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
   sprintf(
     that->cmd,
@@ -1401,7 +1406,7 @@ struct RunRecorderPairsRefVal* RunRecorderGetMetricsLocal(
     "WHERE _Metric.RefProject = _Project.Ref AND "
     "_Project.Label = \"%s\"";
   free(that->cmd);
-  that->cmd = malloc(strlen(cmdFormat) + strlen(project) + 1);
+  that->cmd = malloc(strlen(cmdFormat) + strlen(project) - 2 + 1);
   if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
   sprintf(
     that->cmd,
@@ -1545,7 +1550,7 @@ void RunRecorderUpdateViewProject(
   // Create the SQL command to delete the view
   char* cmdDelFormat = "DROP VIEW IF EXISTS %s";
   free(that->cmd);
-  that->cmd = malloc(strlen(cmdDelFormat) + strlen(project) + 1);
+  that->cmd = malloc(strlen(cmdDelFormat) + strlen(project) - 2 + 1);
   if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
   sprintf(
     that->cmd,
@@ -1585,8 +1590,8 @@ void RunRecorderUpdateViewProject(
 
   // Create the head of the command
   that->cmd = malloc(
-    strlen(cmdAddFormatHead) - 2 +
-    strlen(project) +
+    strlen(cmdAddFormatHead) +
+    strlen(project) - 2 +
     strlen(cmdAddFormatBody) + 1);
   if (that->cmd == NULL) {
 
@@ -1671,7 +1676,7 @@ void RunRecorderUpdateViewProject(
       realloc(
         that->cmd,
         strlen(that->cmd) + strlen(cmdAddFormatVal) +
-        lenRefMetricStr * 2 - 4 + 1);
+        lenRefMetricStr * 2 - 6 + 1);
     if (cmd == NULL) {
 
       RunRecorderPairsRefValFree(&metrics);
@@ -1765,8 +1770,8 @@ void RunRecorderAddMetricLocal(
     "WHERE _Project.Label = \"%s\"";
   free(that->cmd);
   that->cmd = malloc(
-    strlen(cmdFormat) + strlen(label) +
-    strlen(defaultVal) + strlen(project) + 1);
+    strlen(cmdFormat) + strlen(label) - 2 +
+    strlen(defaultVal) - 2 + strlen(project) - 2 + 1);
   if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
   sprintf(
     that->cmd,
@@ -2048,15 +2053,15 @@ void RunRecorderMeasureAddValueInt(
       metric,
       str);
 
-    } Catch (TryCatchExc_MallocFailed) {
+    // Free memory
+    free(str);
 
-      free(str);
-      Raise(TryCatchGetLastExc());
+  } Catch (TryCatchExc_MallocFailed) {
 
-    } EndTry;
+    free(str);
+    Raise(TryCatchGetLastExc());
 
-  // Free memory
-  free(str);
+  } EndTry;
 
 }
 
@@ -2123,7 +2128,7 @@ void RunRecorderAddMeasureLocal(
     "WHERE _Project.Label = \"%s\"";
   free(that->cmd);
   that->cmd = malloc(
-    strlen(cmdFormat) + strlen(dateStr) + strlen(project) + 1);
+    strlen(cmdFormat) + strlen(dateStr) - 2 + strlen(project) - 2 + 1);
   if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
   sprintf(
     that->cmd,
@@ -2149,13 +2154,7 @@ void RunRecorderAddMeasureLocal(
     snprintf(
     NULL,
     0,
-    "%lld",
-    that->refLastAddedMeasure);
-  char* refMeasureStr = malloc(lenRefMeasureStr + 1);
-  if (refMeasureStr == NULL) Raise(TryCatchExc_MallocFailed);
-  sprintf(
-    refMeasureStr,
-    "%lld",
+    "%ld",
     that->refLastAddedMeasure);
 
   // Declare a variable to memorise an eventual failure
@@ -2173,12 +2172,13 @@ void RunRecorderAddMeasureLocal(
     // Create the SQL command
     char* cmdValBase =
       "INSERT INTO _Value (RefMeasure, RefMetric, Value) "
-      "SELECT \"%s\", _Metric.Ref, \"%s\" FROM _Metric "
+      "SELECT %ld, _Metric.Ref, \"%s\" FROM _Metric "
       "WHERE _Metric.Label = \"%s\"";
     free(that->cmd);
     that->cmd = malloc(
-      strlen(cmdValBase) + strlen(refMeasureStr) +
-      strlen(measure->values[iVal]) + strlen(measure->metrics[iVal]) + 1);
+      strlen(cmdValBase) + lenRefMeasureStr - 3 +
+      strlen(measure->values[iVal]) - 2 +
+      strlen(measure->metrics[iVal]) - 2 + 1);
     if (that->cmd == NULL) {
 
       hasFailed = true;
@@ -2188,7 +2188,7 @@ void RunRecorderAddMeasureLocal(
       sprintf(
         that->cmd,
         cmdValBase,
-        refMeasureStr,
+        that->refLastAddedMeasure,
         measure->values[iVal],
         measure->metrics[iVal]);
 
@@ -2207,9 +2207,6 @@ void RunRecorderAddMeasureLocal(
     }
 
   }
-
-  // Free memory
-  free(refMeasureStr);
 
   // If there has been a failure
   if (hasFailed == true) Raise(TryCatchExc_AddMeasureFailed);
@@ -2353,19 +2350,19 @@ void RunRecorderAddMeasure(
 
 void RunRecorderDeleteMeasureLocal(
   struct RunRecorder* const that,
-        sqlite3_int64 const measure) {
+        long const measure) {
 
   // Create the SQL command to delete the measure's values
-  // '-4' for the replaced '%lld'
+  // '-3' for the replaced '%ld'
   size_t lenMeasureStr =
     snprintf(
       NULL,
       0,
-      "%lld",
+      "%ld",
       measure);
-  char* cmdFormatVal = "DELETE FROM _Value WHERE RefMeasure = %lld";
+  char* cmdFormatVal = "DELETE FROM _Value WHERE RefMeasure = %ld";
   free(that->cmd);
-  that->cmd = malloc(strlen(cmdFormatVal) + lenMeasureStr - 4 + 1);
+  that->cmd = malloc(strlen(cmdFormatVal) + lenMeasureStr - 3 + 1);
   if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
   sprintf(
     that->cmd,
@@ -2385,10 +2382,10 @@ void RunRecorderDeleteMeasureLocal(
   if (retExec != SQLITE_OK) Raise(TryCatchExc_DeleteMeasureFailed);
 
   // Create the SQL command to delete the measure
-  // '-4' for the replaced '%lld'
-  char* cmdFormat = "DELETE FROM _Measure WHERE Ref = %lld ; VACUUM";
+  // '-3' for the replaced '%ld'
+  char* cmdFormat = "DELETE FROM _Measure WHERE Ref = %ld ; VACUUM";
   free(that->cmd);
-  that->cmd = malloc(strlen(cmdFormat) + lenMeasureStr - 2 + 1);
+  that->cmd = malloc(strlen(cmdFormat) + lenMeasureStr - 3 + 1);
   if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
   sprintf(
     that->cmd,
@@ -2417,19 +2414,19 @@ void RunRecorderDeleteMeasureLocal(
 
 void RunRecorderDeleteMeasureAPI(
   struct RunRecorder* const that,
-        sqlite3_int64 const measure) {
+        long const measure) {
 
   // Create the request to the Web API
-  // '-4' in the malloc for the replaced '%lld'
+  // '-3' in the malloc for the replaced '%ld'
   size_t lenMeasureStr =
     snprintf(
       NULL,
       0,
       "%lld",
       measure);
-  char* cmdFormat = "action=delete_measure&measure=%lld";
+  char* cmdFormat = "action=delete_measure&measure=%ld";
   free(that->cmd);
-  that->cmd = malloc(strlen(cmdFormat) + lenMeasureStr - 4 + 1);
+  that->cmd = malloc(strlen(cmdFormat) + lenMeasureStr - 3 + 1);
   if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
   sprintf(
     that->cmd,
@@ -2454,7 +2451,7 @@ void RunRecorderDeleteMeasureAPI(
 
 void RunRecorderDeleteMeasure(
   struct RunRecorder* const that,
-        sqlite3_int64 const measure) {
+        long const measure) {
 
   // Ensure the error messages are freed to avoid confusion with
   // eventual previous messages
@@ -2502,7 +2499,7 @@ static int RunRecorderGetMeasuresLocalCb(
 
   // If the arguments are invalid
   // Return non zero to trigger SQLITE_ABORT in the calling function
-  if (nbCol == 0 || colVal == NULL || colName == NULL) return 1;
+  if (nbCol == 0 || colVal == NULL || colName == NULL ) return 1;
 
   Try {
 
@@ -2530,6 +2527,14 @@ static int RunRecorderGetMeasuresLocalCb(
 
       }
 
+    // Else, the measures are already allocated
+    } else {
+
+      // If the number of columns in data doesn't match the number of
+      // metrics in the struct RunRecordMeasures in argument,
+      // return non zero to trigger SQLITE_ABORT in the calling function
+      if (nbCol != (*measures)->nbMetric) return 1;
+
     }
 
     // Allocate memory for the received measure's values
@@ -2547,20 +2552,21 @@ static int RunRecorderGetMeasuresLocalCb(
       iCol < nbCol;
       ++iCol) (*measures)->values[(*measures)->nbMeasure][iCol] = NULL;
 
+    // Update the number of measure
+    ++((*measures)->nbMeasure);
+
     // Add the values of the received measure
     for (
       int iCol = 0;
       iCol < nbCol;
       ++iCol) {
 
-      (*measures)->values[(*measures)->nbMeasure][iCol] = strdup(colVal[iCol]);
-      if ((*measures)->values[(*measures)->nbMeasure][iCol] == NULL)
+      (*measures)->values[(*measures)->nbMeasure - 1][iCol] =
+        strdup(colVal[iCol]);
+      if ((*measures)->values[(*measures)->nbMeasure - 1][iCol] == NULL)
         Raise(TryCatchExc_MallocFailed);
 
     }
-
-    // Update the number of measure
-    ++((*measures)->nbMeasure);
 
   } CatchDefault {
 
@@ -2613,7 +2619,7 @@ void RunRecorderSetCmdToGetMeasuresLocal(
       iMetric < metrics->nb;
       ++iMetric) {
 
-      size_t len = strlen(metrics->values[iMetric]) + 2 + strlen(that->cmd);
+      size_t len = strlen(that->cmd) + strlen(metrics->values[iMetric]) + 1 + 1;
       char* cmd =
         realloc(
           that->cmd,
@@ -2643,7 +2649,7 @@ void RunRecorderSetCmdToGetMeasuresLocal(
       realloc(
         that->cmd,
         strlen(that->cmd) +
-        strlen(cmdFormatTail) - 2 + strlen(project) + 1);
+        strlen(cmdFormatTail) + strlen(project) - 2 + 1);
     if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
     that->cmd = cmd;
     char* ptrEnd =
@@ -2671,7 +2677,7 @@ void RunRecorderSetCmdToGetMeasuresLocal(
         realloc(
           that->cmd,
           strlen(that->cmd) +
-          strlen(cmdLimit) - 2 + lenNbMeasureStr + 1);
+          strlen(cmdLimit) + lenNbMeasureStr - 3 + 1);
       if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
       that->cmd = cmd;
       char* ptrEnd =
@@ -2877,7 +2883,7 @@ struct RunRecorderMeasures* RunRecorderCSVToData(
     iMeasure < nbMeasure;
     ++iMeasure) {
 
-    measures->values[iMeasure] = malloc(sizeof(char**) * nbCol);
+    measures->values[iMeasure] = malloc(sizeof(char*) * nbCol);
     if (measures->values[iMeasure] == NULL) Raise(TryCatchExc_MallocFailed);
     for (
       long iCol = 0;
@@ -3056,7 +3062,7 @@ struct RunRecorderMeasures* RunRecorderGetLastMeasuresAPI(
   char* cmdFormat = "action=csv&project=%s&last=%ld";
   free(that->cmd);
   that->cmd = malloc(strlen(cmdFormat) + strlen(project) - 2 + 
-    lenNbMeasureStr - 2 + 1);
+    lenNbMeasureStr - 3 + 1);
   if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
   sprintf(
     that->cmd,
@@ -3284,7 +3290,7 @@ void RunRecorderFlushProjectLocal(
     "WHERE _Measure.RefProject = _Project.Ref "
     "AND _Project.Label = \"%s\")";
   free(that->cmd);
-  that->cmd = malloc(strlen(cmdFormatValue) + strlen(project) - 1);
+  that->cmd = malloc(strlen(cmdFormatValue) + strlen(project) - 2 + 1);
   if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
   sprintf(
     that->cmd,
@@ -3310,7 +3316,7 @@ void RunRecorderFlushProjectLocal(
     "WHERE _Measure.RefProject = _Project.Ref "
     "AND _Project.Label = \"%s\")";
   free(that->cmd);
-  that->cmd = malloc(strlen(cmdFormatMeasure) + strlen(project) - 1);
+  that->cmd = malloc(strlen(cmdFormatMeasure) + strlen(project) - 2 + 1);
   if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
   sprintf(
     that->cmd,
@@ -3335,7 +3341,7 @@ void RunRecorderFlushProjectLocal(
     "(SELECT Ref FROM _Project "
     "WHERE _Project.Label = \"%s\")";
   free(that->cmd);
-  that->cmd = malloc(strlen(cmdFormatMetric) + strlen(project) - 1);
+  that->cmd = malloc(strlen(cmdFormatMetric) + strlen(project) - 2 + 1);
   if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
   sprintf(
     that->cmd,
@@ -3359,7 +3365,7 @@ void RunRecorderFlushProjectLocal(
     "DELETE FROM _Project "
     "WHERE _Project.Label = \"%s\"";
   free(that->cmd);
-  that->cmd = malloc(strlen(cmdFormatProject) + strlen(project) - 1);
+  that->cmd = malloc(strlen(cmdFormatProject) + strlen(project) - 2 + 1);
   if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
   sprintf(
     that->cmd,
