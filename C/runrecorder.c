@@ -14,6 +14,12 @@
 // Loop from 0 to n
 #define ForZeroTo(I,N) for (long I = 0; I < N; ++I)
 
+// strdup freeing the assigned value and raising exception if it fails
+#define SafeStrDup(T,S)  \
+  do { \
+    free(T); T = strdup(S); if (T == NULL) Raise(TryCatchExc_MallocFailed); \
+  } while(false)
+
 // ================== Functions declaration =========================
 
 // Return true if a struct RunRecorder uses the Web API, else false
@@ -107,8 +113,9 @@ void RunRecorderInitLocal(
   if (ret != 0) {
 
     if (fp != NULL) fclose(fp);
-    free(that->errMsg);
-    that->errMsg = strdup(sqlite3_errmsg(that->db));
+    SafeStrDup(
+      that->errMsg,
+      sqlite3_errmsg(that->db));
     Raise(TryCatchExc_OpenDbFailed);
 
   }
@@ -153,8 +160,9 @@ void RunRecorderInitWebAPI(
 
     curl_easy_cleanup(that->curl);
     curl_global_cleanup();
-    free(that->errMsg);
-    that->errMsg = strdup(curl_easy_strerror(res));
+    SafeStrDup(
+      that->errMsg,
+      curl_easy_strerror(res));
     Raise(TryCatchExc_CurlSetOptFailed);
 
   }
@@ -169,8 +177,9 @@ void RunRecorderInitWebAPI(
 
     curl_easy_cleanup(that->curl);
     curl_global_cleanup();
-    free(that->errMsg);
-    that->errMsg = strdup(curl_easy_strerror(res));
+    SafeStrDup(
+      that->errMsg,
+      curl_easy_strerror(res));
     Raise(TryCatchExc_CurlSetOptFailed);
 
   }
@@ -183,8 +192,9 @@ void RunRecorderInitWebAPI(
 
     curl_easy_cleanup(that->curl);
     curl_global_cleanup();
-    free(that->errMsg);
-    that->errMsg = strdup(curl_easy_strerror(res));
+    SafeStrDup(
+      that->errMsg,
+      curl_easy_strerror(res));
     Raise(TryCatchExc_CurlSetOptFailed);
 
   }
@@ -207,6 +217,7 @@ struct RunRecorder* RunRecorderCreate(
   // Initialise the other properties
   that->errMsg = NULL;
   that->db = NULL;
+  that->url = NULL;
   that->curl = NULL;
   that->curlReply = NULL;
   that->cmd = NULL;
@@ -214,8 +225,9 @@ struct RunRecorder* RunRecorderCreate(
   that->refLastAddedMeasure = 0;
 
   // Duplicate the url
-  that->url = strdup(url);
-  if (that->url == NULL) Raise(TryCatchExc_MallocFailed);
+  SafeStrDup(
+    that->url,
+    url);
 
   // Return the struct RunRecorder
   return that;
@@ -491,8 +503,18 @@ static int RunRecorderGetVersionLocalCb(
   if (nbCol != 1 || colVal == NULL || *colVal == NULL) return 1;
 
   // Memorise the returned value
-  *ptrVersion = strdup(*colVal);
-  if (*ptrVersion == NULL) return 1;
+  Try {
+
+    SafeStrDup(
+      *ptrVersion,
+      *colVal);
+
+  } Catch (TryCatchExc_MallocFailed) {
+
+    // Return non zero to trigger SQLITE_ABORT in the calling function
+    return 1;
+
+  } EndTry;
 
   // Return success code
   return 0;
@@ -706,8 +728,9 @@ void RunRecorderSetAPIReqPostVal(
       data);
   if (res != CURLE_OK) {
 
-    free(that->errMsg);
-    that->errMsg = strdup(curl_easy_strerror(res));
+    SafeStrDup(
+      that->errMsg,
+      curl_easy_strerror(res));
     Raise(TryCatchExc_CurlSetOptFailed);
 
   }
@@ -731,8 +754,9 @@ char* RunRecorderGetAPIRetCode(
       "ret");
   if (retCode == NULL) {
 
-    free(that->errMsg);
-    that->errMsg = strdup("'ret' key missing in API reply");
+    SafeStrDup(
+      that->errMsg,
+      "'ret' key missing in API reply");
     Raise(TryCatchExc_ApiRequestFailed);
 
   }
@@ -758,8 +782,9 @@ void RunRecorderSendAPIReq(
   CURLcode res = curl_easy_perform(that->curl);
   if (res != CURLE_OK) {
 
-    free(that->errMsg);
-    that->errMsg = strdup(curl_easy_strerror(res));
+    SafeStrDup(
+      that->errMsg,
+      curl_easy_strerror(res));
     Raise(TryCatchExc_CurlRequestFailed);
 
   }
@@ -1058,8 +1083,9 @@ void RunRecorderPairsRefValAdd(
 
   // Set the reference and value of the pair
   pairs->refs[pairs->nb - 1] = ref;
-  pairs->values[pairs->nb - 1] = strdup(val);
-  if (pairs->values[pairs->nb - 1] == NULL) Raise(TryCatchExc_MallocFailed);
+  SafeStrDup(
+    pairs->values[pairs->nb - 1],
+    val);
 
 }
 
@@ -1993,10 +2019,12 @@ void RunRecorderMeasureAddValueStr(
   ++(that->nbVal);
 
   // Set the reference and value of the measure
-  that->metrics[that->nbVal - 1] = strdup(metric);
-  if (that->metrics[that->nbVal - 1] == NULL) Raise(TryCatchExc_MallocFailed);
-  that->values[that->nbVal - 1] = strdup(val);
-  if (that->values[that->nbVal - 1] == NULL) Raise(TryCatchExc_MallocFailed);
+  SafeStrDup(
+    that->metrics[that->nbVal - 1],
+    metric);
+  SafeStrDup(
+    that->values[that->nbVal - 1],
+    val);
 
 }
 
@@ -2473,12 +2501,10 @@ static int RunRecorderGetMeasuresLocalCb(
       if ((*measures)->metrics == NULL) Raise(TryCatchExc_MallocFailed);
       ForZeroTo(iMetric, (*measures)->nbMetric)
         (*measures)->metrics[iMetric] = NULL;
-      ForZeroTo(iMetric, (*measures)->nbMetric) {
-
-        (*measures)->metrics[iMetric] = strdup(colName[iMetric]);
-        if ((*measures)->metrics[iMetric] == NULL) Raise(TryCatchExc_MallocFailed);
-
-      }
+      ForZeroTo(iMetric, (*measures)->nbMetric)
+        SafeStrDup(
+          (*measures)->metrics[iMetric],
+          colName[iMetric]);
 
     // Else, the measures are already allocated
     } else {
@@ -2507,14 +2533,10 @@ static int RunRecorderGetMeasuresLocalCb(
     ++((*measures)->nbMeasure);
 
     // Add the values of the received measure
-    ForZeroTo(iMetric, (*measures)->nbMetric) {
-
-      (*measures)->values[(*measures)->nbMeasure - 1][iMetric] =
-        strdup(colVal[iMetric]);
-      if ((*measures)->values[(*measures)->nbMeasure - 1][iMetric] == NULL)
-        Raise(TryCatchExc_MallocFailed);
-
-    }
+    ForZeroTo(iMetric, (*measures)->nbMetric)
+      SafeStrDup(
+        (*measures)->values[(*measures)->nbMeasure - 1][iMetric],
+        colVal[iMetric]);
 
   } CatchDefault {
 
