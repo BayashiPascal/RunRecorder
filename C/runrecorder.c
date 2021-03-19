@@ -11,6 +11,9 @@
 // Number of tables in the database
 #define RUNRECORDER_NB_TABLE 5
 
+// Loop from 0 to n
+#define ForZeroTo(I,N) for (long I = 0; I < N; ++I)
+
 // ================== Functions declaration =========================
 
 // Return true if a struct RunRecorder uses the Web API, else false
@@ -399,10 +402,7 @@ void RunRecorderCreateDbLocal(
   sqlite3_free(that->sqliteErrMsg);
 
   // Loop on the commands
-  for (
-    int iCmd = 0;
-    iCmd < RUNRECORDER_NB_TABLE + 1;
-    ++iCmd) {
+  ForZeroTo(iCmd, RUNRECORDER_NB_TABLE) {
 
     // Execute the command to create the table
     int retExec =
@@ -943,10 +943,7 @@ bool RunRecorderPairsRefValContainsVal(
                            char const* const val) {
 
   // Loop on the pairs
-  for (
-    long iPair = 0;
-    iPair < that->nb;
-    ++iPair) {
+  ForZeroTo(iPair, that->nb) {
 
     // If the pair's value is the checked value
     int retCmp =
@@ -1382,16 +1379,8 @@ void RunRecorderPairsRefValFree(
 
   if ((*that)->values != NULL) {
 
-    // Loop on the pairs
-    for (
-      long iPair = 0;
-      iPair < (*that)->nb;
-      ++iPair) {
-
-      // Free the value
-      free((*that)->values[iPair]);
-
-    }
+    // Free the pairs
+    ForZeroTo(iPair, (*that)->nb) free((*that)->values[iPair]);
 
   }
 
@@ -1614,8 +1603,6 @@ void RunRecorderUpdateViewProject(
       ",IFNULL((SELECT Value FROM _Value "
       "WHERE RefMeasure=_Measure.Ref AND RefMetric=%ld),"
       "(SELECT DefaultValue FROM _Metric WHERE Ref=%ld)) ";
-    char* cmdAddFormatTail =
-      "FROM _Measure ORDER BY _Measure.DateMeasure, _Measure.Ref";
 
     // Free the command string
     free(that->cmd);
@@ -1632,10 +1619,7 @@ void RunRecorderUpdateViewProject(
       project);
 
     // Loop on the metrics
-    for (
-      long iMetric = 0;
-      iMetric < metrics->nb;
-      ++iMetric) {
+    ForZeroTo(iMetric, metrics->nb) {
 
       // Extend the command with the metric label
       char* cmd =
@@ -1672,10 +1656,7 @@ void RunRecorderUpdateViewProject(
       cmdAddFormatBody);
 
     // Loop on the metrics
-    for (
-      long iMetric = 0;
-      iMetric < metrics->nb;
-      ++iMetric) {
+    ForZeroTo(iMetric, metrics->nb) {
 
       // Get the length of the metric reference as a string
       size_t lenRefMetricStr =
@@ -1713,16 +1694,18 @@ void RunRecorderUpdateViewProject(
     RunRecorderPairsRefValFree(&metrics);
     Raise(TryCatchGetLastExc());
 
-  }
+  } EndTryWithDefault;
 
   // Extend the command with the tail
-  cmd =
+  char* cmdAddFormatTail =
+    "FROM _Measure ORDER BY _Measure.DateMeasure, _Measure.Ref";
+  char* cmd =
     realloc(
       that->cmd,
       strlen(that->cmd) + strlen(cmdAddFormatTail) + 1);
   if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
   that->cmd = cmd;
-  ptrEnd =
+  char* ptrEnd =
     strchr(
       that->cmd,
       '\0');
@@ -1952,31 +1935,15 @@ void RunRecorderMeasureFree(
 
   if ((*that)->metrics != NULL) {
 
-    // Loop on the measure
-    for (
-      long iVal = 0;
-      iVal < (*that)->nbVal;
-      ++iVal) {
-
-      // Free the value
-      free((*that)->metrics[iVal]);
-
-    }
+    // Free the metrics
+    ForZeroTo(iMetric, (*that)->nbVal) free((*that)->metrics[iMetric]);
 
   }
 
   if ((*that)->values != NULL) {
 
-    // Loop on the measure
-    for (
-      long iVal = 0;
-      iVal < (*that)->nbVal;
-      ++iVal) {
-
-      // Free the value
-      free((*that)->values[iVal]);
-
-    }
+    // Free the values
+    ForZeroTo(iVal, (*that)->nbVal) free((*that)->values[iVal]);
 
   }
 
@@ -2057,12 +2024,12 @@ void RunRecorderMeasureAddValueInt(
     // Free memory
     free(str);
 
-  } Catch (TryCatchExc_MallocFailed) {
+  } CatchDefault {
 
     free(str);
     Raise(TryCatchGetLastExc());
 
-  } EndTry;
+  } EndTryWithDefault;
 
 }
 
@@ -2090,12 +2057,12 @@ void RunRecorderMeasureAddValueFloat(
     // Free memory
     free(str);
 
-  } Catch (TryCatchExc_MallocFailed) {
+  } CatchDefault {
 
     free(str);
     Raise(TryCatchGetLastExc());
 
-  } EndTry;
+  } EndTryWithDefault;
 
 }
 
@@ -2165,10 +2132,7 @@ void RunRecorderAddMeasureLocal(
   bool hasFailed = false;
 
   // Loop on the values in the measure
-  for (
-    long iVal = 0;
-    iVal < measure->nbVal;
-    ++iVal) {
+  ForZeroTo(iVal, measure->nbVal) {
 
     // Create the SQL command
     char* cmdValBase =
@@ -2237,10 +2201,7 @@ void RunRecorderAddMeasureAPI(
   size_t lenStrValues = 0;
 
   // Loop on the values
-  for (
-    long iVal = 0;
-    iVal < measure->nbVal;
-    ++iVal) {
+  ForZeroTo(iVal, measure->nbVal) {
 
     // Add the size necessary for this value and its header
     // '-2' for the replaced '%s'
@@ -2261,10 +2222,7 @@ void RunRecorderAddMeasureAPI(
     that->cmd,
     cmdFormat,
     project);
-  for (
-    long iVal = 0;
-    iVal < measure->nbVal;
-    ++iVal) {
+  ForZeroTo(iVal, measure->nbVal) {
 
     char* ptrEnd =
       strchr(
@@ -2422,7 +2380,7 @@ void RunRecorderDeleteMeasureAPI(
     snprintf(
       NULL,
       0,
-      "%lld",
+      "%ld",
       measure);
   char* cmdFormat = "action=delete_measure&measure=%ld";
   free(that->cmd);
@@ -2513,17 +2471,12 @@ static int RunRecorderGetMeasuresLocalCb(
       (*measures)->nbMetric = nbCol;
       (*measures)->metrics = malloc(sizeof(char*) * nbCol);
       if ((*measures)->metrics == NULL) Raise(TryCatchExc_MallocFailed);
-      for (
-        int iCol = 0;
-        iCol < nbCol;
-        ++iCol) (*measures)->metrics[iCol] = NULL;
-      for (
-        int iCol = 0;
-        iCol < nbCol;
-        ++iCol) {
+      ForZeroTo(iMetric, (*measures)->nbMetric)
+        (*measures)->metrics[iMetric] = NULL;
+      ForZeroTo(iMetric, (*measures)->nbMetric) {
 
-        (*measures)->metrics[iCol] = strdup(colName[iCol]);
-        if ((*measures)->metrics[iCol] == NULL) Raise(TryCatchExc_MallocFailed);
+        (*measures)->metrics[iMetric] = strdup(colName[iMetric]);
+        if ((*measures)->metrics[iMetric] == NULL) Raise(TryCatchExc_MallocFailed);
 
       }
 
@@ -2547,23 +2500,18 @@ static int RunRecorderGetMeasuresLocalCb(
     (*measures)->values[(*measures)->nbMeasure] = malloc(sizeof(char*) * nbCol);
     if ((*measures)->values[(*measures)->nbMeasure] == NULL)
       Raise(TryCatchExc_MallocFailed);
-    for (
-      int iCol = 0;
-      iCol < nbCol;
-      ++iCol) (*measures)->values[(*measures)->nbMeasure][iCol] = NULL;
+    ForZeroTo(iMetric, (*measures)->nbMetric)
+      (*measures)->values[(*measures)->nbMeasure][iMetric] = NULL;
 
     // Update the number of measure
     ++((*measures)->nbMeasure);
 
     // Add the values of the received measure
-    for (
-      int iCol = 0;
-      iCol < nbCol;
-      ++iCol) {
+    ForZeroTo(iMetric, (*measures)->nbMetric) {
 
-      (*measures)->values[(*measures)->nbMeasure - 1][iCol] =
-        strdup(colVal[iCol]);
-      if ((*measures)->values[(*measures)->nbMeasure - 1][iCol] == NULL)
+      (*measures)->values[(*measures)->nbMeasure - 1][iMetric] =
+        strdup(colVal[iMetric]);
+      if ((*measures)->values[(*measures)->nbMeasure - 1][iMetric] == NULL)
         Raise(TryCatchExc_MallocFailed);
 
     }
@@ -2614,10 +2562,7 @@ void RunRecorderSetCmdToGetMeasuresLocal(
       "%s",
       cmdFormatHead);
 
-    for (
-      long iMetric = 0;
-      iMetric < metrics->nb;
-      ++iMetric) {
+    ForZeroTo(iMetric, metrics->nb) {
 
       size_t len = strlen(that->cmd) + strlen(metrics->values[iMetric]) + 1 + 1;
       char* cmd =
@@ -2871,27 +2816,17 @@ struct RunRecorderMeasures* RunRecorderCSVToData(
     measures->nbMeasure = nbMeasure;
     measures->metrics = malloc(sizeof(char*) * measures->nbMetric);
     if (measures->metrics == NULL) Raise(TryCatchExc_MallocFailed);
-    for (
-      long iCol = 0;
-      iCol < measures->nbMetric;
-      ++iCol) measures->metrics[iCol] = NULL;
+    ForZeroTo(iMetric, measures->nbMetric)
+      measures->metrics[iMetric] = NULL;
     measures->values = malloc(sizeof(char**) * nbMeasure);
     if (measures->values == NULL) Raise(TryCatchExc_MallocFailed);
-    for (
-      long iMeasure = 0;
-      iMeasure < nbMeasure;
-      ++iMeasure) measures->values[iMeasure] = NULL;
-    for (
-      long iMeasure = 0;
-      iMeasure < nbMeasure;
-      ++iMeasure) {
+    ForZeroTo(iMeasure, nbMeasure) measures->values[iMeasure] = NULL;
+    ForZeroTo(iMeasure, nbMeasure) {
 
       measures->values[iMeasure] = malloc(sizeof(char*) * nbCol);
       if (measures->values[iMeasure] == NULL) Raise(TryCatchExc_MallocFailed);
-      for (
-        long iCol = 0;
-        iCol < measures->nbMetric;
-        ++iCol) measures->values[iMeasure][iCol] = NULL;
+      ForZeroTo(iMetric, measures->nbMetric)
+        measures->values[iMeasure][iMetric] = NULL;
 
     }
 
@@ -2917,7 +2852,7 @@ struct RunRecorderMeasures* RunRecorderCSVToData(
 
   } CatchDefault {
 
-    RunRecorderMeasuresFree(&metrics);
+    RunRecorderMeasuresFree(&measures);
     Raise(TryCatchGetLastExc());
 
   } EndTryWithDefault;
@@ -3172,15 +3107,7 @@ void RunRecorderMeasuresFree(
   // Free the metrics label
   if ((*that)->metrics != NULL) {
 
-    for (
-      long iMetric = 0;
-      iMetric < (*that)->nbMetric;
-      ++iMetric) {
-
-      free((*that)->metrics[iMetric]);
-
-    }
-
+    ForZeroTo(iMetric, (*that)->nbMetric) free((*that)->metrics[iMetric]);
     free((*that)->metrics);
 
   }
@@ -3188,22 +3115,12 @@ void RunRecorderMeasuresFree(
   // Free the values
   if ((*that)->values != NULL) {
 
-    for (
-      long iMeasure = 0;
-      iMeasure < (*that)->nbMeasure;
-      ++iMeasure) {
+    ForZeroTo(iMeasure, (*that)->nbMeasure) {
 
       if ((*that)->values[iMeasure] != NULL) {
 
-        for (
-          long iMetric = 0;
-          iMetric < (*that)->nbMetric;
-          ++iMetric) {
-
+        ForZeroTo(iMetric, (*that)->nbMetric)
           free((*that)->values[iMeasure][iMetric]);
-
-        }
-
         free((*that)->values[iMeasure]);
 
       }
@@ -3238,10 +3155,7 @@ void RunRecorderMeasuresPrintCSV(
   if (that->metrics != NULL) {
 
     char sep = '&';
-    for (
-      long iMetric = 0;
-      iMetric < that->nbMetric;
-      ++iMetric) {
+    ForZeroTo(iMetric, that->nbMetric) {
 
       if (iMetric == that->nbMetric - 1) sep = '\n';
       fprintf(
@@ -3257,16 +3171,10 @@ void RunRecorderMeasuresPrintCSV(
   // Print the values
   if (that->values != NULL) {
 
-    for (
-      long iMeasure = 0;
-      iMeasure < that->nbMeasure;
-      ++iMeasure) {
+    ForZeroTo(iMeasure, that->nbMeasure) {
 
       char sep = '&';
-      for (
-        long iMetric = 0;
-        iMetric < that->nbMetric;
-        ++iMetric) {
+      ForZeroTo(iMetric, that->nbMetric) {
 
         if (iMetric == that->nbMetric - 1) sep = '\n';
         fprintf(
