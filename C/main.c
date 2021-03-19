@@ -119,6 +119,7 @@ int main(
   Try {
 
     projects = RunRecorderGetProjects(recorder);
+    printf("Projects:\n");
     for (
       long iProject = 0;
       iProject < projects->nb;
@@ -195,6 +196,7 @@ int main(
       RunRecorderGetMetrics(
         recorder,
         "RoomTemperature");
+    printf("Metrics of RoomTemperature:\n");
     for (
       long iMetric = 0;
       iMetric < metrics->nb;

@@ -86,8 +86,8 @@ td {
         // Request the list of projects and update the selection box
         RequestProjects();
 
-        // Start the auto refresh of displayed data
-        setInterval(AutoRefresh, 5000);
+        // Start the auto refresh of displayed data every 30s
+        setInterval(AutoRefresh, 30000);
 
 
       } catch (err) {
@@ -233,6 +233,9 @@ td {
           for (project in ret["projects"])
             $("#selProject").append(
               $("<option>", {value:project, text:ret["projects"][project]}));
+
+          // Request the refresh of displayed data
+          AutoRefresh();
 
         }
 
