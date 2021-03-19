@@ -45,6 +45,13 @@
     if (ptr == NULL) Raise(TryCatchExc_MallocFailed); else T = ptr; \
   } while(false)
 
+// sprintf at the end of a string
+#define SPrintfAtEnd(S, F, ...) \
+  do { \
+    char* ptrEnd = strchr(S, '\0'); \
+    sprintf(ptrEnd, F, __VA_ARGS__); \
+  } while(false)
+
 // ================== Functions declaration =========================
 
 // Return true if a struct RunRecorder uses the Web API, else false
@@ -1668,12 +1675,8 @@ void RunRecorderUpdateViewProject(
       SafeRealloc(
         that->cmd,
         strlen(that->cmd) + strlen(metrics->values[iMetric]) + 2);
-      char* ptrEnd =
-        strchr(
-          that->cmd,
-          '\0');
-      sprintf(
-        ptrEnd,
+      SPrintfAtEnd(
+        that->cmd,
         ",%s",
         metrics->values[iMetric]);
 
@@ -1683,12 +1686,8 @@ void RunRecorderUpdateViewProject(
     SafeRealloc(
       that->cmd,
       strlen(that->cmd) + strlen(cmdAddFormatBody) + 1);
-    char* ptrEnd =
-      strchr(
-        that->cmd,
-        '\0');
-    sprintf(
-      ptrEnd,
+    SPrintfAtEnd(
+      that->cmd,
       "%s",
       cmdAddFormatBody);
 
@@ -1708,12 +1707,8 @@ void RunRecorderUpdateViewProject(
         that->cmd,
         strlen(that->cmd) + strlen(cmdAddFormatVal) +
         lenRefMetricStr * 2 - 6 + 1);
-      ptrEnd =
-        strchr(
-          that->cmd,
-          '\0');
-      sprintf(
-        ptrEnd,
+      SPrintfAtEnd(
+        that->cmd,
         cmdAddFormatVal,
         metrics->refs[iMetric],
         metrics->refs[iMetric]);
@@ -1736,12 +1731,8 @@ void RunRecorderUpdateViewProject(
   SafeRealloc(
     that->cmd,
     strlen(that->cmd) + strlen(cmdAddFormatTail) + 1);
-  char* ptrEnd =
-    strchr(
-      that->cmd,
-      '\0');
-  sprintf(
-    ptrEnd,
+  SPrintfAtEnd(
+    that->cmd,
     "%s",
     cmdAddFormatTail);
 
@@ -2253,12 +2244,8 @@ void RunRecorderAddMeasureAPI(
     project);
   ForZeroTo(iVal, measure->nbVal) {
 
-    char* ptrEnd =
-      strchr(
-        that->cmd,
-        '\0');
-    sprintf(
-      ptrEnd,
+    SPrintfAtEnd(
+      that->cmd,
       cmdFormatVal,
       measure->metrics[iVal],
       measure->values[iVal]);
@@ -2590,15 +2577,10 @@ void RunRecorderSetCmdToGetMeasuresLocal(
       SafeRealloc(
         that->cmd,
         len);
-      char* ptrEnd = 
-        strchr(
-          that->cmd,
-          '\0');
-
       char sep = ',';
       if (iMetric == metrics->nb - 1) sep = ' ';
-      sprintf(
-        ptrEnd,
+      SPrintfAtEnd( 
+        that->cmd,
         "%s%c",
         metrics->values[iMetric],
         sep);
@@ -2613,12 +2595,8 @@ void RunRecorderSetCmdToGetMeasuresLocal(
       that->cmd,
       strlen(that->cmd) +
       strlen(cmdFormatTail) + strlen(project) - 2 + 1);
-    char* ptrEnd =
-      strchr(
-        that->cmd,
-        '\0');
-    sprintf(
-      ptrEnd,
+    SPrintfAtEnd(
+      that->cmd,
       cmdFormatTail,
       project);
 
@@ -2638,12 +2616,8 @@ void RunRecorderSetCmdToGetMeasuresLocal(
         that->cmd,
         strlen(that->cmd) +
         strlen(cmdLimit) + lenNbMeasureStr - 3 + 1);
-      char* ptrEnd =
-        strchr(
-          that->cmd,
-          '\0');
-      sprintf(
-        ptrEnd,
+      SPrintfAtEnd(
+        that->cmd,
         cmdLimit,
         nbMeasure);
 
