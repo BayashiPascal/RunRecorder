@@ -49,7 +49,6 @@ char* TryCatchExceptionStr[TryCatchExc_LastID] = {
   "TryCatchExc_AddMeasureFailed",
   "TryCatchExc_DeleteMeasureFailed",
   "TryCatchExc_IOError",
-  "TryCatchExc_BufferOverflow",
   "TryCatchExc_InvalidJSON",
 };
 

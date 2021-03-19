@@ -50,7 +50,6 @@ enum TryCatchException {
   TryCatchExc_AddMeasureFailed,
   TryCatchExc_DeleteMeasureFailed,
   TryCatchExc_IOError,
-  TryCatchExc_BufferOverflow,
   TryCatchExc_LastID
 
 };

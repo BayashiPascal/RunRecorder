@@ -426,8 +426,11 @@ void RunRecorderCreateDbLocal(
 void RunRecorderUpgradeDb(
   struct RunRecorder* const that) {
 
-  // Placeholder
+  // Unused argument
   (void)that;
+
+  // Just a placeholder, nothing to do yet as there is currently only
+  // one version of the database
 
 }
 
@@ -604,76 +607,81 @@ char* RunRecoderGetJSONValOfKey(
   // Get the length of the key
   size_t lenKey = strlen(key);
 
-  // Create the key decorated with it's syntax
-  size_t lenKeyDecorated = lenKey + 4;
-  char* keyDecorated = malloc(lenKeyDecorated);
-  if (keyDecorated == NULL) Raise(TryCatchExc_MallocFailed);
-  sprintf(
-    keyDecorated,
-    "\"%s\":",
-    key);
-  if (strlen(keyDecorated) >= lenKeyDecorated)
-    Raise(TryCatchExc_BufferOverflow);
+  // Variable to memorise the key decorated with it's syntax
+  char* keyDecorated = NULL;
 
-  // Search the key in the JSON encoded string
-  char const* ptrKey =
-    strstr(
-      json,
-      keyDecorated);
-  if (ptrKey != NULL) {
+  Try {
 
-    // Variable to memorise the start of the value
-    char const* ptrVal = ptrKey + strlen(keyDecorated) + 1;
+    // Create the key decorated with it's syntax
+    size_t lenKeyDecorated = lenKey + 4;
+    keyDecorated = malloc(lenKeyDecorated);
+    if (keyDecorated == NULL) Raise(TryCatchExc_MallocFailed);
+    sprintf(
+      keyDecorated,
+      "\"%s\":",
+      key);
 
-    // Declare a pointer to loop on the string until the end of the value
-    char const* ptr = ptrVal;
-    if (ptrKey[strlen(keyDecorated)] == '"') {
+    // Search the key in the JSON encoded string
+    char const* ptrKey =
+      strstr(
+        json,
+        keyDecorated);
+    if (ptrKey != NULL) {
 
-      // Loop on the characters of the value until the next double quote
-      while (*ptr != '\0' && *ptr != '"') {
+      // Variable to memorise the start of the value
+      char const* ptrVal = ptrKey + strlen(keyDecorated) + 1;
 
-        ++ptr;
+      // Declare a pointer to loop on the string until the end of the value
+      char const* ptr = ptrVal;
+      if (ptrKey[strlen(keyDecorated)] == '"') {
 
-        // Skip the escaped character
-        if (*ptr != '\0' && *ptr == '\\') ++ptr;
+        // Loop on the characters of the value until the next double quote
+        // or end of string
+        while (*ptr != '\0' && *ptr != '"') {
 
-      }
+          ++ptr;
 
-    } else if (ptrKey[strlen(keyDecorated)] == '{') {
+          // Skip the escaped character
+          if (*ptr == '\\') ++ptr;
 
-      // Loop on the characters of the value until the closing curly brace
-      while (*ptr != '\0' && *ptr != '}') ++ptr;
+        }
 
-    }
+      } else if (ptrKey[strlen(keyDecorated)] == '{') {
 
-    // If we have found the end of the value
-    if (*ptr != '\0') {
-
-      // Get the length of the value
-      size_t lenVal = ptr - ptrVal;
-
-      // Allocate memory for the value
-      val = malloc(lenVal + 1);
-      if (val == NULL) {
-
-        free(keyDecorated);
-        Raise(TryCatchExc_MallocFailed);
+        // Loop on the characters of the value until the closing curly
+        // brace or end of string
+        while (*ptr != '\0' && *ptr != '}') ++ptr;
 
       }
 
-      // Copy the value
-      memcpy(
-        val,
-        ptrVal,
-        lenVal);
-      val[lenVal] = '\0';
+      // If we have found the end of the value
+      if (*ptr != '\0') {
+
+        // Get the length of the value
+        size_t lenVal = ptr - ptrVal;
+
+        // Allocate memory for the value
+        val = malloc(lenVal + 1);
+        if (val == NULL) Raise(TryCatchExc_MallocFailed);
+
+        // Copy the value
+        memcpy(
+          val,
+          ptrVal,
+          lenVal);
+        val[lenVal] = '\0';
+
+      }
 
     }
 
-  }
+  } CatchDefault {
+    
+    free(keyDecorated);
+    free(val);
+    Raise(TryCatchGetLastExc());
 
-  // Free memory
-  free(keyDecorated);
+  } EndTryWithDefault;
 
   // Return the value
   return val;
@@ -736,7 +744,9 @@ char* RunRecorderGetAPIRetCode(
 
 // Send the current request of a struct RunRecorder
 // Input:
-//   that: the struct RunRecorder
+//        that: the struct RunRecorder
+//   isJsonReq: flag to indicate that the request returns JSON encoded
+//              data
 // Raise:
 //   TryCatchExc_CurlRequestFailed
 void RunRecorderSendAPIReq(
@@ -754,10 +764,10 @@ void RunRecorderSendAPIReq(
 
   }
 
-  // If 
+  // If the request returns JSON encoded data
   if (isJsonReq == true) {
 
-    // Check the return code from the JSON reply
+    // Check the returned code
     char* retCode = RunRecorderGetAPIRetCode(that);
     int cmpRet =
       strcmp(
@@ -993,11 +1003,7 @@ void RunRecorderAddProject(
       projects,
       name);
   RunRecorderPairsRefValFree(&projects);
-  if (alreadyUsed == true) {
-
-    Raise(TryCatchExc_ProjectNameAlreadyUsed);
-
-  }
+  if (alreadyUsed == true) Raise(TryCatchExc_ProjectNameAlreadyUsed);
 
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {
@@ -1169,10 +1175,11 @@ struct RunRecorderPairsRefVal* RunRecorderGetPairsRefValFromJSON(
   // Loop until the end of the json string
   while (*ptr != '\0') {
 
-    // Go to the next double quote
+    // Go to the next double quote or end of string
     while (*ptr != '\0' && *ptr != '"') ++ptr;
 
-    if (*ptr != '\0') {
+    // If we have found the double quote
+    if (*ptr == '"') {
 
       // Skip the opening double quote for the reference
       ++ptr;
@@ -1208,35 +1215,39 @@ struct RunRecorderPairsRefVal* RunRecorderGetPairsRefValFromJSON(
       if (*ptrEndVal == '\0' ||
           ptrEndVal == ptr) Raise(TryCatchExc_InvalidJSON);
 
-      // Get the value
-      size_t lenVal = ptrEndVal - ptr;
-      char* val = malloc(lenVal + 1);
-      if (val == NULL) Raise(TryCatchExc_MallocFailed);
-      memcpy(
-        val,
-        ptr,
-        lenVal);
-      val[lenVal] = '\0';
+      // Variable to memorise the value
+      char* val = NULL;
 
-      // Move to the character after the closing double quote of the value
-      ptr = ptrEndVal + 1;
-
-      // Add the pair
       Try {
+
+        // Get the value
+        size_t lenVal = ptrEndVal - ptr;
+        char* val = malloc(lenVal + 1);
+        if (val == NULL) Raise(TryCatchExc_MallocFailed);
+        memcpy(
+          val,
+          ptr,
+          lenVal);
+        val[lenVal] = '\0';
+
+        // Move to the character after the closing double quote of the value
+        ptr = ptrEndVal + 1;
+
+        // Add the pair
 
         RunRecorderPairsRefValAdd(
           pairs,
           ref,
           val);
 
-      } Catch (TryCatchExc_MallocFailed) {
+        free(val);
+
+      } CatchDefault {
 
         free(val);
         Raise(TryCatchGetLastExc());
 
-      } EndTry;
-
-      free(val);
+      } EndTryWithDefault;
 
     }
 
@@ -1271,18 +1282,26 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjectsAPI(
     that,
     true);
 
-  // Get the projects list in the JSON reply
-  char* json =
-    RunRecoderGetJSONValOfKey(
-      that->curlReply,
-      "projects");
-  if (json == NULL) Raise(TryCatchExc_ApiRequestFailed);
+  // Variable to memorise the value of the 'projects' key
+  char* json = NULL;
 
-  // Extract the projects
+  // Variable to memorise the projects
   struct RunRecorderPairsRefVal* projects = NULL;
+
   Try {
 
+    // Get the projects list in the JSON reply
+    char* json =
+      RunRecoderGetJSONValOfKey(
+        that->curlReply,
+        "projects");
+    if (json == NULL) Raise(TryCatchExc_ApiRequestFailed);
+
+    // Extract the projects
     projects = RunRecorderGetPairsRefValFromJSON(json);
+
+    // Free memory
+    free(json);
 
   } Catch(TryCatchExc_MallocFailed) {
 
@@ -1290,9 +1309,6 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjectsAPI(
     Raise(TryCatchGetLastExc());
     
   } EndTry;
-
-  // Free memory
-  free(json);
 
   // Return the projects
   return projects;
@@ -1413,23 +1429,30 @@ struct RunRecorderPairsRefVal* RunRecorderGetMetricsLocal(
     cmdFormat,
     project);
 
-  // Declare a struct RunRecorderPairsRefVal to memorise the metrics
-  struct RunRecorderPairsRefVal* metrics = RunRecorderPairsRefValCreate();
+  // Declare a variable to memorise the metrics
+  struct RunRecorderPairsRefVal* metrics = NULL;
 
-  // Execute the request
-  int retExec =
-    sqlite3_exec(
-      that->db,
-      that->cmd,
-      RunRecorderGetPairsLocalCb,
-      metrics,
-      &(that->sqliteErrMsg));
-  if (retExec != SQLITE_OK) {
+  Try {
 
-    RunRecorderPairsRefValFree(&metrics);
-    Raise(TryCatchExc_SQLRequestFailed);
+    // Create the struct RunRecorderPairsRefVal to memorise the metrics
+    metrics = RunRecorderPairsRefValCreate();
 
-  }
+    // Execute the request
+    int retExec =
+      sqlite3_exec(
+        that->db,
+        that->cmd,
+        RunRecorderGetPairsLocalCb,
+        metrics,
+        &(that->sqliteErrMsg));
+    if (retExec != SQLITE_OK) Raise(TryCatchExc_SQLRequestFailed);
+
+  } CatchDefault {
+
+      RunRecorderPairsRefValFree(&metrics);
+      Raise(TryCatchGetLastExc());
+
+  } EndTryWithDefault;
 
   // Return the metrics
   return metrics;
@@ -1471,27 +1494,34 @@ struct RunRecorderPairsRefVal* RunRecorderGetMetricsAPI(
     that,
     true);
 
-  // Get the projects list in the JSON reply
-  char* json =
-    RunRecoderGetJSONValOfKey(
-      that->curlReply,
-      "metrics");
-  if (json == NULL) Raise(TryCatchExc_ApiRequestFailed);
-  // Extract the metrics
+  // Variable to memorise the value of the 'metrics' key
+  char* json = NULL;
+
+  // Variable to memorise the metrics
   struct RunRecorderPairsRefVal* metrics = NULL;
+
   Try {
 
+    // Get the metrics list in the JSON reply
+    json =
+      RunRecoderGetJSONValOfKey(
+        that->curlReply,
+        "metrics");
+    if (json == NULL) Raise(TryCatchExc_ApiRequestFailed);
+
+    // Extract the metrics
     metrics = RunRecorderGetPairsRefValFromJSON(json);
 
-  } Catch(TryCatchExc_MallocFailed) {
+    // Free memory
+    free(json);
+
+  } CatchDefault {
 
     free(json);
+    RunRecorderPairsRefValFree(&metrics);
     Raise(TryCatchGetLastExc());
     
-  } EndTry;
-
-  // Free memory
-  free(json);
+  } EndTryWithDefault;
 
   // Return the metrics
   return metrics;
@@ -1575,54 +1605,62 @@ void RunRecorderUpdateViewProject(
       that,
       project);
 
-  // Declare the format strings to create the SQL command to add the view
-  char* cmdAddFormatHead = "CREATE VIEW %s (Ref";
-  char* cmdAddFormatBody = ") AS SELECT _Measure.Ref ";
-  char* cmdAddFormatVal =
-    ",IFNULL((SELECT Value FROM _Value "
-    "WHERE RefMeasure=_Measure.Ref AND RefMetric=%ld),"
-    "(SELECT DefaultValue FROM _Metric WHERE Ref=%ld)) ";
-  char* cmdAddFormatTail =
-    "FROM _Measure ORDER BY _Measure.DateMeasure, _Measure.Ref";
+  Try {
 
-  // Free the command string
-  free(that->cmd);
+    // Declare the format strings to create the SQL command to add the view
+    char* cmdAddFormatHead = "CREATE VIEW %s (Ref";
+    char* cmdAddFormatBody = ") AS SELECT _Measure.Ref ";
+    char* cmdAddFormatVal =
+      ",IFNULL((SELECT Value FROM _Value "
+      "WHERE RefMeasure=_Measure.Ref AND RefMetric=%ld),"
+      "(SELECT DefaultValue FROM _Metric WHERE Ref=%ld)) ";
+    char* cmdAddFormatTail =
+      "FROM _Measure ORDER BY _Measure.DateMeasure, _Measure.Ref";
 
-  // Create the head of the command
-  that->cmd = malloc(
-    strlen(cmdAddFormatHead) +
-    strlen(project) - 2 +
-    strlen(cmdAddFormatBody) + 1);
-  if (that->cmd == NULL) {
+    // Free the command string
+    free(that->cmd);
 
-    RunRecorderPairsRefValFree(&metrics);
-    Raise(TryCatchExc_MallocFailed);
+    // Create the head of the command
+    that->cmd = malloc(
+      strlen(cmdAddFormatHead) +
+      strlen(project) - 2 +
+      strlen(cmdAddFormatBody) + 1);
+    if (that->cmd == NULL) Raise(TryCatchExc_MallocFailed);
+    sprintf(
+      that->cmd,
+      cmdAddFormatHead,
+      project);
 
-  }
+    // Loop on the metrics
+    for (
+      long iMetric = 0;
+      iMetric < metrics->nb;
+      ++iMetric) {
 
-  sprintf(
-    that->cmd,
-    cmdAddFormatHead,
-    project);
-
-  // Loop on the metrics
-  for (
-    long iMetric = 0;
-    iMetric < metrics->nb;
-    ++iMetric) {
-
-    // Extend the command with the metric label
-    char* cmd =
-      realloc(
-        that->cmd,
-        strlen(that->cmd) + strlen(metrics->values[iMetric]) + 2);
-    if (cmd == NULL) {
-
-      RunRecorderPairsRefValFree(&metrics);
-      Raise(TryCatchExc_MallocFailed);
+      // Extend the command with the metric label
+      char* cmd =
+        realloc(
+          that->cmd,
+          strlen(that->cmd) + strlen(metrics->values[iMetric]) + 2);
+      if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
+      that->cmd = cmd;
+      char* ptrEnd =
+        strchr(
+          that->cmd,
+          '\0');
+      sprintf(
+        ptrEnd,
+        ",%s",
+        metrics->values[iMetric]);
 
     }
 
+    // Extend the command with the body
+    char* cmd =
+      realloc(
+        that->cmd,
+        strlen(that->cmd) + strlen(cmdAddFormatBody) + 1);
+    if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
     that->cmd = cmd;
     char* ptrEnd =
       strchr(
@@ -1630,88 +1668,59 @@ void RunRecorderUpdateViewProject(
         '\0');
     sprintf(
       ptrEnd,
-      ",%s",
-      metrics->values[iMetric]);
+      "%s",
+      cmdAddFormatBody);
 
-  }
+    // Loop on the metrics
+    for (
+      long iMetric = 0;
+      iMetric < metrics->nb;
+      ++iMetric) {
 
-  // Extend the command with the body
-  char* cmd =
-    realloc(
-      that->cmd,
-      strlen(that->cmd) + strlen(cmdAddFormatBody) + 1);
-  if (cmd == NULL) {
+      // Get the length of the metric reference as a string
+      size_t lenRefMetricStr =
+        snprintf(
+          NULL,
+          0,
+          "%ld",
+          metrics->refs[iMetric]);
 
-    RunRecorderPairsRefValFree(&metrics);
-    Raise(TryCatchExc_MallocFailed);
-
-  }
-
-  that->cmd = cmd;
-  char* ptrEnd =
-    strchr(
-      that->cmd,
-      '\0');
-  sprintf(
-    ptrEnd,
-    "%s",
-    cmdAddFormatBody);
-
-  // Loop on the metrics
-  for (
-    long iMetric = 0;
-    iMetric < metrics->nb;
-    ++iMetric) {
-
-    // Get the length of the metric reference as a string
-    size_t lenRefMetricStr =
-      snprintf(
-        NULL,
-        0,
-        "%ld",
+      // Extend the command with the metric related body part
+      cmd =
+        realloc(
+          that->cmd,
+          strlen(that->cmd) + strlen(cmdAddFormatVal) +
+          lenRefMetricStr * 2 - 6 + 1);
+      if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
+      that->cmd = cmd;
+      ptrEnd =
+        strchr(
+          that->cmd,
+          '\0');
+      sprintf(
+        ptrEnd,
+        cmdAddFormatVal,
+        metrics->refs[iMetric],
         metrics->refs[iMetric]);
-
-    // Extend the command with the metric related body part
-    cmd =
-      realloc(
-        that->cmd,
-        strlen(that->cmd) + strlen(cmdAddFormatVal) +
-        lenRefMetricStr * 2 - 6 + 1);
-    if (cmd == NULL) {
-
-      RunRecorderPairsRefValFree(&metrics);
-      Raise(TryCatchExc_MallocFailed);
 
     }
 
-    that->cmd = cmd;
-    ptrEnd =
-      strchr(
-        that->cmd,
-        '\0');
-    sprintf(
-      ptrEnd,
-      cmdAddFormatVal,
-      metrics->refs[iMetric],
-      metrics->refs[iMetric]);
+    // Free memory
+    RunRecorderPairsRefValFree(&metrics);
+
+  } CatchDefault {
+
+    RunRecorderPairsRefValFree(&metrics);
+    Raise(TryCatchGetLastExc());
 
   }
-
-  // Free memory
-  RunRecorderPairsRefValFree(&metrics);
 
   // Extend the command with the tail
   cmd =
     realloc(
       that->cmd,
       strlen(that->cmd) + strlen(cmdAddFormatTail) + 1);
-  if (cmd == NULL) {
-
-    RunRecorderPairsRefValFree(&metrics);
-    Raise(TryCatchExc_MallocFailed);
-
-  }
-
+  if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
   that->cmd = cmd;
   ptrEnd =
     strchr(
@@ -1732,12 +1741,7 @@ void RunRecorderUpdateViewProject(
       // No user data
       NULL,
       &(that->sqliteErrMsg));
-  if (retExec != SQLITE_OK) {
-
-    RunRecorderPairsRefValFree(&metrics);
-    Raise(TryCatchExc_UpdateViewFailed);
-
-  }
+  if (retExec != SQLITE_OK) Raise(TryCatchExc_UpdateViewFailed);
 
 }
 
@@ -1839,9 +1843,10 @@ void RunRecorderAddMetricAPI(
     that->cmd);
 
   // Send the request to the API
+  bool isJsonReq = true;
   RunRecorderSendAPIReq(
     that,
-    true);
+    isJsonReq);
 
 }
 
@@ -1887,11 +1892,7 @@ void RunRecorderAddMetric(
       metrics,
       label);
   RunRecorderPairsRefValFree(&metrics);
-  if (alreadyUsed == true) {
-
-    Raise(TryCatchExc_MetricNameAlreadyUsed);
-
-  }
+  if (alreadyUsed == true) Raise(TryCatchExc_MetricNameAlreadyUsed);
 
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {
@@ -2086,15 +2087,15 @@ void RunRecorderMeasureAddValueFloat(
       metric,
       str);
 
-    } Catch (TryCatchExc_MallocFailed) {
+    // Free memory
+    free(str);
 
-      free(str);
-      Raise(TryCatchGetLastExc());
+  } Catch (TryCatchExc_MallocFailed) {
 
-    } EndTry;
+    free(str);
+    Raise(TryCatchGetLastExc());
 
-  // Free memory
-  free(str);
+  } EndTry;
 
 }
 
@@ -2319,8 +2320,7 @@ void RunRecorderAddMeasure(
   that->refLastAddedMeasure = 0;
 
   // Ensure errMsg is freed
-  sqlite3_free(that->sqliteErrMsg);
-  free(that->errMsg);
+  RunRecorderFreeErrMsg(that);
 
   // If the RunRecorder uses a local database
   if (RunRecorderUsesAPI(that) == false) {
@@ -2864,53 +2864,63 @@ struct RunRecorderMeasures* RunRecorderCSVToData(
 
   // Allocate memory for the result struct RunRecorderMeasures
   struct RunRecorderMeasures* measures = RunRecorderMeasuresCreate();
-  measures->nbMetric = nbCol;
-  measures->nbMeasure = nbMeasure;
-  measures->metrics = malloc(sizeof(char*) * measures->nbMetric);
-  if (measures->metrics == NULL) Raise(TryCatchExc_MallocFailed);
-  for (
-    long iCol = 0;
-    iCol < measures->nbMetric;
-    ++iCol) measures->metrics[iCol] = NULL;
-  measures->values = malloc(sizeof(char**) * nbMeasure);
-  if (measures->values == NULL) Raise(TryCatchExc_MallocFailed);
-  for (
-    long iMeasure = 0;
-    iMeasure < nbMeasure;
-    ++iMeasure) measures->values[iMeasure] = NULL;
-  for (
-    long iMeasure = 0;
-    iMeasure < nbMeasure;
-    ++iMeasure) {
 
-    measures->values[iMeasure] = malloc(sizeof(char*) * nbCol);
-    if (measures->values[iMeasure] == NULL) Raise(TryCatchExc_MallocFailed);
+  Try {
+
+    measures->nbMetric = nbCol;
+    measures->nbMeasure = nbMeasure;
+    measures->metrics = malloc(sizeof(char*) * measures->nbMetric);
+    if (measures->metrics == NULL) Raise(TryCatchExc_MallocFailed);
     for (
       long iCol = 0;
       iCol < measures->nbMetric;
-      ++iCol) measures->values[iMeasure][iCol] = NULL;
+      ++iCol) measures->metrics[iCol] = NULL;
+    measures->values = malloc(sizeof(char**) * nbMeasure);
+    if (measures->values == NULL) Raise(TryCatchExc_MallocFailed);
+    for (
+      long iMeasure = 0;
+      iMeasure < nbMeasure;
+      ++iMeasure) measures->values[iMeasure] = NULL;
+    for (
+      long iMeasure = 0;
+      iMeasure < nbMeasure;
+      ++iMeasure) {
 
-  }
+      measures->values[iMeasure] = malloc(sizeof(char*) * nbCol);
+      if (measures->values[iMeasure] == NULL) Raise(TryCatchExc_MallocFailed);
+      for (
+        long iCol = 0;
+        iCol < measures->nbMetric;
+        ++iCol) measures->values[iMeasure][iCol] = NULL;
 
-  // Extract the metrics label
-  ptr =
-    RunRecorderSplitCSVRowToData(
-      csv,
-      measures->metrics,
-      sep);
+    }
 
-  // Extract the measures' values
-  long iMeasure = 0;
-  while (*ptr != '\0') {
-
+    // Extract the metrics label
     ptr =
       RunRecorderSplitCSVRowToData(
-        ptr,
-        measures->values[iMeasure],
+        csv,
+        measures->metrics,
         sep);
-    ++iMeasure;
 
-  }
+    // Extract the measures' values
+    long iMeasure = 0;
+    while (*ptr != '\0') {
+
+      ptr =
+        RunRecorderSplitCSVRowToData(
+          ptr,
+          measures->values[iMeasure],
+          sep);
+      ++iMeasure;
+
+    }
+
+  } CatchDefault {
+
+    RunRecorderMeasuresFree(&metrics);
+    Raise(TryCatchGetLastExc());
+
+  } EndTryWithDefault;
 
   // Return the result struct RunRecorderMeasures
   return measures;
