@@ -12,18 +12,26 @@
 #define RUNRECORDER_NB_TABLE 5
 
 // Loop from 0 to n
-#define ForZeroTo(I,N) for (long I = 0; I < N; ++I)
+#define ForZeroTo(I, N) for (long I = 0; I < N; ++I)
 
-// strdup freeing the assigned value and raising exception if it fails
-#define SafeStrDup(T,S)  \
+// strdup freeing the assigned variable and raising exception if it fails
+#define SafeStrDup(T, S)  \
   do { \
     free(T); T = strdup(S); if (T == NULL) Raise(TryCatchExc_MallocFailed); \
   } while(false)
 
-// malloc freeing the assigned value and raising exception if it fails
-#define SafeMalloc(T,S)  \
+// malloc freeing the assigned variable and raising exception if it fails
+#define SafeMalloc(T, S)  \
   do { \
     free(T); T = malloc(S); if (T == NULL) Raise(TryCatchExc_MallocFailed); \
+  } while(false)
+
+// realloc raising exception and leaving the original pointer unchanged
+// if it fails
+#define SafeRealloc(T, S)  \
+  do { \
+    void* ptr = realloc(T, S); \
+    if (ptr == NULL) Raise(TryCatchExc_MallocFailed); else T = ptr; \
   } while(false)
 
 // ================== Functions declaration =========================
@@ -423,7 +431,7 @@ void RunRecorderCreateDbLocal(
   sqlite3_free(that->sqliteErrMsg);
 
   // Loop on the commands
-  ForZeroTo(iCmd, RUNRECORDER_NB_TABLE) {
+  ForZeroTo(iCmd, RUNRECORDER_NB_TABLE + 1) {
 
     // Execute the command to create the table
     int retExec =
@@ -593,13 +601,9 @@ size_t RunRecorderGetReplyAPI(
 
     // Allocate memory for current data, the incoming data and the
     // terminating '\0'
-    *reply =
-      realloc(
-        *reply,
-        replyLength + dataSize + 1);
-
-    // If the allocation failed
-    if (reply == NULL) Raise(TryCatchExc_MallocFailed);
+    SafeRealloc(
+      *reply,
+      replyLength + dataSize + 1);
 
     // Copy the incoming data and the end of the current buffer
     memcpy(
@@ -1074,24 +1078,12 @@ void RunRecorderPairsRefValAdd(
                      char const* const val) {
 
   // Allocate memory
-  long* refs =
-    realloc(
-      pairs->refs,
-      sizeof(long) * (pairs->nb + 1));
-  if (refs == NULL) Raise(TryCatchExc_MallocFailed);
-  char** values =
-    realloc(
-      pairs->values,
-      sizeof(char*) * (pairs->nb + 1));
-  if (values == NULL) {
-
-    free(refs);
-    Raise(TryCatchExc_MallocFailed);
-
-  }
-
-  pairs->refs = refs;
-  pairs->values = values;
+  SafeRealloc(
+    pairs->refs,
+    sizeof(long) * (pairs->nb + 1));
+  SafeRealloc(
+    pairs->values,
+    sizeof(char*) * (pairs->nb + 1));
   pairs->values[pairs->nb] = NULL;
 
   // Update the number of pairs
@@ -1663,12 +1655,9 @@ void RunRecorderUpdateViewProject(
     ForZeroTo(iMetric, metrics->nb) {
 
       // Extend the command with the metric label
-      char* cmd =
-        realloc(
-          that->cmd,
-          strlen(that->cmd) + strlen(metrics->values[iMetric]) + 2);
-      if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
-      that->cmd = cmd;
+      SafeRealloc(
+        that->cmd,
+        strlen(that->cmd) + strlen(metrics->values[iMetric]) + 2);
       char* ptrEnd =
         strchr(
           that->cmd,
@@ -1681,12 +1670,9 @@ void RunRecorderUpdateViewProject(
     }
 
     // Extend the command with the body
-    char* cmd =
-      realloc(
-        that->cmd,
-        strlen(that->cmd) + strlen(cmdAddFormatBody) + 1);
-    if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
-    that->cmd = cmd;
+    SafeRealloc(
+      that->cmd,
+      strlen(that->cmd) + strlen(cmdAddFormatBody) + 1);
     char* ptrEnd =
       strchr(
         that->cmd,
@@ -1708,13 +1694,10 @@ void RunRecorderUpdateViewProject(
           metrics->refs[iMetric]);
 
       // Extend the command with the metric related body part
-      cmd =
-        realloc(
-          that->cmd,
-          strlen(that->cmd) + strlen(cmdAddFormatVal) +
-          lenRefMetricStr * 2 - 6 + 1);
-      if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
-      that->cmd = cmd;
+      SafeRealloc(
+        that->cmd,
+        strlen(that->cmd) + strlen(cmdAddFormatVal) +
+        lenRefMetricStr * 2 - 6 + 1);
       ptrEnd =
         strchr(
           that->cmd,
@@ -1740,12 +1723,9 @@ void RunRecorderUpdateViewProject(
   // Extend the command with the tail
   char* cmdAddFormatTail =
     "FROM _Measure ORDER BY _Measure.DateMeasure, _Measure.Ref";
-  char* cmd =
-    realloc(
-      that->cmd,
-      strlen(that->cmd) + strlen(cmdAddFormatTail) + 1);
-  if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
-  that->cmd = cmd;
+  SafeRealloc(
+    that->cmd,
+    strlen(that->cmd) + strlen(cmdAddFormatTail) + 1);
   char* ptrEnd =
     strchr(
       that->cmd,
@@ -2008,24 +1988,12 @@ void RunRecorderMeasureAddValueStr(
            char const* const val) {
 
   // Allocate memory
-  char** metrics =
-    realloc(
-      that->metrics,
-      sizeof(char*) * (that->nbVal + 1));
-  if (metrics == NULL) Raise(TryCatchExc_MallocFailed);
-  char** values =
-    realloc(
-      that->values,
-      sizeof(char*) * (that->nbVal + 1));
-  if (values == NULL) {
-
-    free(metrics);
-    Raise(TryCatchExc_MallocFailed);
-
-  }
-
-  that->metrics = metrics;
-  that->values = values;
+  SafeRealloc(
+    that->metrics,
+    sizeof(char*) * (that->nbVal + 1));
+  SafeRealloc(
+    that->values,
+    sizeof(char*) * (that->nbVal + 1));
   that->metrics[that->nbVal] = NULL;
   that->values[that->nbVal] = NULL;
 
@@ -2541,12 +2509,9 @@ static int RunRecorderGetMeasuresLocalCb(
     }
 
     // Allocate memory for the received measure's values
-    char*** values =
-      realloc(
-        (*measures)->values,
-        sizeof(char**) * ((*measures)->nbMeasure + 1));
-    if (values == NULL) Raise(TryCatchExc_MallocFailed);
-    (*measures)->values = values;
+    SafeRealloc(
+      (*measures)->values,
+      sizeof(char**) * ((*measures)->nbMeasure + 1));
     (*measures)->values[(*measures)->nbMeasure] = NULL;
     SafeMalloc(
       (*measures)->values[(*measures)->nbMeasure],
@@ -2612,12 +2577,9 @@ void RunRecorderSetCmdToGetMeasuresLocal(
     ForZeroTo(iMetric, metrics->nb) {
 
       size_t len = strlen(that->cmd) + strlen(metrics->values[iMetric]) + 1 + 1;
-      char* cmd =
-        realloc(
-          that->cmd,
-          len);
-      if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
-      that->cmd = cmd;
+      SafeRealloc(
+        that->cmd,
+        len);
       char* ptrEnd = 
         strchr(
           that->cmd,
@@ -2637,13 +2599,10 @@ void RunRecorderSetCmdToGetMeasuresLocal(
     RunRecorderPairsRefValFree(&metrics);
 
     char* cmdFormatTail = "FROM %s";
-    char* cmd =
-      realloc(
-        that->cmd,
-        strlen(that->cmd) +
-        strlen(cmdFormatTail) + strlen(project) - 2 + 1);
-    if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
-    that->cmd = cmd;
+    SafeRealloc(
+      that->cmd,
+      strlen(that->cmd) +
+      strlen(cmdFormatTail) + strlen(project) - 2 + 1);
     char* ptrEnd =
       strchr(
         that->cmd,
@@ -2665,13 +2624,10 @@ void RunRecorderSetCmdToGetMeasuresLocal(
           nbMeasure);
 
       char* cmdLimit = " ORDER BY Ref DESC LIMIT %ld";
-      char* cmd =
-        realloc(
-          that->cmd,
-          strlen(that->cmd) +
-          strlen(cmdLimit) + lenNbMeasureStr - 3 + 1);
-      if (cmd == NULL) Raise(TryCatchExc_MallocFailed);
-      that->cmd = cmd;
+      SafeRealloc(
+        that->cmd,
+        strlen(that->cmd) +
+        strlen(cmdLimit) + lenNbMeasureStr - 3 + 1);
       char* ptrEnd =
         strchr(
           that->cmd,
