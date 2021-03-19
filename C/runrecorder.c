@@ -14,16 +14,27 @@
 // Loop from 0 to n
 #define ForZeroTo(I, N) for (long I = 0; I < N; ++I)
 
+// Polymorphic free
+#define PolyFree(P) _Generic(P, \
+  struct RunRecorder**: RunRecorderFree, \
+  struct RunRecorderPairsRefVal**: RunRecorderPairsRefValFree, \
+  struct RunRecorderMeasure**: RunRecorderMeasureFree, \
+  struct RunRecorderMeasures**: RunRecorderMeasuresFree, \
+  default: free)((void*)P)
+
+
 // strdup freeing the assigned variable and raising exception if it fails
 #define SafeStrDup(T, S)  \
   do { \
-    free(T); T = strdup(S); if (T == NULL) Raise(TryCatchExc_MallocFailed); \
+    PolyFree(T); T = strdup(S); \
+    if (T == NULL) Raise(TryCatchExc_MallocFailed); \
   } while(false)
 
 // malloc freeing the assigned variable and raising exception if it fails
 #define SafeMalloc(T, S)  \
   do { \
-    free(T); T = malloc(S); if (T == NULL) Raise(TryCatchExc_MallocFailed); \
+    PolyFree(T); T = malloc(S); \
+    if (T == NULL) Raise(TryCatchExc_MallocFailed); \
   } while(false)
 
 // realloc raising exception and leaving the original pointer unchanged
@@ -251,6 +262,20 @@ struct RunRecorder* RunRecorderCreate(
 
 }
 
+// Free the error messages of a struct RunRecorder
+// Input:
+//   that: The struct RunRecorder to be freed
+void RunRecorderFreeErrMsg(
+  struct RunRecorder* const that) {
+
+  // Free the error messages
+  PolyFree(that->errMsg);
+  that->errMsg = NULL;
+  sqlite3_free(that->sqliteErrMsg);
+  that->sqliteErrMsg = NULL;
+
+}
+
 // Initialise a struct RunRecorder
 // Input:
 //   that: The struct RunRecorder
@@ -265,9 +290,8 @@ struct RunRecorder* RunRecorderCreate(
 void RunRecorderInit(
   struct RunRecorder* const that) {
 
-  // Ensure errMsg is freed
-  sqlite3_free(that->sqliteErrMsg);
-  free(that->errMsg);
+  // Ensure the error message are freed
+  RunRecorderFreeErrMsg(that);
 
   // If the recorder doesn't use the API
   if (RunRecorderUsesAPI(that) == false) {
@@ -290,7 +314,7 @@ void RunRecorderInit(
     strcmp(
       version,
       RUNRECORDER_VERSION_DB);
-  free(version);
+  PolyFree(version);
   if (cmpVersion != 0) RunRecorderUpgradeDb(that);
 
 }
@@ -305,11 +329,11 @@ void RunRecorderFree(
   if (that == NULL || *that == NULL) return;
 
   // Free memory used by the properties
-  free((*that)->url);
-  free((*that)->errMsg);
+  PolyFree((*that)->url);
+  PolyFree((*that)->errMsg);
   sqlite3_free((*that)->sqliteErrMsg);
-  free((*that)->curlReply);
-  free((*that)->cmd);
+  PolyFree((*that)->curlReply);
+  PolyFree((*that)->cmd);
 
   // Close the connection to the local database if it was opened
   if ((*that)->db != NULL) sqlite3_close((*that)->db);
@@ -323,22 +347,8 @@ void RunRecorderFree(
   }
 
   // Free memory used by the RunRecorder
-  free(*that);
+  PolyFree(*that);
   *that = NULL;
-
-}
-
-// Free the error messages of a struct RunRecorder
-// Input:
-//   that: The struct RunRecorder to be freed
-void RunRecorderFreeErrMsg(
-  struct RunRecorder* const that) {
-
-  // Free the error messages
-  free(that->errMsg);
-  that->errMsg = NULL;
-  sqlite3_free(that->sqliteErrMsg);
-  that->sqliteErrMsg = NULL;
 
 }
 
@@ -368,7 +378,7 @@ bool RunRecorderUsesAPI(
 void RunRecorderResetCurlReply(
   struct RunRecorder* const that) {
 
-  free(that->curlReply);
+  PolyFree(that->curlReply);
   that->curlReply = NULL;
 
 }
@@ -399,6 +409,9 @@ void RunRecorderCreateDb(
 void RunRecorderCreateDbLocal(
   struct RunRecorder* const that) {
 
+  // Ensure the error messages are freed
+  RunRecorderFreeErrMsg(that);
+
   // List of commands to create the table
   char* sqlCmd[RUNRECORDER_NB_TABLE + 1] = {
 
@@ -426,9 +439,6 @@ void RunRecorderCreateDbLocal(
     "VALUES (NULL, '" RUNRECORDER_VERSION_DB "')"
 
   };
-
-  // Ensure errMsg is freed
-  sqlite3_free(that->sqliteErrMsg);
 
   // Loop on the commands
   ForZeroTo(iCmd, RUNRECORDER_NB_TABLE + 1) {
@@ -713,12 +723,12 @@ char* RunRecoderGetJSONValOfKey(
     }
 
     // Free memory
-    free(keyDecorated);
+    PolyFree(keyDecorated);
 
   } CatchDefault {
     
-    free(keyDecorated);
-    free(val);
+    PolyFree(keyDecorated);
+    PolyFree(val);
     Raise(TryCatchGetLastExc());
 
   } EndTryWithDefault;
@@ -816,10 +826,10 @@ void RunRecorderSendAPIReq(
       strcmp(
         retCode,
         "0");
-    free(retCode);
+    PolyFree(retCode);
     if (cmpRet != 0) {
 
-      free(that->errMsg);
+      PolyFree(that->errMsg);
       that->errMsg =
         RunRecoderGetJSONValOfKey(
           that->curlReply,
@@ -882,7 +892,7 @@ void RunRecorderAddProjectLocal(
   // Create the SQL command
   char* cmdFormat =
     "INSERT INTO _Project (Ref, Label) VALUES (NULL, \"%s\")";
-  free(that->cmd);
+  PolyFree(that->cmd);
   size_t lenCmd = strlen(cmdFormat) + strlen(name) - 2 + 1;
   SafeMalloc(
     that->cmd,
@@ -926,7 +936,7 @@ void RunRecorderAddProjectAPI(
   // Create the request to the Web API
   // '-2' in the malloc for the replaced '%s'
   char* cmdFormat = "action=add_project&label=%s";
-  free(that->cmd);
+  PolyFree(that->cmd);
   size_t lenCmd = strlen(cmdFormat) + strlen(name) - 2 + 1;
   SafeMalloc(
     that->cmd,
@@ -1272,11 +1282,11 @@ struct RunRecorderPairsRefVal* RunRecorderGetPairsRefValFromJSON(
           ref,
           val);
 
-        free(val);
+        PolyFree(val);
 
       } CatchDefault {
 
-        free(val);
+        PolyFree(val);
         Raise(TryCatchGetLastExc());
 
       } EndTryWithDefault;
@@ -1333,11 +1343,11 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjectsAPI(
     projects = RunRecorderGetPairsRefValFromJSON(json);
 
     // Free memory
-    free(json);
+    PolyFree(json);
 
   } Catch(TryCatchExc_MallocFailed) {
 
-    free(json);
+    PolyFree(json);
     Raise(TryCatchGetLastExc());
     
   } EndTry;
@@ -1416,14 +1426,14 @@ void RunRecorderPairsRefValFree(
   if ((*that)->values != NULL) {
 
     // Free the pairs
-    ForZeroTo(iPair, (*that)->nb) free((*that)->values[iPair]);
+    ForZeroTo(iPair, (*that)->nb) PolyFree((*that)->values[iPair]);
 
   }
 
   // Free memory
-  free((*that)->values);
-  free((*that)->refs);
-  free(*that);
+  PolyFree((*that)->values);
+  PolyFree((*that)->refs);
+  PolyFree(*that);
   *that = NULL;
 
 }
@@ -1538,11 +1548,11 @@ struct RunRecorderPairsRefVal* RunRecorderGetMetricsAPI(
     metrics = RunRecorderGetPairsRefValFromJSON(json);
 
     // Free memory
-    free(json);
+    PolyFree(json);
 
   } CatchDefault {
 
-    free(json);
+    PolyFree(json);
     RunRecorderPairsRefValFree(&metrics);
     Raise(TryCatchGetLastExc());
     
@@ -1956,21 +1966,21 @@ void RunRecorderMeasureFree(
   if ((*that)->metrics != NULL) {
 
     // Free the metrics
-    ForZeroTo(iMetric, (*that)->nbVal) free((*that)->metrics[iMetric]);
+    ForZeroTo(iMetric, (*that)->nbVal) PolyFree((*that)->metrics[iMetric]);
 
   }
 
   if ((*that)->values != NULL) {
 
     // Free the values
-    ForZeroTo(iVal, (*that)->nbVal) free((*that)->values[iVal]);
+    ForZeroTo(iVal, (*that)->nbVal) PolyFree((*that)->values[iVal]);
 
   }
 
   // Free memory
-  free((*that)->metrics);
-  free((*that)->values);
-  free(*that);
+  PolyFree((*that)->metrics);
+  PolyFree((*that)->values);
+  PolyFree(*that);
   *that = NULL;
 
 }
@@ -2035,11 +2045,11 @@ void RunRecorderMeasureAddValueInt(
       str);
 
     // Free memory
-    free(str);
+    PolyFree(str);
 
   } CatchDefault {
 
-    free(str);
+    PolyFree(str);
     Raise(TryCatchGetLastExc());
 
   } EndTryWithDefault;
@@ -2071,11 +2081,11 @@ void RunRecorderMeasureAddValueFloat(
       str);
 
     // Free memory
-    free(str);
+    PolyFree(str);
 
   } CatchDefault {
 
-    free(str);
+    PolyFree(str);
     Raise(TryCatchGetLastExc());
 
   } EndTryWithDefault;
@@ -2276,7 +2286,7 @@ void RunRecorderAddMeasureAPI(
       version,
       NULL,
       10);
-  free(version);
+  PolyFree(version);
   if (errno != 0) Raise(TryCatchExc_ApiRequestFailed);
 
 }
@@ -3119,8 +3129,8 @@ void RunRecorderMeasuresFree(
   // Free the metrics label
   if ((*that)->metrics != NULL) {
 
-    ForZeroTo(iMetric, (*that)->nbMetric) free((*that)->metrics[iMetric]);
-    free((*that)->metrics);
+    ForZeroTo(iMetric, (*that)->nbMetric) PolyFree((*that)->metrics[iMetric]);
+    PolyFree((*that)->metrics);
 
   }
 
@@ -3132,19 +3142,19 @@ void RunRecorderMeasuresFree(
       if ((*that)->values[iMeasure] != NULL) {
 
         ForZeroTo(iMetric, (*that)->nbMetric)
-          free((*that)->values[iMeasure][iMetric]);
-        free((*that)->values[iMeasure]);
+          PolyFree((*that)->values[iMeasure][iMetric]);
+        PolyFree((*that)->values[iMeasure]);
 
       }
 
     }
 
-    free((*that)->values);
+    PolyFree((*that)->values);
 
   }
 
   // Free memory
-  free(*that);
+  PolyFree(*that);
   *that = NULL;
 
 }
