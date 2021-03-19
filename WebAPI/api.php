@@ -4,9 +4,10 @@
 // Start the PHP session
 session_start();
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+//ini_set('display_errors', 1);
+//ini_set('display_startup_errors', 1);
+//error_reporting(E_ALL);
+error_reporting(E_NONE);
 
 // Path to the database
 $pathDB = "./runrecorder.db";
@@ -270,7 +271,8 @@ function UpdateViewProject($db, $project) {
     $cmd .= $ref . ")) ";
 
   }
-  $cmd .= "FROM _Measure ORDER BY _Measure.DateMeasure, _Measure.Ref";
+  $cmd .= "FROM _Measure WHERE _Measure.RefProject = ";
+  $cmd .= $refProject . " ORDER BY _Measure.DateMeasure, _Measure.Ref";
 
   // Create the view
   $success = $db->exec($cmd);
@@ -722,6 +724,7 @@ try {
         'metrics&project=..., ' .
         'add_measure&project=...&...=...&..., ' .
         'delete_measure&measure=..., ' .
+        'measures&project=...[&last=...], ' .
         'csv&project=..., ' .
         'flush&project=..."}';
 

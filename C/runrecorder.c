@@ -1727,14 +1727,15 @@ void RunRecorderUpdateViewProject(
 
   // Extend the command with the tail
   char* cmdAddFormatTail =
-    "FROM _Measure ORDER BY _Measure.DateMeasure, _Measure.Ref";
+    "FROM _Measure, _Project WHERE _Measure.RefProject = _Project.Ref AND _Project.Label = \"%s\" ORDER BY _Measure.DateMeasure, _Measure.Ref";
   SafeRealloc(
     that->cmd,
-    strlen(that->cmd) + strlen(cmdAddFormatTail) + 1);
+    strlen(that->cmd) + strlen(cmdAddFormatTail) +
+    strlen(project) - 2 + 1);
   SPrintfAtEnd(
     that->cmd,
-    "%s",
-    cmdAddFormatTail);
+    cmdAddFormatTail,
+    project);
 
   // Execute the command to add the view
   retExec =
