@@ -30,26 +30,10 @@
 enum TryCatchException {
 
   TryCatchExc_Segv = 1,
-  TryCatchExc_CreateTableFailed,
-  TryCatchExc_OpenDbFailed,
-  TryCatchExc_CreateCurlFailed,
-  TryCatchExc_CurlRequestFailed,
-  TryCatchExc_CurlSetOptFailed,
-  TryCatchExc_SQLRequestFailed,
-  TryCatchExc_ApiRequestFailed,
   TryCatchExc_MallocFailed,
-  TryCatchExc_InvalidProjectName,
-  TryCatchExc_ProjectNameAlreadyUsed,
-  TryCatchExc_FlushProjectFailed,
-  TryCatchExc_AddProjectFailed,
-  TryCatchExc_AddMetricFailed,
-  TryCatchExc_UpdateViewFailed,
-  TryCatchExc_InvalidJSON,
-  TryCatchExc_InvalidMetricName,
-  TryCatchExc_MetricNameAlreadyUsed,
-  TryCatchExc_AddMeasureFailed,
-  TryCatchExc_DeleteMeasureFailed,
   TryCatchExc_IOError,
+  TryCatchExc_ExcIDConflict,
+  TryCatchExc_TooManyExcToStrFun,
   TryCatchExc_LastID
 
 };
@@ -207,10 +191,19 @@ int TryCatchGetLastExc(
   // No parameters
   void);
 
-// Function to convert from enum TryCatchException to char*
-char const* TryCatchExceptionToStr(
+// Function to convert an exception ID to char*
+char const* TryCatchExcToStr(
   // The exception ID
-  enum TryCatchException exc);
+  int exc);
+
+// Function to add a function used by TryCatch to convert user-defined
+// function to a string. The function in argument must return NULL if its
+// argument is not an exception ID it is handling, else a pointer to a
+// statically allocated string.
+// It is highly recommended to provide conversion functions to cover
+// all the user defined exceptions as it also allows TryCatch to detect
+// conflict between exception IDs.
+void TryCatchAddExcToStrFun(char const* (fun(int)));
 
 // End of the guard against multiple inclusion
 #endif

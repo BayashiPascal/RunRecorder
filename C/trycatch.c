@@ -12,12 +12,12 @@
 // Stack of jmp_buf to memorise the TryCatch blocks
 // To avoid exposing this variable to the user, implement any code using
 // it as functions here instead of in the #define-s of trycatch.h
-jmp_buf tryCatchExcJmp[TryCatchMaxExcLvl];
+static jmp_buf tryCatchExcJmp[TryCatchMaxExcLvl];
 
 // Index of the next TryCatch block in the stack of jmp_buf
 // To avoid exposing this variable to the user, implement any code using
 // it as functions here instead of in the #define-s of trycatch.h
-int tryCatchExcLvl = 0;
+static int tryCatchExcLvl = 0;
 
 // ID of the last raised exception
 // To avoid exposing this variable to the user, implement any code using
@@ -25,32 +25,34 @@ int tryCatchExcLvl = 0;
 // Do not use the type enum TryCatchException to allow the user to extend
 // the list of exceptions with user-defined exceptions outside of enum
 // TryCatchException.
-int tryCatchExc = 0;
+static int tryCatchExc = 0;
 
-// Label for the exceptions
-char* TryCatchExceptionStr[TryCatchExc_LastID] = {
+// Label for the TryCatchExceptions
+static char* exceptionStr[TryCatchExc_LastID] = {
   "",
   "TryCatchExc_Segv",
-  "TryCatchExc_CreateTableFailed",
-  "TryCatchExc_OpenDbFailed",
-  "TryCatchExc_CreateCurlFailed",
-  "TryCatchExc_CurlRequestFailed",
-  "TryCatchExc_CurlSetOptFailed",
-  "TryCatchExc_SQLRequestFailed",
-  "TryCatchExc_ApiRequestFailed",
   "TryCatchExc_MallocFailed",
-  "TryCatchExc_InvalidProjectName",
-  "TryCatchExc_ProjectNameAlreadyUsed",
-  "TryCatchExc_FlushProjectFailed",
-  "TryCatchExc_AddProjectFailed",
-  "TryCatchExc_AddMetricFailed",
-  "TryCatchExc_UpdateViewFailed",
-  "TryCatchExc_MetricNameAlreadyUsed",
-  "TryCatchExc_AddMeasureFailed",
-  "TryCatchExc_DeleteMeasureFailed",
   "TryCatchExc_IOError",
-  "TryCatchExc_InvalidJSON",
+  "TryCatchExc_ExcIDConflict",
+  "TryCatchExc_TooManyExcToStrFun",
 };
+
+// Buffer to build default label for user defined exceptions
+// Size of the buffer is calculated as length of "User-defined exception
+//  ()" plus enough space to hold the representation of an int
+static char userDefinedExceptionDefaultLabel[50];
+
+// Max number of user-defined functions used to convert user-defined
+// exception ID to strings
+#define nbMaxUserDefinedExcToStr 256
+
+// Current number of user-defined functions used to convert user-defined
+// exception ID to strings
+static int nbUserDefinedExcToStr = 0;
+
+// Pointers to user-defined functions used to convert user-defined
+// exception ID to strings
+static char const* (*userDefinedExcToStr[nbMaxUserDefinedExcToStr])(int);
 
 // Function called at the beginning of a TryCatch block to guard against
 // overflow of the stack of jump_buf
@@ -126,7 +128,7 @@ void Raise(
     fprintf(
       stderr,
       "Unhandled exception (%s).\n",
-      TryCatchExceptionToStr(exc));
+      TryCatchExcToStr(exc));
 
   }
 
@@ -148,7 +150,7 @@ void TryCatchDefault(
     fprintf(
       stderr,
       "Unhandled exception (%s) in %s, line %d.\n",
-      TryCatchExceptionToStr(tryCatchExc),
+      TryCatchExcToStr(tryCatchExc),
       filename,
       line);
 
@@ -234,12 +236,76 @@ int TryCatchGetLastExc(
 
 }
 
-// Function to convert from enum TryCatchException to char*
-char const* TryCatchExceptionToStr(
+// Function to convert an exception ID to char*
+char const* TryCatchExcToStr(
   // The exception ID
-  enum TryCatchException exc) {
+  int exc) {
 
-  return TryCatchExceptionStr[exc];
+  // Declare the pointer to the result string
+  char const* excStr = NULL;
+
+  // If the exception ID is one of TryCatchException
+  if (exc < TryCatchExc_LastID) excStr = exceptionStr[exc];
+
+  // Loop on user-defined conversion functions
+  for (
+    int iFun = 0;
+    iFun < nbUserDefinedExcToStr;
+    ++iFun) {
+
+    // Get the conversion using this function
+    char const* str = (*userDefinedExcToStr[iFun])(exc);
+
+    // If the exception ID could be converted
+    if (str != NULL) {
+
+      // If there was already another result of conversion,
+      // it means there is a ID conflict
+      if (excStr != NULL) Raise(TryCatchExc_ExcIDConflict);
+
+      // Update the pointer the result
+      excStr = str;
+
+    }
+
+  }
+
+  // If we haven't find a conversion yet
+  if (excStr == NULL) {
+
+    // Create a default string
+    sprintf(
+      userDefinedExceptionDefaultLabel,
+      "User-defined exception (%d)",
+      exc);
+    excStr = userDefinedExceptionDefaultLabel;
+
+  }
+
+  // Return the converted exception to string
+  return excStr;
+
+}
+
+// Function to add a function used by TryCatch to convert user-defined
+// function to a string. The function in argument must return NULL if its
+// argument is not an exception ID it is handling, else a pointer to a
+// statically allocated string.
+// It is highly recommended to provide conversion functions to cover
+// all the user defined exceptions as it also allows TryCatch to detect
+// conflict between exception IDs.
+void TryCatchAddExcToStrFun(char const* (fun(int))) {
+
+  // If the buffer of pointer to conversion function is full, raise
+  // the exception TooManyExcToStrFun
+  if (nbUserDefinedExcToStr >= nbMaxUserDefinedExcToStr)
+    Raise(TryCatchExc_TooManyExcToStrFun);
+
+  // Add the pointer
+  userDefinedExcToStr[nbUserDefinedExcToStr] = fun;
+
+  // Increment the number of conversion functions
+  ++nbUserDefinedExcToStr;
 
 }
 

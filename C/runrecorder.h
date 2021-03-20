@@ -18,6 +18,31 @@
 // Include own modules header
 #include "trycatch.h"
 
+// List of RunRecorder's exceptions ID
+enum RunRecorderException {
+
+  RunRecorderExc_CreateTableFailed = 100,
+  RunRecorderExc_OpenDbFailed,
+  RunRecorderExc_CreateCurlFailed,
+  RunRecorderExc_CurlRequestFailed,
+  RunRecorderExc_CurlSetOptFailed,
+  RunRecorderExc_SQLRequestFailed,
+  RunRecorderExc_ApiRequestFailed,
+  RunRecorderExc_InvalidProjectName,
+  RunRecorderExc_ProjectNameAlreadyUsed,
+  RunRecorderExc_FlushProjectFailed,
+  RunRecorderExc_AddProjectFailed,
+  RunRecorderExc_AddMetricFailed,
+  RunRecorderExc_UpdateViewFailed,
+  RunRecorderExc_InvalidJSON,
+  RunRecorderExc_InvalidMetricName,
+  RunRecorderExc_MetricNameAlreadyUsed,
+  RunRecorderExc_AddMeasureFailed,
+  RunRecorderExc_DeleteMeasureFailed,
+  RunRecorderExc_LastID
+
+};
+
 // Structure of a RunRecorder
 struct RunRecorder {
 
@@ -358,6 +383,10 @@ void RunRecorderMeasuresPrintCSV(
   struct RunRecorderMeasures const* const that,
                           FILE* const stream);
 
+// Function to convert a RunRecorder exception ID to char*
+char const* RunRecorderExcToStr(
+  // The exception ID
+  int exc);
 
 // End of the guard against multiple inclusion
 #endif

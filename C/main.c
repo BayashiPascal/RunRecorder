@@ -13,7 +13,7 @@ void PrintCaughtException(
   fprintf(
     stderr,
     "Caught exception %s during %s.\n",
-    TryCatchExceptionToStr(TryCatchGetLastExc()),
+    TryCatchExcToStr(TryCatchGetLastExc()),
     caller);
   if (recorder->errMsg != NULL) {
 
@@ -42,6 +42,9 @@ int main(
 
   // Unused parameters
   (void)argc; (void)argv;
+
+  // Set the conversion function to string for RunRecorder exceptions
+  TryCatchAddExcToStrFun(RunRecorderExcToStr);
 
   // Path to the SQLite database local file or Web API
   char const* pathDb = "./runrecorder.db";
@@ -98,7 +101,7 @@ int main(
         recorder,
         "RoomTemperature");
 
-    } Catch (TryCatchExc_ProjectNameAlreadyUsed) {
+    } Catch (RunRecorderExc_ProjectNameAlreadyUsed) {
 
       printf("Project RoomTemperature already in the database\n");
 
@@ -158,7 +161,7 @@ int main(
         "Date",
         "-");
 
-    } Catch (TryCatchExc_MetricNameAlreadyUsed) {
+    } Catch (RunRecorderExc_MetricNameAlreadyUsed) {
 
       printf("Metric Date already exists in RoomTemperature\n");
 
@@ -172,7 +175,7 @@ int main(
         "Temperature",
         "0.0");
 
-    } Catch (TryCatchExc_MetricNameAlreadyUsed) {
+    } Catch (RunRecorderExc_MetricNameAlreadyUsed) {
 
       printf("Metric Temperature already exists in RoomTemperature\n");
 
