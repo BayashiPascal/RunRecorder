@@ -17,27 +17,33 @@ BUILD_MODE=0
 # Compiler arguments depending on BUILD_MODE
 ifeq ($(BUILD_MODE), 0)
 	BUILD_ARG=-I./ -Wall -Wextra -Og -ggdb -g3 -DBUILDMODE=$(BUILD_MODE)
-	LINK_ARG=-lm -lpthread -ldl -lcurl
+	LINK_ARG=-lm -lpthread -ldl -lcurl -ltrycatchc
 else ifeq ($(BUILD_MODE), 1)
 	BUILD_ARG=-I./ -Wall -Wextra -Werror -Wfatal-errors -O3 -DBUILDMODE=$(BUILD_MODE)
-	LINK_ARG=-lm -lpthread -ldl -lcurl
+	LINK_ARG=-lm -lpthread -ldl -lcurl -ltrycatchc
 endif
 
 # Rules
 
-all: main
+all: /usr/local/lib/libtrycatchc.a main
 
-main: sqlite3/sqlite3.o trycatch.o runrecorder.o main.o Makefile
-	$(COMPILER) main.o runrecorder.o trycatch.o sqlite3/sqlite3.o $(LINK_ARG) -o main 
+main: sqlite3/sqlite3.o runrecorder.o main.o Makefile
+	$(COMPILER) main.o runrecorder.o sqlite3/sqlite3.o $(LINK_ARG) -o main 
 
-main.o: main.c runrecorder.h trycatch.h Makefile
+main.o: main.c runrecorder.h Makefile
 	$(COMPILER) $(BUILD_ARG) -c main.c 
 
-trycatch.o: trycatch.c trycatch.h Makefile
-	$(COMPILER) -c trycatch.c
-
-runrecorder.o: runrecorder.c runrecorder.h trycatch.h sqlite3/sqlite3.h curl/include/curl/curl.h Makefile
+runrecorder.o: runrecorder.c runrecorder.h sqlite3/sqlite3.h curl/include/curl/curl.h Makefile
 	$(COMPILER) $(BUILD_ARG) -c runrecorder.c
+
+/usr/local/lib/libtrycatchc.a:
+	wget https://github.com/BayashiPascal/TryCatchC/archive/main.zip
+	unzip main.zip
+	mv TryCatchC-main TryCatchC
+	rm main.zip
+	cd TryCatchC && sed -i 's/^#define TryCatchMaxExcLvl.*$$/#define TryCatchMaxExcLvl 256/' trycatch.c
+	cd TryCatchC && make && sudo make install
+	rm -rf TryCatchC
 
 sqlite3/sqlite3.o: sqlite3/sqlite3.h
 	cd sqlite3; \

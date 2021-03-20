@@ -14,9 +14,7 @@
 #include <sqlite3/sqlite3.h>
 #include <curl/curl.h>
 #include <errno.h>
-
-// Include own modules header
-#include "trycatch.h"
+#include <TryCatchC/trycatchc.h>
 
 // List of RunRecorder's exceptions ID
 enum RunRecorderException {
