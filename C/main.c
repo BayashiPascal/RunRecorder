@@ -43,9 +43,6 @@ int main(
   // Unused parameters
   (void)argc; (void)argv;
 
-  // Set the conversion function to string for RunRecorder exceptions
-  TryCatchAddExcToStrFun(RunRecorderExcToStr);
-
   // Path to the SQLite database local file or Web API
   char const* pathDb = "./runrecorder.db";
   //char const* pathApi = "https://localhost/RunRecorder/api.php";

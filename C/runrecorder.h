@@ -16,7 +16,8 @@
 #include <errno.h>
 #include <TryCatchC/trycatchc.h>
 
-// List of RunRecorder's exceptions ID
+// ================== RunRecorder Exceptions =========================
+
 enum RunRecorderException {
 
   RunRecorderExc_CreateTableFailed = 100,
@@ -40,6 +41,8 @@ enum RunRecorderException {
   RunRecorderExc_LastID
 
 };
+
+// ================== Structures definitions =========================
 
 // Structure of a RunRecorder
 struct RunRecorder {
@@ -122,27 +125,19 @@ struct RunRecorderMeasures {
 
 };
 
+// ================== Public functions declarations =========================
+
 // Constructor for a struct RunRecorder
 // Input:
 //   url: Path to the SQLite database or Web API
 // Output:
 //  Return a new struct RunRecorder
-// Raise:
-//   TryCatchExc_MallocFailed
 struct RunRecorder* RunRecorderCreate(
   char const* const url);
 
 // Initialise a struct RunRecorder
 // Input:
 //   that: The struct RunRecorder
-// Raise: 
-//   TryCatchExc_CreateTableFailed
-//   TryCatchExc_OpenDbFailed
-//   TryCatchExc_CreateCurlFailed
-//   TryCatchExc_CurlSetOptFailed
-//   TryCatchExc_SQLRequestFailed
-//   TryCatchExc_ApiRequestFailed
-//   TryCatchExc_MallocFailed
 void RunRecorderInit(
   struct RunRecorder* const that);
 
@@ -150,21 +145,23 @@ void RunRecorderInit(
 // Input:
 //   that: The struct RunRecorder to be freed
 void RunRecorderFree(
-  struct RunRecorder** that);
+  struct RunRecorder** const that);
 
 // Get the version of the database
 // Input:
 //   that: the struct RunRecorder
 // Output:
 //   Return a new string
-// Raise:
-//   TryCatchExc_SQLRequestFailed
-//   TryCatchExc_CurlSetOptFailed
-//   TryCatchExc_CurlRequestFailed
-//   TryCatchExc_ApiRequestFailed
-//   TryCatchExc_MallocFailed
 char* RunRecorderGetVersion(
   struct RunRecorder* const that);
+
+// Check if a string respect the pattern /[a-zA-Z][a-zA-Z0-9_]*/
+// Input:
+//   str: the string to check
+// Output:
+//   Return true if the string respect the pattern, else false
+bool RunRecorderIsValidLabel(
+  char const* const str);
 
 // Add a new project
 // Input:
@@ -172,33 +169,32 @@ char* RunRecorderGetVersion(
 //   name: the name of the new project
 // The project's name must respect the following pattern: 
 // /^[a-zA-Z][a-zA-Z0-9_]*$/ .
+// Output:
+//   Return the reference of the new project
 // Raise:
-//   TryCatchExc_SQLRequestFailed
-//   TryCatchExc_CurlSetOptFailed
-//   TryCatchExc_CurlRequestFailed
-//   TryCatchExc_ApiRequestFailed
-//   TryCatchExc_MallocFailed
-//   TryCatchExc_InvalidProjectName
-//   TryCatchExc_ProjectNameAlreadyUsed
-//   TryCatchExc_AddProjectFailed
+//   RunRecorderExc_InvalidProjectName
+//   RunRecorderExc_ProjectNameAlreadyUsed
 void RunRecorderAddProject(
   struct RunRecorder* const that,
-  char const* const name);
+          char const* const name);
 
 // Get the list of projects
 // Input:
 //   that: the struct RunRecorder
 // Output:
 //   Return the projects' reference/label
-// Raise:
-//   TryCatchExc_SQLRequestFailed
-//   TryCatchExc_CurlSetOptFailed
-//   TryCatchExc_CurlRequestFailed
-//   TryCatchExc_MallocFailed
-//   TryCatchExc_ApiRequestFailed
-//   TryCatchExc_InvalidJSON
 struct RunRecorderPairsRefVal* RunRecorderGetProjects(
   struct RunRecorder* const that);
+
+// Get the list of metrics for a project
+// Input:
+//      that: the struct RunRecorder
+//   project: the project
+// Output:
+//   Return the metrics' reference/label
+struct RunRecorderPairsRefVal* RunRecorderGetMetrics(
+  struct RunRecorder* const that,
+          char const* const project);
 
 // Add a metric to a project
 // Input:
@@ -214,40 +210,61 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjects(
 // the same project. A metric label can't be 'action' or 'project' (case
 //  sensitive, so 'Action' is fine).
 // Raise:
-//   TryCatchExc_SQLRequestFailed
-//   TryCatchExc_MallocFailed
-//   TryCatchExc_InvalidMetricName
-//   TryCatchExc_MetricNameAlreadyUsed
+//   RunRecorderExc_InvalidMetricName
+//   RunRecorderExc_MetricNameAlreadyUsed
 void RunRecorderAddMetric(
   struct RunRecorder* const that,
           char const* const project,
           char const* const label,
           char const* const defaultVal);
 
-// Get the list of metrics for a project
-// Input:
-//      that: the struct RunRecorder
-//   project: the project
+// Create a struct RunRecorderMeasure
 // Output:
-//   Return the metrics' reference/label
-// Raise:
-//   TryCatchExc_SQLRequestFailed
-//   TryCatchExc_CurlSetOptFailed
-//   TryCatchExc_CurlRequestFailed
-//   TryCatchExc_MallocFailed
-//   TryCatchExc_ApiRequestFailed
-//   TryCatchExc_InvalidJSON
-struct RunRecorderPairsRefVal* RunRecorderGetMetrics(
-  struct RunRecorder* const that,
-          char const* const project);
+//   Return the new struct RunRecorderMeasure
+struct RunRecorderMeasure* RunRecorderMeasureCreate(
+  void);
+
+// Free a struct RunRecorderMeasure
+// Input:
+//   that: the struct RunRecorderMeasure
+void RunRecorderMeasureFree(
+  struct RunRecorderMeasure** that);
+
+// Add a string value to a measure
+// Input:
+//     that: the struct RunRecorderMeasure
+//   metric: the value's metric
+//      val: the value
+void RunRecorderMeasureAddValueStr(
+  struct RunRecorderMeasure* that,
+           char const* const metric,
+           char const* const val);
+
+// Add an int value converted to a string to a measure
+// Input:
+//     that: the struct RunRecorderMeasure
+//   metric: the value's metric
+//      val: the value
+void RunRecorderMeasureAddValueInt(
+  struct RunRecorderMeasure* that,
+           char const* const metric,
+                  long const val);
+
+// Add a double value converted to a string to a measure
+// Input:
+//     that: the struct RunRecorderMeasure
+//   metric: the value's metric
+//      val: the value
+void RunRecorderMeasureAddValueDouble(
+  struct RunRecorderMeasure* that,
+           char const* const metric,
+                double const val);
 
 // Add a measure to a project
 // Inputs:
-//       that: the struct RunRecorder
-//    project: the project to add the measure to
-//    measure: the measure to add
-// Raise:
-
+//         that: the struct RunRecorder
+//      project: the project to add the measure to
+//      measure: the measure to add
 void RunRecorderAddMeasure(
                struct RunRecorder* const that,
                        char const* const project,
@@ -257,11 +274,9 @@ void RunRecorderAddMeasure(
 // Inputs:
 //       that: the struct RunRecorder
 //    measure: the measure to delete
-// Raise:
-
 void RunRecorderDeleteMeasure(
   struct RunRecorder* const that,
-        long const measure);
+                 long const measure);
 
 // Get the measures of a project
 // Inputs:
@@ -269,8 +284,6 @@ void RunRecorderDeleteMeasure(
 //      project: the project's name
 // Output:
 //   Return the measures as a struct RunRecorderMeasures
-// Raise:
-
 struct RunRecorderMeasures* RunRecorderGetMeasures(
   struct RunRecorder* const that,
           char const* const project);
@@ -283,85 +296,12 @@ struct RunRecorderMeasures* RunRecorderGetMeasures(
 // Output:
 //   Return the measures as a struct RunRecorderMeasures, ordered from the
 //   most recent to the oldest
-// Raise:
-
 struct RunRecorderMeasures* RunRecorderGetLastMeasures(
   struct RunRecorder* const that,
           char const* const project,
                  long const nbMeasure);
 
-// Remove a project
-// Inputs:
-//         that: the struct RunRecorder
-//      project: the project's name
-// Raise:
-
-void RunRecorderFlushProject(
-  struct RunRecorder* const that,
-          char const* const project);
-
-// Create a static struct RunRecorderPairsRefVal
-// Output:
-//   Return the new struct RunRecorderPairsRefVal
-struct RunRecorderPairsRefVal* RunRecorderPairsRefValCreate(
-  void);
-
-// Free a static struct RunRecorderPairsRefVal
-// Input:
-//   that: the struct RunRecorderPairsRefVal
-void RunRecorderPairsRefValFree(
-  struct RunRecorderPairsRefVal** that);
-
-// Create a static struct RunRecorderMeasure
-// Output:
-//   Return the new struct RunRecorderMeasure
-struct RunRecorderMeasure* RunRecorderMeasureCreate(
-  void);
-
-// Free a static struct RunRecorderMeasure
-// Input:
-//   that: the struct RunRecorderMeasure
-void RunRecorderMeasureFree(
-  struct RunRecorderMeasure** that);
-
-// Add a value to a measure
-// Input:
-//     that: the struct RunRecorderMeasure
-//   metric: the value's metric
-//      val: the value
-// Raise:
-//   TryCatchExc_MallocFailed
-void RunRecorderMeasureAddValueStr(
-  struct RunRecorderMeasure* that,
-           char const* const metric,
-           char const* const val);
-
-void RunRecorderMeasureAddValueInt(
-  struct RunRecorderMeasure* that,
-           char const* const metric,
-                  long const val);
-
-void RunRecorderMeasureAddValueFloat(
-  struct RunRecorderMeasure* that,
-           char const* const metric,
-                double const val);
-
-#define RunRecorderMeasureAddValue(T, M, V) _Generic(V, \
-  char*: RunRecorderMeasureAddValueStr, \
-  char const*: RunRecorderMeasureAddValueStr, \
-  int: RunRecorderMeasureAddValueInt, \
-  unsigned int: RunRecorderMeasureAddValueInt, \
-  long: RunRecorderMeasureAddValueInt, \
-  float: RunRecorderMeasureAddValueFloat, \
-  double: RunRecorderMeasureAddValueFloat)(T, M, V)
-
-// Create a static struct RunRecorderMeasures
-// Output:
-//   Return the new struct RunRecorderMeasures
-struct RunRecorderMeasures* RunRecorderMeasuresCreate(
-  void);
-
-// Free a static struct RunRecorderMeasures
+// Free a struct RunRecorderMeasures
 // Input:
 //   that: the struct RunRecorderMeasures
 void RunRecorderMeasuresFree(
@@ -375,17 +315,36 @@ void RunRecorderMeasuresFree(
 // Inputs:
 //     that: the struct RunRecorderMeasures
 //   stream: the stream to write on
-// Raise:
-
 void RunRecorderMeasuresPrintCSV(
   struct RunRecorderMeasures const* const that,
-                          FILE* const stream);
+                              FILE* const stream);
 
-// Function to convert a RunRecorder exception ID to char*
-char const* RunRecorderExcToStr(
-  // The exception ID
-  int exc);
+// Remove a project
+// Inputs:
+//         that: the struct RunRecorder
+//      project: the project's name
+void RunRecorderFlushProject(
+  struct RunRecorder* const that,
+          char const* const project);
+
+// Free a struct RunRecorderPairsRefVal
+// Input:
+//   that: the struct RunRecorderPairsRefVal
+void RunRecorderPairsRefValFree(
+  struct RunRecorderPairsRefVal** that);
+
+// ================== Polymorphism =========================
+
+#define RunRecorderMeasureAddValue(T, M, V) _Generic(V, \
+  char*: RunRecorderMeasureAddValueStr, \
+  char const*: RunRecorderMeasureAddValueStr, \
+  int: RunRecorderMeasureAddValueInt, \
+  unsigned int: RunRecorderMeasureAddValueInt, \
+  long: RunRecorderMeasureAddValueInt, \
+  float: RunRecorderMeasureAddValueDouble, \
+  double: RunRecorderMeasureAddValueDouble)(T, M, V)
 
 // End of the guard against multiple inclusion
 #endif
+
 // ------------------ runrecorder.h ------------------
