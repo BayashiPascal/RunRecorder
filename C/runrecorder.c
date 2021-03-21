@@ -366,18 +366,17 @@ static void UpdateViewProject(
 // Add a metric to a project to a local database
 // Input:
 //         that: the struct RunRecorder
-//      project: the name of the project to which add the metric
-//        label: the label of the metric. 
-//   defaultVal: the default value of the metric 
-// The label of the metric must respect the following pattern:
-// /^[a-zA-Z][a-zA-Z0-9_]*$/.
-// The default of the metric must be one character long at least.
-// The double quote `"`, equal sign `=` and ampersand `&` can't be used in
-// the default value. There cannot be two metrics with the same label for
-// the same project. A metric label can't be 'action' or 'project' (case
-//  sensitive, so 'Action' is fine).
+//      project: the name of the project to which add to the metric
+//        label: the label of the metric, it must respect the following
+//               pattern: /^[a-zA-Z][a-zA-Z0-9_]*$/
+//               There cannot be two metrics with the same label for the
+//               same project. A metric label can't be 'action' or 'project'
+//               (case sensitive, so 'Action' is fine).
+//   defaultVal: the default value of the metric, it must respect the
+//               following pattern: /^[^"=&]+$*/
 // Raise:
-//   RunRecorderExc_AddMetricFailed
+//   RunRecorderExc_InvalidMetricName
+//   RunRecorderExc_MetricNameAlreadyUsed
 static void AddMetricLocal(
   struct RunRecorder* const that,
           char const* const project,
@@ -387,16 +386,17 @@ static void AddMetricLocal(
 // Add a metric to a project through the Web API
 // Input:
 //         that: the struct RunRecorder
-//      project: the name of the project to which add the metric
-//        label: the label of the metric. 
-//   defaultVal: the default value of the metric 
-// The label of the metric must respect the following pattern:
-// /^[a-zA-Z][a-zA-Z0-9_]*$/.
-// The default of the metric must be one character long at least.
-// The double quote `"`, equal sign `=` and ampersand `&` can't be used in
-// the default value. There cannot be two metrics with the same label for
-// the same project. A metric label can't be 'action' or 'project' (case
-//  sensitive, so 'Action' is fine).
+//      project: the name of the project to which add to the metric
+//        label: the label of the metric, it must respect the following
+//               pattern: /^[a-zA-Z][a-zA-Z0-9_]*$/
+//               There cannot be two metrics with the same label for the
+//               same project. A metric label can't be 'action' or 'project'
+//               (case sensitive, so 'Action' is fine).
+//   defaultVal: the default value of the metric, it must respect the
+//               following pattern: /^[^"=&]+$*/
+// Raise:
+//   RunRecorderExc_InvalidMetricName
+//   RunRecorderExc_MetricNameAlreadyUsed
 static void AddMetricAPI(
   struct RunRecorder* const that,
           char const* const project,
@@ -576,8 +576,12 @@ static void FlushProjectAPI(
           char const* const project);
 
 // Function to convert a RunRecorder exception ID to char*
+// Input:
+//   exc: the exception ID
+// Output:
+//   Return a pointer to a static string describing the exception, or
+//   NULL if the ID is not one of RunRecorderException
 static char const* ExcToStr(
-  // The exception ID
   int exc);
 
 // ================== Public functions definition =========================
@@ -2452,7 +2456,6 @@ static struct RunRecorderPairsRefVal* GetProjectsAPI(
 
   // Variable to memorise the projects
   struct RunRecorderPairsRefVal* projects = NULL;
-
   Try {
 
     // Get the projects list in the JSON reply
@@ -2468,12 +2471,12 @@ static struct RunRecorderPairsRefVal* GetProjectsAPI(
     // Free memory
     PolyFree(json);
 
-  } Catch(TryCatchExc_MallocFailed) {
+  } CatchDefault {
 
     PolyFree(json);
     Raise(TryCatchGetLastExc());
     
-  } EndTry;
+  } EndTryWithDefault;
 
   // Return the projects
   return projects;
@@ -2521,7 +2524,7 @@ static struct RunRecorderPairsRefVal* GetMetricsLocal(
     "_Project.Label = \"%s\"";
   SafeMalloc(
     that->cmd,
-    strlen(cmdFormat) + strlen(project) - 2 + 1);
+    strlen(cmdFormat) - 2 + strlen(project) + 1);
   sprintf(
     that->cmd,
     cmdFormat,
@@ -2529,7 +2532,6 @@ static struct RunRecorderPairsRefVal* GetMetricsLocal(
 
   // Declare a variable to memorise the metrics
   struct RunRecorderPairsRefVal* metrics = NULL;
-
   Try {
 
     // Create the struct RunRecorderPairsRefVal to memorise the metrics
@@ -2570,11 +2572,10 @@ static struct RunRecorderPairsRefVal* GetMetricsAPI(
           char const* const project) {
 
   // Create the request to the Web API
-  // '-2' in the malloc for the replaced '%s'
   char* cmdFormat = "action=metrics&project=%s";
   SafeMalloc(
     that->cmd,
-    strlen(cmdFormat) + strlen(project) - 2 + 1);
+    strlen(cmdFormat) - 2 + strlen(project) + 1);
   sprintf(
     that->cmd,
     cmdFormat,
@@ -2594,7 +2595,6 @@ static struct RunRecorderPairsRefVal* GetMetricsAPI(
 
   // Variable to memorise the metrics
   struct RunRecorderPairsRefVal* metrics = NULL;
-
   Try {
 
     // Get the metrics list in the JSON reply
@@ -2637,7 +2637,7 @@ static void UpdateViewProject(
   char* cmdDelFormat = "DROP VIEW IF EXISTS %s";
   SafeMalloc(
     that->cmd,
-    strlen(cmdDelFormat) + strlen(project) - 2 + 1);
+    strlen(cmdDelFormat) - 2 + strlen(project) + 1);
   sprintf(
     that->cmd,
     cmdDelFormat,
@@ -2648,9 +2648,7 @@ static void UpdateViewProject(
     sqlite3_exec(
       that->db,
       that->cmd,
-      // No callback
       NULL,
-      // No user data
       NULL,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_UpdateViewFailed);
@@ -2660,7 +2658,6 @@ static void UpdateViewProject(
     RunRecorderGetMetrics(
       that,
       project);
-
   Try {
 
     // Declare the format strings to create the SQL command to add the view
@@ -2674,8 +2671,7 @@ static void UpdateViewProject(
     // Create the head of the command
     SafeMalloc(
       that->cmd,
-      strlen(cmdAddFormatHead) +
-      strlen(project) - 2 +
+      strlen(cmdAddFormatHead) - 2 + strlen(project) +
       strlen(cmdAddFormatBody) + 1);
     sprintf(
       that->cmd,
@@ -2688,7 +2684,7 @@ static void UpdateViewProject(
       // Extend the command with the metric label
       SafeRealloc(
         that->cmd,
-        strlen(that->cmd) + strlen(metrics->values[iMetric]) + 2);
+        strlen(that->cmd) + 1 + strlen(metrics->values[iMetric]) + 1);
       SPrintfAtEnd(
         that->cmd,
         ",%s",
@@ -2719,8 +2715,8 @@ static void UpdateViewProject(
       // Extend the command with the metric related body part
       SafeRealloc(
         that->cmd,
-        strlen(that->cmd) + strlen(cmdAddFormatVal) +
-        lenRefMetricStr * 2 - 6 + 1);
+        strlen(that->cmd) + strlen(cmdAddFormatVal) - 3 + 
+        lenRefMetricStr - 3 + lenRefMetricStr + 1);
       SPrintfAtEnd(
         that->cmd,
         cmdAddFormatVal,
@@ -2741,11 +2737,11 @@ static void UpdateViewProject(
 
   // Extend the command with the tail
   char* cmdAddFormatTail =
-    "FROM _Measure, _Project WHERE _Measure.RefProject = _Project.Ref AND _Project.Label = \"%s\" ORDER BY _Measure.DateMeasure, _Measure.Ref";
+    "FROM _Measure, _Project WHERE _Measure.RefProject = _Project.Ref AND "
+    "_Project.Label = \"%s\" ORDER BY _Measure.DateMeasure, _Measure.Ref";
   SafeRealloc(
     that->cmd,
-    strlen(that->cmd) + strlen(cmdAddFormatTail) +
-    strlen(project) - 2 + 1);
+    strlen(that->cmd) + strlen(cmdAddFormatTail) - 2 + strlen(project) + 1);
   SPrintfAtEnd(
     that->cmd,
     cmdAddFormatTail,
@@ -2756,9 +2752,7 @@ static void UpdateViewProject(
     sqlite3_exec(
       that->db,
       that->cmd,
-      // No callback
       NULL,
-      // No user data
       NULL,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_UpdateViewFailed);
@@ -2768,18 +2762,17 @@ static void UpdateViewProject(
 // Add a metric to a project to a local database
 // Input:
 //         that: the struct RunRecorder
-//      project: the name of the project to which add the metric
-//        label: the label of the metric. 
-//   defaultVal: the default value of the metric 
-// The label of the metric must respect the following pattern:
-// /^[a-zA-Z][a-zA-Z0-9_]*$/.
-// The default of the metric must be one character long at least.
-// The double quote `"`, equal sign `=` and ampersand `&` can't be used in
-// the default value. There cannot be two metrics with the same label for
-// the same project. A metric label can't be 'action' or 'project' (case
-//  sensitive, so 'Action' is fine).
+//      project: the name of the project to which add to the metric
+//        label: the label of the metric, it must respect the following
+//               pattern: /^[a-zA-Z][a-zA-Z0-9_]*$/
+//               There cannot be two metrics with the same label for the
+//               same project. A metric label can't be 'action' or 'project'
+//               (case sensitive, so 'Action' is fine).
+//   defaultVal: the default value of the metric, it must respect the
+//               following pattern: /^[^"=&]+$*/
 // Raise:
-//   RunRecorderExc_AddMetricFailed
+//   RunRecorderExc_InvalidMetricName
+//   RunRecorderExc_MetricNameAlreadyUsed
 static void AddMetricLocal(
   struct RunRecorder* const that,
           char const* const project,
@@ -2793,8 +2786,8 @@ static void AddMetricLocal(
     "WHERE _Project.Label = \"%s\"";
   SafeMalloc(
     that->cmd,
-    strlen(cmdFormat) + strlen(label) - 2 +
-    strlen(defaultVal) - 2 + strlen(project) - 2 + 1);
+    strlen(cmdFormat) - 2 + strlen(label) - 2 +
+    strlen(defaultVal) - 2 + strlen(project) + 1);
   sprintf(
     that->cmd,
     cmdFormat,
@@ -2807,9 +2800,7 @@ static void AddMetricLocal(
     sqlite3_exec(
       that->db,
       that->cmd,
-      // No callback
       NULL,
-      // No user data
       NULL,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_AddMetricFailed);
@@ -2824,16 +2815,17 @@ static void AddMetricLocal(
 // Add a metric to a project through the Web API
 // Input:
 //         that: the struct RunRecorder
-//      project: the name of the project to which add the metric
-//        label: the label of the metric. 
-//   defaultVal: the default value of the metric 
-// The label of the metric must respect the following pattern:
-// /^[a-zA-Z][a-zA-Z0-9_]*$/.
-// The default of the metric must be one character long at least.
-// The double quote `"`, equal sign `=` and ampersand `&` can't be used in
-// the default value. There cannot be two metrics with the same label for
-// the same project. A metric label can't be 'action' or 'project' (case
-//  sensitive, so 'Action' is fine).
+//      project: the name of the project to which add to the metric
+//        label: the label of the metric, it must respect the following
+//               pattern: /^[a-zA-Z][a-zA-Z0-9_]*$/
+//               There cannot be two metrics with the same label for the
+//               same project. A metric label can't be 'action' or 'project'
+//               (case sensitive, so 'Action' is fine).
+//   defaultVal: the default value of the metric, it must respect the
+//               following pattern: /^[^"=&]+$*/
+// Raise:
+//   RunRecorderExc_InvalidMetricName
+//   RunRecorderExc_MetricNameAlreadyUsed
 static void AddMetricAPI(
   struct RunRecorder* const that,
           char const* const project,
@@ -2841,12 +2833,11 @@ static void AddMetricAPI(
           char const* const defaultVal) {
 
   // Create the request to the Web API
-  // '-2' in the malloc for the replaced '%s'
   char* cmdFormat = "action=add_metric&project=%s&label=%s&default=%s";
   SafeMalloc(
     that->cmd,
-    strlen(cmdFormat) + strlen(label) - 2 + strlen(project) - 2 +
-    strlen(defaultVal) - 2 + 1);
+    strlen(cmdFormat) - 2 + strlen(label) - 2 +
+    strlen(project) - 2 + strlen(defaultVal) + 1);
   sprintf(
     that->cmd,
     cmdFormat,
@@ -2884,8 +2875,8 @@ static void AddMeasureLocal(
   time_t mytime = time(NULL);
   char* dateStr = ctime(&mytime);
 
-  // Remove the line return at the end
-  dateStr[strlen(dateStr)-1] = '\0';
+  // Remove the line return at the end of the date
+  dateStr[strlen(dateStr) - 1] = '\0';
 
   // Create the SQL command
   char* cmdFormat =
@@ -2894,7 +2885,7 @@ static void AddMeasureLocal(
     "WHERE _Project.Label = \"%s\"";
   SafeMalloc(
     that->cmd,
-    strlen(cmdFormat) + strlen(dateStr) - 2 + strlen(project) - 2 + 1);
+    strlen(cmdFormat) - 2 + strlen(dateStr) - 2 + strlen(project) + 1);
   sprintf(
     that->cmd,
     cmdFormat,
@@ -2906,9 +2897,7 @@ static void AddMeasureLocal(
     sqlite3_exec(
       that->db,
       that->cmd,
-      // No callback
       NULL,
-      // No user data
       NULL,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_AddMeasureFailed);
@@ -2944,11 +2933,11 @@ static void AddMeasureLocal(
         strlen(measure->values[iVal]) - 2 +
         strlen(measure->metrics[iVal]) - 2 + 1);
 
-    } Catch(TryCatchExc_MallocFailed) {
+    } CatchDefault {
 
       hasFailed = true;
 
-    } EndTry;
+    } EndTryWithDefault;
 
     if (that->cmd != NULL) {
 
@@ -2964,9 +2953,7 @@ static void AddMeasureLocal(
         sqlite3_exec(
           that->db,
           that->cmd,
-          // No callback
           NULL,
-          // No user data
           NULL,
           &(that->sqliteErrMsg));
       if (retExec != SQLITE_OK) hasFailed = true;
@@ -2975,7 +2962,7 @@ static void AddMeasureLocal(
 
   }
 
-  // If there has been a failure
+  // If there has been a failure, raise an exception
   if (hasFailed == true) Raise(RunRecorderExc_AddMeasureFailed);
 
 }
@@ -3001,37 +2988,28 @@ static void AddMeasureAPI(
   // Variable to memorise the size of the values in the command string
   size_t lenStrValues = 0;
 
-  // Loop on the values
-  ForZeroTo(iVal, measure->nbMetric) {
-
-    // Add the size necessary for this value and its header
-    // '-2' for the replaced '%s'
-    lenStrValues += strlen(cmdFormatVal) +
+  // Loop on the values and add the size necessary for each value and its
+  // header
+  ForZeroTo(iVal, measure->nbMetric)
+    lenStrValues += strlen(cmdFormatVal) - 2 +
       strlen(measure->metrics[iVal]) - 2 +
-      strlen(measure->values[iVal]) - 2;
-
-  }
+      strlen(measure->values[iVal]);
 
   // Create the request to the Web API
-    // '-2' for the replaced '%s'
   char* cmdFormat = "action=add_measure&project=%s";
   SafeMalloc(
     that->cmd,
-    strlen(cmdFormat) + strlen(project) - 2 + lenStrValues + 1);
+    strlen(cmdFormat) - 2 + strlen(project) + lenStrValues + 1);
   sprintf(
     that->cmd,
     cmdFormat,
     project);
-  ForZeroTo(iVal, measure->nbMetric) {
-
+  ForZeroTo(iVal, measure->nbMetric)
     SPrintfAtEnd(
       that->cmd,
       cmdFormatVal,
       measure->metrics[iVal],
       measure->values[iVal]);
-
-  }
-
   SetAPIReqPostVal(
     that,
     that->cmd);
@@ -3070,7 +3048,6 @@ static void DeleteMeasureLocal(
                  long const refMeasure) {
 
   // Create the SQL command to delete the measure's values
-  // '-3' for the replaced '%ld'
   size_t lenMeasureStr =
     snprintf(
       NULL,
@@ -3080,7 +3057,7 @@ static void DeleteMeasureLocal(
   char* cmdFormatVal = "DELETE FROM _Value WHERE RefMeasure = %ld";
   SafeMalloc(
     that->cmd,
-    strlen(cmdFormatVal) + lenMeasureStr - 3 + 1);
+    strlen(cmdFormatVal) - 3 + lenMeasureStr + 1);
   sprintf(
     that->cmd,
     cmdFormatVal,
@@ -3091,19 +3068,16 @@ static void DeleteMeasureLocal(
     sqlite3_exec(
       that->db,
       that->cmd,
-      // No callback
       NULL,
-      // No user data
       NULL,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_DeleteMeasureFailed);
 
   // Create the SQL command to delete the measure
-  // '-3' for the replaced '%ld'
   char* cmdFormat = "DELETE FROM _Measure WHERE Ref = %ld ; VACUUM";
   SafeMalloc(
     that->cmd,
-    strlen(cmdFormat) + lenMeasureStr - 3 + 1);
+    strlen(cmdFormat) - 3 + lenMeasureStr + 1);
   sprintf(
     that->cmd,
     cmdFormat,
@@ -3114,9 +3088,7 @@ static void DeleteMeasureLocal(
     sqlite3_exec(
       that->db,
       that->cmd,
-      // No callback
       NULL,
-      // No user data
       NULL,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_DeleteMeasureFailed);
@@ -3132,7 +3104,6 @@ static void DeleteMeasureAPI(
         long const refMeasure) {
 
   // Create the request to the Web API
-  // '-3' in the malloc for the replaced '%ld'
   size_t lenMeasureStr =
     snprintf(
       NULL,
@@ -3142,7 +3113,7 @@ static void DeleteMeasureAPI(
   char* cmdFormat = "action=delete_measure&measure=%ld";
   SafeMalloc(
     that->cmd,
-    strlen(cmdFormat) + lenMeasureStr - 3 + 1);
+    strlen(cmdFormat) - 3 + lenMeasureStr + 1);
   sprintf(
     that->cmd,
     cmdFormat,
@@ -3213,11 +3184,13 @@ static int GetMeasuresLocalCb(
 
     }
 
-    // Allocate memory for the received measure's values
+    // Allocate memory for the received measure
     SafeRealloc(
       (*measures)->values,
       sizeof(char**) * ((*measures)->nbMeasure + 1));
     (*measures)->values[(*measures)->nbMeasure] = NULL;
+
+    // Allocate memory for the received measure's values
     SafeMalloc(
       (*measures)->values[(*measures)->nbMeasure],
       sizeof(char*) * nbCol);
@@ -3227,7 +3200,7 @@ static int GetMeasuresLocalCb(
     // Update the number of measure
     ++((*measures)->nbMeasure);
 
-    // Add the values of the received measure
+    // For each metric, copy the value of the received measure
     ForZeroTo(iMetric, (*measures)->nbMetric)
       SafeStrDup(
         (*measures)->values[(*measures)->nbMeasure - 1][iMetric],
@@ -3265,9 +3238,9 @@ static void SetCmdToGetMeasuresLocal(
       that,
       project);
 
-  // Create the request
   Try {
 
+    // Create the head of the command
     char* cmdFormatHead = "SELECT Ref,";
     SafeMalloc(
       that->cmd,
@@ -3277,8 +3250,10 @@ static void SetCmdToGetMeasuresLocal(
       "%s",
       cmdFormatHead);
 
+    // For each metric
     ForZeroTo(iMetric, metrics->nb) {
 
+      // Append the metric label to the command
       size_t len = strlen(that->cmd) + strlen(metrics->values[iMetric]) + 1 + 1;
       SafeRealloc(
         that->cmd,
@@ -3296,6 +3271,7 @@ static void SetCmdToGetMeasuresLocal(
     // Free memory
     RunRecorderPairsRefValFree(&metrics);
 
+    // Append the tail of the command
     char* cmdFormatTail = "FROM %s";
     SafeRealloc(
       that->cmd,
@@ -3317,6 +3293,7 @@ static void SetCmdToGetMeasuresLocal(
           "%ld",
           nbMeasure);
 
+      // Append the limit at the end of the command
       char* cmdLimit = " ORDER BY Ref DESC LIMIT %ld";
       SafeRealloc(
         that->cmd,
@@ -3350,7 +3327,7 @@ static struct RunRecorderMeasures* GetMeasuresLocal(
   struct RunRecorder* const that,
           char const* const project) {
 
-  // Declate the struct RunRecorderMeasures to memorise the measures
+  // Declare the struct RunRecorderMeasures to memorise the measures
   struct RunRecorderMeasures* measures = NULL;
 
   // Create the request with no limit on the number of returned measures
@@ -3387,7 +3364,7 @@ static char const* SplitCSVRowToData(
         char** const tgt,
           char const sep) {
 
-  // Extract the metrics label
+  // Loop on one line of the CSV data
   long iCol = 0;
   char const* ptr = csv;
   while (*ptr != '\n') {
@@ -3409,7 +3386,7 @@ static char const* SplitCSVRowToData(
           1);
         tgt[iCol][0] = '\0';
 
-      // Else, the current position if not a separator 
+      // Else, the current position is not a separator 
       } else {
 
         // The column is one character wide
@@ -3476,7 +3453,8 @@ static struct RunRecorderMeasures* CSVToData(
   char const* const csv,
          char const sep) {
 
-  // Calculate the number of columns
+  // Calculate the number of columns by counting the separator in the first
+  // row
   long nbCol = 1;
   char const* ptr = csv;
   while (*ptr != '\n' && *ptr != '\0') {
@@ -3486,10 +3464,11 @@ static struct RunRecorderMeasures* CSVToData(
 
   }
 
-  // Skip the line return of the header
+  // Skip the line return of the first line
   if (*ptr == '\n') ++ptr;
 
-  // Calculate the number of measures
+  // Calculate the number of measures by counting the number of line return
+  // in the remaining rows
   long nbMeasure = 0;
   do {
 
@@ -3500,20 +3479,26 @@ static struct RunRecorderMeasures* CSVToData(
 
   // Allocate memory for the result struct RunRecorderMeasures
   struct RunRecorderMeasures* measures = RunRecorderMeasuresCreate();
-
   Try {
 
+    // Set the number of metrics and measure
     measures->nbMetric = nbCol;
     measures->nbMeasure = nbMeasure;
+
+    // Allocate memory for the metrics
     SafeMalloc(
       measures->metrics,
       sizeof(char*) * measures->nbMetric);
     ForZeroTo(iMetric, measures->nbMetric)
       measures->metrics[iMetric] = NULL;
+
+    // Allocate memory for the measures
     SafeMalloc(
       measures->values,
       sizeof(char**) * nbMeasure);
     ForZeroTo(iMeasure, nbMeasure) measures->values[iMeasure] = NULL;
+
+    // Allocate memory for the values
     ForZeroTo(iMeasure, nbMeasure) {
 
       SafeMalloc(
@@ -3531,7 +3516,7 @@ static struct RunRecorderMeasures* CSVToData(
         measures->metrics,
         sep);
 
-    // Extract the measures' values
+    // Extract the measures
     long iMeasure = 0;
     while (*ptr != '\0') {
 
@@ -3567,11 +3552,10 @@ static struct RunRecorderMeasures* GetMeasuresAPI(
           char const* const project) {
 
   // Create the request to the Web API
-  // '-2' in the malloc for the replaced '%s'
   char* cmdFormat = "action=csv&project=%s";
   SafeMalloc(
     that->cmd,
-    strlen(cmdFormat) + strlen(project) - 2 + 1);
+    strlen(cmdFormat) - 2 + strlen(project) + 1);
   sprintf(
     that->cmd,
     cmdFormat,
@@ -3590,7 +3574,7 @@ static struct RunRecorderMeasures* GetMeasuresAPI(
   struct RunRecorderMeasures* data =
     CSVToData(
       that->curlReply,
-      '&');
+      CSV_SEP);
 
   // Return the struct RunRecorderMeasures
   return data;
@@ -3615,7 +3599,7 @@ static struct RunRecorderMeasures* GetLastMeasuresLocal(
   // Declate the struct RunRecorderMeasures to memorise the measures
   struct RunRecorderMeasures* measures = NULL;
 
-  // Create the request with no limit on the number of returned measures
+  // Create the request with the requested limit
   SetCmdToGetMeasuresLocal(
     that,
     project,
@@ -3658,12 +3642,10 @@ static struct RunRecorderMeasures* GetLastMeasuresAPI(
       nbMeasure);
 
   // Create the request to the Web API
-  // '-2' in the malloc for the replaced '%s' and '%ld'
   char* cmdFormat = "action=csv&project=%s&last=%ld";
   SafeMalloc(
     that->cmd,
-    strlen(cmdFormat) + strlen(project) - 2 + 
-    lenNbMeasureStr - 3 + 1);
+    strlen(cmdFormat) - 2 + strlen(project) - 3 + lenNbMeasureStr + 1);
   sprintf(
     that->cmd,
     cmdFormat,
@@ -3683,7 +3665,7 @@ static struct RunRecorderMeasures* GetLastMeasuresAPI(
   struct RunRecorderMeasures* data =
     CSVToData(
       that->curlReply,
-      '&');
+      CSV_SEP);
 
   // Return the struct RunRecorderMeasures
   return data;
@@ -3731,7 +3713,7 @@ static void FlushProjectLocal(
     "AND _Project.Label = \"%s\")";
   SafeMalloc(
     that->cmd,
-    strlen(cmdFormatValue) + strlen(project) - 2 + 1);
+    strlen(cmdFormatValue) - 2 + strlen(project) + 1);
   sprintf(
     that->cmd,
     cmdFormatValue,
@@ -3742,9 +3724,7 @@ static void FlushProjectLocal(
     sqlite3_exec(
       that->db,
       that->cmd,
-      // No callback
       NULL,
-      // No user data
       NULL,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_FlushProjectFailed);
@@ -3757,7 +3737,7 @@ static void FlushProjectLocal(
     "AND _Project.Label = \"%s\")";
   SafeMalloc(
     that->cmd,
-    strlen(cmdFormatMeasure) + strlen(project) - 2 + 1);
+    strlen(cmdFormatMeasure) - 2 + strlen(project) + 1);
   sprintf(
     that->cmd,
     cmdFormatMeasure,
@@ -3768,9 +3748,7 @@ static void FlushProjectLocal(
     sqlite3_exec(
       that->db,
       that->cmd,
-      // No callback
       NULL,
-      // No user data
       NULL,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_FlushProjectFailed);
@@ -3782,7 +3760,7 @@ static void FlushProjectLocal(
     "WHERE _Project.Label = \"%s\")";
   SafeMalloc(
     that->cmd,
-    strlen(cmdFormatMetric) + strlen(project) - 2 + 1);
+    strlen(cmdFormatMetric) - 2 + strlen(project) + 1);
   sprintf(
     that->cmd,
     cmdFormatMetric,
@@ -3793,9 +3771,7 @@ static void FlushProjectLocal(
     sqlite3_exec(
       that->db,
       that->cmd,
-      // No callback
       NULL,
-      // No user data
       NULL,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_FlushProjectFailed);
@@ -3806,7 +3782,7 @@ static void FlushProjectLocal(
     "WHERE _Project.Label = \"%s\"";
   SafeMalloc(
     that->cmd,
-    strlen(cmdFormatProject) + strlen(project) - 2 + 1);
+    strlen(cmdFormatProject) - 2 + strlen(project) + 1);
   sprintf(
     that->cmd,
     cmdFormatProject,
@@ -3817,9 +3793,7 @@ static void FlushProjectLocal(
     sqlite3_exec(
       that->db,
       that->cmd,
-      // No callback
       NULL,
-      // No user data
       NULL,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_FlushProjectFailed);
@@ -3835,11 +3809,10 @@ static void FlushProjectAPI(
           char const* const project) {
 
   // Create the request to the Web API
-  // '-2' in the malloc for the replaced '%s'
   char* cmdFormat = "action=flush&project=%s";
   SafeMalloc(
     that->cmd,
-    strlen(cmdFormat) + strlen(project) - 2 + 1);
+    strlen(cmdFormat) - 2 + strlen(project) + 1);
   sprintf(
     that->cmd,
     cmdFormat,
@@ -3857,8 +3830,12 @@ static void FlushProjectAPI(
 }
 
 // Function to convert a RunRecorder exception ID to char*
+// Input:
+//   exc: the exception ID
+// Output:
+//   Return a pointer to a static string describing the exception, or
+//   NULL if the ID is not one of RunRecorderException
 static char const* ExcToStr(
-  // The exception ID
   int exc) {
 
   // If the exception ID is one of RunRecorderException
