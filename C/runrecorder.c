@@ -119,20 +119,20 @@ static bool UsesAPI(
   struct RunRecorder const* const that);
 
 // Reset the curl reply, to be called before sending a new curl request
-// or the result of the new request will be append to the eventual
+// or the result of the new request will be appended to the eventual
 // one of the previous request
 // Input:
 //   The struct RunRecorder
 static void ResetCurlReply(
   struct RunRecorder* const that);
 
-// Create the database
+// Create the RunRecorder's tables in an empty database
 // Input:
 //   that: The struct RunRecorder
 static void CreateDb(
   struct RunRecorder* const that);
 
-// Create the database locally
+// Create the RunRecorder's tables in an empty local database
 // Input:
 //   that: The struct RunRecorder
 // Raise:
@@ -175,7 +175,7 @@ static char* GetVersionLocal(
 //   data: incoming data
 //   size: always 1
 //   nmemb: number of incoming byte
-//   reply: pointer to memory where to store the incoming data
+//   reply: pointer to where to store the incoming data
 // Output:
 //   Return the number of received byte
 static size_t GetReplyAPI(
@@ -190,6 +190,8 @@ static size_t GetReplyAPI(
 //    key: the key
 // Output:
 //   Return a new string, or NULL if the key doesn't exist
+// Raise:
+//   RunRecorderExc_ApiRequestFailed
 static char* GetJSONValOfKey(
   char const* const json,
   char const* const key);
@@ -234,24 +236,26 @@ static void SendAPIReq(
 static char* GetVersionAPI(
   struct RunRecorder* const that);
 
-// Add a new projet in a local database
+// Add a new project in a local database
 // Input:
 //   that: the struct RunRecorder
-//   name: the name of the new project
-// The project's name must respect the following pattern: 
-// /^[a-zA-Z][a-zA-Z0-9_]*$/ .
+//   name: the name of the new project, it must respect the following
+//         pattern: /^[a-zA-Z][a-zA-Z0-9_]*$/
 // Raise:
-//   RunRecorderExc_AddProjectFailed
+//   RunRecorderExc_InvalidProjectName
+//   RunRecorderExc_ProjectNameAlreadyUsed
 static void AddProjectLocal(
   struct RunRecorder* const that,
           char const* const name);
 
-// Add a new projet in a remote database
+// Add a new project through the Web API
 // Input:
 //   that: the struct RunRecorder
-//   name: the name of the new project
-// The project's name must respect the following pattern: 
-// /^[a-zA-Z][a-zA-Z0-9_]*$/ .
+//   name: the name of the new project, it must respect the following
+//         pattern: /^[a-zA-Z][a-zA-Z0-9_]*$/
+// Raise:
+//   RunRecorderExc_InvalidProjectName
+//   RunRecorderExc_ProjectNameAlreadyUsed
 static void AddProjectAPI(
   struct RunRecorder* const that,
           char const* const name);
@@ -280,7 +284,8 @@ static void PairsRefValAdd(
 // Input:
 //      data: The pairs
 //     nbCol: Number of columns in the returned rows
-//    colVal: Row values
+//    colVal: Row values, the reference is expected to be in the first
+//            column and the value in the second column
 //   colName: Columns name
 // Output:
 //   Return 0 if successful, else 1
@@ -302,7 +307,7 @@ static struct RunRecorderPairsRefVal* GetProjectsLocal(
 
 // Extract a struct RunRecorderPairsRefVal from a JSON string
 // Input:
-//   json: the JSON string, such as "1":"A","2":"B"
+//   json: the JSON string, expected to be formatted as "1":"A","2":"B",...
 // Output:
 //   Return a new struct RunRecorderPairsRefVal
 // Raise:
@@ -1462,31 +1467,43 @@ static void InitLocal(
       that->url,
       "r");
 
-  // Open the connection to the local database
+  // Open the connection to the local database, if the database doesn't
+  // exist an empty one will be created automatically by SQLite3
   int ret =
     sqlite3_open(
       that->url,
       &(that->db));
-  if (ret != 0) {
 
+  // If the database couldn't be opened/created
+  if (ret != SQLITE_OK) {
+
+    // If it could be opend through fopen, close it
     if (fp != NULL) fclose(fp);
+
+    // Copy the error message and raise an exception
     SafeStrDup(
       that->errMsg,
       sqlite3_errmsg(that->db));
     Raise(RunRecorderExc_OpenDbFailed);
 
-  }
-
-  // If the SQLite database local file doesn't exists
-  if (fp == NULL) {
-
-    // Create the database
-    CreateDb(that);
-
+  // Else, the database could be opened/created
   } else {
 
-    // Close the FILE*
-    fclose(fp);
+    // If we couldn't open it with fopen before opening it with
+    // sqlite3_open it means the database has just been created by
+    // SQLite3
+    if (fp == NULL) {
+
+      // Create the RunRecorder's tables in the database
+      CreateDb(that);
+
+    // Else, the database could be opened and is ready to use by RunRecorder
+    } else {
+
+      // Close the FILE*
+      fclose(fp);
+
+    }
 
   }
 
@@ -1501,7 +1518,7 @@ static void InitLocal(
 static void InitWebAPI(
   struct RunRecorder* const that) {
 
-  // Create the curl instance
+  // Create the Curl instance
   curl_global_init(CURL_GLOBAL_ALL);
   that->curl = curl_easy_init();
   if (that->curl == NULL) {
@@ -1511,8 +1528,12 @@ static void InitWebAPI(
 
   }
 
-  // Set the url of the Web API
-  CURLcode res = curl_easy_setopt(that->curl, CURLOPT_URL, that->url);
+  // Set the url of the Web API in the Curl instance
+  CURLcode res =
+    curl_easy_setopt(
+      that->curl,
+      CURLOPT_URL,
+      that->url);
   if (res != CURLE_OK) {
 
     curl_easy_cleanup(that->curl);
@@ -1524,7 +1545,7 @@ static void InitWebAPI(
 
   }
 
-  // Set the callback to receive data
+  // Set the pointer where to memorise received data
   res =
     curl_easy_setopt(
       that->curl,
@@ -1540,6 +1561,8 @@ static void InitWebAPI(
     Raise(RunRecorderExc_CurlSetOptFailed);
 
   }
+
+  // Set the callback to receive data
   res =
     curl_easy_setopt(
       that->curl,
@@ -1591,35 +1614,35 @@ static bool UsesAPI(
 
 }
 
-// Reset the curl reply, to be called before sending a new curl request
-// or the result of the new request will be append to the eventual
+// Reset the Curl reply, to be called before sending a new curl request
+// or the result of the new request will be appended to the eventual
 // one of the previous request
 // Input:
 //   The struct RunRecorder
 static void ResetCurlReply(
   struct RunRecorder* const that) {
 
+  // Free the Curl reply
   PolyFree(that->curlReply);
   that->curlReply = NULL;
 
 }
 
-// Create the database
+// Create the RunRecorder's tables in an empty database
 // Input:
 //   that: The struct RunRecorder
 static void CreateDb(
   struct RunRecorder* const that) {
 
-  // If the RunRecorder uses a local database
+  // If the RunRecorder uses a local database, create the local database
   if (UsesAPI(that) == false) CreateDbLocal(that);
 
-  // If the RunRecorder uses the Web API there is
-  // nothing to do as the remote API will take care of creating the
-  // database when necessary
+  // If the RunRecorder uses the Web API there is nothing to do as the
+  // remote API will take care of creating the  database as necessary
 
 }
 
-// Create the database locally
+// Create the RunRecorder's tables in an empty local database
 // Input:
 //   that: The struct RunRecorder
 // Raise:
@@ -1631,7 +1654,7 @@ static void CreateDbLocal(
   // eventual previous messages
   FreeErrMsg(that);
 
-  // List of commands to create the table
+  // List of commands to create the tables
   char* sqlCmd[NB_TABLE + 1] = {
 
     "CREATE TABLE _Version ("
@@ -1662,7 +1685,7 @@ static void CreateDbLocal(
   // Loop on the commands
   ForZeroTo(iCmd, NB_TABLE + 1) {
 
-    // Execute the command to create the table
+    // Execute the command
     int retExec =
       sqlite3_exec(
         that->db,
@@ -1692,7 +1715,7 @@ static void UpgradeDb(
 
 }
 
-// Callback for RunRecorderGetVersionLocal
+// Callback for GetVersionLocal
 // Input:
 //      data: The version
 //     nbCol: Number of columns in the returned rows
@@ -1709,12 +1732,12 @@ static int GetVersionLocalCb(
   // Unused argument
   (void)colName;
 
-  // Cast the data
-  char** ptrVersion = (char**)data;
-
   // If the arguments are invalid
   // Return non zero to trigger SQLITE_ABORT in the calling function
   if (nbCol != 1 || colVal == NULL || *colVal == NULL) return 1;
+
+  // Cast the data
+  char** ptrVersion = (char**)data;
 
   // Memorise the returned value
   Try {
@@ -1723,12 +1746,12 @@ static int GetVersionLocalCb(
       *ptrVersion,
       *colVal);
 
-  } Catch (TryCatchExc_MallocFailed) {
+  } CatchDefault {
 
     // Return non zero to trigger SQLITE_ABORT in the calling function
     return 1;
 
-  } EndTry;
+  } EndTryWithDefault;
 
   // Return success code
   return 0;
@@ -1745,7 +1768,7 @@ static int GetVersionLocalCb(
 static char* GetVersionLocal(
   struct RunRecorder* const that) {
 
-  // Declare a variable to memeorise the version
+  // Declare a variable to memorise the version
   char* version = NULL;
 
   // Execute the command to get the version
@@ -1769,7 +1792,7 @@ static char* GetVersionLocal(
 //   data: incoming data
 //   size: always 1
 //   nmemb: number of incoming byte
-//   reply: pointer to memory where to store the incoming data
+//   reply: pointer to where to store the incoming data
 // Output:
 //   Return the number of received byte
 static size_t GetReplyAPI(
@@ -1781,17 +1804,17 @@ static size_t GetReplyAPI(
   // Get the size in byte of the received data
   size_t dataSize = size * nmemb;
 
-  // Cast
-  char** reply = (char**)ptr;
-
   // If there is received data
   if (dataSize != 0) {
+
+    // Cast the data
+    char** reply = (char**)ptr;
 
     // Variable to memorise the current length of the buffer for the reply
     size_t replyLength = 0;
 
-    // If the current buffer for the reply is not empty
-    // Get the current length of the reply
+    // If the current buffer for the reply is not empty, get the current
+    // length of the reply
     if (*reply != NULL) replyLength = strlen(*reply);
 
     // Allocate memory for current data, the incoming data and the
@@ -1800,11 +1823,13 @@ static size_t GetReplyAPI(
       *reply,
       replyLength + dataSize + 1);
 
-    // Copy the incoming data and the end of the current buffer
+    // Copy the incoming data at the end of the current buffer
     memcpy(
       *reply + replyLength,
       data,
       dataSize);
+
+    // Set the terminating NULL character
     (*reply)[replyLength + dataSize] = '\0';
 
   }
@@ -1820,6 +1845,8 @@ static size_t GetReplyAPI(
 //    key: the key
 // Output:
 //   Return a new string, or NULL if the key doesn't exist
+// Raise:
+//   RunRecorderExc_ApiRequestFailed
 static char* GetJSONValOfKey(
   char const* const json,
   char const* const key) {
@@ -1832,25 +1859,23 @@ static char* GetJSONValOfKey(
   // Variable to memorise the value
   char* val = NULL;
 
-  // Get the length of the key
-  size_t lenKey = strlen(key);
-
   // Variable to memorise the key decorated with it's syntax
   char* keyDecorated = NULL;
 
   Try {
 
     // Create the key decorated with it's syntax
-    size_t lenKeyDecorated = lenKey + 4;
+    char* keyFormat = "\"%s\":";
+    size_t lenKeyDecorated = strlen(keyFormat) - 2 + strlen(key) + 1;
     SafeMalloc(
       keyDecorated,
       lenKeyDecorated);
     sprintf(
       keyDecorated,
-      "\"%s\":",
+      keyFormat,
       key);
 
-    // Search the key in the JSON encoded string
+    // If the key can be find in the JSON encoded string
     char const* ptrKey =
       strstr(
         json,
@@ -1862,12 +1887,15 @@ static char* GetJSONValOfKey(
 
       // Declare a pointer to loop on the string until the end of the value
       char const* ptr = ptrVal;
+
+      // If the value is a string
       if (ptrKey[strlen(keyDecorated)] == '"') {
 
         // Loop on the characters of the value until the next double quote
         // or end of string
         while (*ptr != '\0' && *ptr != '"') {
 
+          // Move to the next character
           ++ptr;
 
           // Skip the escaped character
@@ -1875,11 +1903,22 @@ static char* GetJSONValOfKey(
 
         }
 
+      // Else, if the value is an object
       } else if (ptrKey[strlen(keyDecorated)] == '{') {
 
         // Loop on the characters of the value until the closing curly
         // brace or end of string
+        // Presume the data are well formatted here, if there are curly
+        // braces in string in the object definition, or sub-object
+        // definition, or any other special case, it means the data
+        // returned by the API are invalid and it will be catched later.
         while (*ptr != '\0' && *ptr != '}') ++ptr;
+
+      // Else, this JSON encoded string is not supported, the API request
+      // has returned invalid data
+      } else {
+
+        Raise(RunRecorderExc_ApiRequestFailed);
 
       }
 
@@ -1900,6 +1939,12 @@ static char* GetJSONValOfKey(
           ptrVal,
           lenVal);
         val[lenVal] = '\0';
+
+      // Else, this JSON encoded string is not supported, the API request
+      // has returned invalid data
+      } else {
+
+        Raise(RunRecorderExc_ApiRequestFailed);
 
       }
 
@@ -1989,8 +2034,11 @@ static void SendAPIReq(
   struct RunRecorder* const that,
                  bool const isJsonReq) {
 
-  // Send the request
+  // Reset the Curl reply or the reply of this request will get appended
+  // to the one of the previous request
   ResetCurlReply(that);
+
+  // Send the request
   CURLcode res = curl_easy_perform(that->curl);
   if (res != CURLE_OK) {
 
@@ -2004,7 +2052,7 @@ static void SendAPIReq(
   // If the request returns JSON encoded data
   if (isJsonReq == true) {
 
-    // Check the returned code
+    // If the returned code is not '0'
     char* retCode = GetAPIRetCode(that);
     int cmpRet =
       strcmp(
@@ -2056,14 +2104,14 @@ static char* GetVersionAPI(
 
 }
 
-// Add a new projet in a local database
+// Add a new project in a local database
 // Input:
 //   that: the struct RunRecorder
-//   name: the name of the new project
-// The project's name must respect the following pattern: 
-// /^[a-zA-Z][a-zA-Z0-9_]*$/ .
+//   name: the name of the new project, it must respect the following
+//         pattern: /^[a-zA-Z][a-zA-Z0-9_]*$/
 // Raise:
-//   RunRecorderExc_AddProjectFailed
+//   RunRecorderExc_InvalidProjectName
+//   RunRecorderExc_ProjectNameAlreadyUsed
 static void AddProjectLocal(
   struct RunRecorder* const that,
   char const* const name) {
@@ -2072,7 +2120,7 @@ static void AddProjectLocal(
   char* cmdFormat =
     "INSERT INTO _Project (Ref, Label) VALUES (NULL, \"%s\")";
   PolyFree(that->cmd);
-  size_t lenCmd = strlen(cmdFormat) + strlen(name) - 2 + 1;
+  size_t lenCmd = strlen(cmdFormat) - 2 + strlen(name) + 1;
   SafeMalloc(
     that->cmd,
     lenCmd);
@@ -2086,30 +2134,29 @@ static void AddProjectLocal(
     sqlite3_exec(
       that->db,
       that->cmd,
-      // No callback
       NULL,
-      // No user data
       NULL,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_AddProjectFailed);
 
 }
 
-// Add a new projet in a remote database
+// Add a new project through the Web API
 // Input:
 //   that: the struct RunRecorder
-//   name: the name of the new project
-// The project's name must respect the following pattern: 
-// /^[a-zA-Z][a-zA-Z0-9_]*$/ .
+//   name: the name of the new project, it must respect the following
+//         pattern: /^[a-zA-Z][a-zA-Z0-9_]*$/
+// Raise:
+//   RunRecorderExc_InvalidProjectName
+//   RunRecorderExc_ProjectNameAlreadyUsed
 static void AddProjectAPI(
   struct RunRecorder* const that,
   char const* const name) {
 
   // Create the request to the Web API
-  // '-2' in the malloc for the replaced '%s'
   char* cmdFormat = "action=add_project&label=%s";
   PolyFree(that->cmd);
-  size_t lenCmd = strlen(cmdFormat) + strlen(name) - 2 + 1;
+  size_t lenCmd = strlen(cmdFormat) - 2 + strlen(name) + 1;
   SafeMalloc(
     that->cmd,
     lenCmd);
@@ -2142,17 +2189,12 @@ static bool PairsRefValContainsVal(
   // Loop on the pairs
   ForZeroTo(iPair, that->nb) {
 
-    // If the pair's value is the checked value
+    // If the pair's value is the checked value, return true
     int retCmp =
       strcmp(
         val,
         that->values[iPair]);
-    if (retCmp == 0) {
-
-      // Return true
-      return true;
-
-    }
+    if (retCmp == 0) return true;
 
   }
 
@@ -2171,7 +2213,7 @@ static void PairsRefValAdd(
                             long const ref,
                      char const* const val) {
 
-  // Allocate memory
+  // Allocate memory for the new value
   SafeRealloc(
     pairs->refs,
     sizeof(long) * (pairs->nb + 1));
@@ -2195,7 +2237,8 @@ static void PairsRefValAdd(
 // Input:
 //      data: The pairs
 //     nbCol: Number of columns in the returned rows
-//    colVal: Row values
+//    colVal: Row values, the reference is expected to be in the first
+//            column and the value in the second column
 //   colName: Columns name
 // Output:
 //   Return 0 if successful, else 1
@@ -2208,23 +2251,28 @@ static int GetPairsLocalCb(
   // Unused argument
   (void)colName;
 
-  // Cast the data
-  struct RunRecorderPairsRefVal* pairs =
-    (struct RunRecorderPairsRefVal*)data;
-
   // If the arguments are invalid
   // Return non zero to trigger SQLITE_ABORT in the calling function
   if (nbCol != 2 || colVal == NULL ||
       colVal[0] == NULL || colVal[1] == NULL) return 1;
 
-  // Add the pair to the pairs
+  // Cast the data
+  struct RunRecorderPairsRefVal* pairs =
+    (struct RunRecorderPairsRefVal*)data;
+
+  // Convert the reference contained in the first column from char* to long
   errno = 0;
   long ref =
     strtol(
       colVal[0],
       NULL,
       10);
+
+  // If the conversion failed, return non zero to trigger SQLITE_ABORT
+  // in the calling function
   if (errno != 0) return 1;
+
+  // Add the pair ref/value to the pairs
   Try {
 
     PairsRefValAdd(
@@ -2232,11 +2280,11 @@ static int GetPairsLocalCb(
       ref,
       colVal[1]);
 
-  } Catch(TryCatchExc_MallocFailed) {
+  } CatchDefault {
 
     return 1;
 
-  } EndTry;
+  } EndTryWithDefault;
 
   // Return success code
   return 0;
@@ -2279,7 +2327,7 @@ static struct RunRecorderPairsRefVal* GetProjectsLocal(
 
 // Extract a struct RunRecorderPairsRefVal from a JSON string
 // Input:
-//   json: the JSON string, such as "1":"A","2":"B"
+//   json: the JSON string, expected to be formatted as "1":"A","2":"B",...
 // Output:
 //   Return a new struct RunRecorderPairsRefVal
 // Raise:
@@ -2302,7 +2350,7 @@ static struct RunRecorderPairsRefVal* GetPairsRefValFromJSON(
     // If we have found the double quote
     if (*ptr == '"') {
 
-      // Skip the opening double quote for the reference
+      // Skip the opening double quote of the reference
       ++ptr;
 
       // Get the reference
@@ -2333,8 +2381,8 @@ static struct RunRecorderPairsRefVal* GetPairsRefValFromJSON(
 
       // If we couldn't find the closing double quote for the value
       // or the value is null
-      if (*ptrEndVal == '\0' ||
-          ptrEndVal == ptr) Raise(RunRecorderExc_InvalidJSON);
+      if (*ptrEndVal == '\0' || ptrEndVal == ptr)
+        Raise(RunRecorderExc_InvalidJSON);
 
       // Variable to memorise the value
       char* val = NULL;
@@ -2356,12 +2404,12 @@ static struct RunRecorderPairsRefVal* GetPairsRefValFromJSON(
         ptr = ptrEndVal + 1;
 
         // Add the pair
-
         PairsRefValAdd(
           pairs,
           ref,
           val);
 
+        // Free the temporary copy of the value
         PolyFree(val);
 
       } CatchDefault {
