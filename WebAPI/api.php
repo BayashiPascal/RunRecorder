@@ -296,6 +296,12 @@ function AddMetric($db, $project, $label, $default) {
     if (preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $label) == false) {
       throw new Exception("The label " . $label. " is invalid.");
     }
+    if ($label == "project") {
+      throw new Exception("The label " . $label. " is invalid.");
+    }
+    if ($label == "action") {
+      throw new Exception("The label " . $label. " is invalid.");
+    }
 
     // If the metric doesn't already exists
     $rows = $db->query('SELECT COUNT(*) as nb FROM _Metric WHERE Label = "' .

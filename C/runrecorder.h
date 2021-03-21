@@ -70,9 +70,7 @@ struct RunRecorder {
   // String to memorise the reply from Curl requests
   char* curlReply;
 
-  // String to memorise the API or SQL commands when they are
-  // dynamically allocated to make memory management easier if an
-  // exception is raised
+  // String to memorise the API or SQL commands
   char* cmd;
 
   // Reference of the last added measure
@@ -86,10 +84,10 @@ struct RunRecorderPairsRefVal {
   // Number of pairs
   long nb;
 
-  // Array of references
+  // Array of reference
   long* refs;
 
-  // Array of values
+  // Array of value as string
   char** values;
 
 };
@@ -98,13 +96,13 @@ struct RunRecorderPairsRefVal {
 // value for one project)
 struct RunRecorderMeasure {
 
-  // Number of values
-  long nbVal;
+  // Number of metrics
+  long nbMetric;
 
   // Array of metrics label
   char** metrics;
 
-  // Array of values
+  // Array of values as string
   char** values;
 
 };
@@ -121,7 +119,8 @@ struct RunRecorderMeasures {
   // Array of metrics label
   char** metrics;
 
-  // Array of array of values, to be used as values[iMeasure][iMetric]
+  // Array of array of values as string, to be used as
+  // values[iMeasure][iMetric]
   char*** values;
 
 };
@@ -142,7 +141,7 @@ struct RunRecorder* RunRecorderCreate(
 void RunRecorderInit(
   struct RunRecorder* const that);
 
-// Destructor for a struct RunRecorder
+// Free memory used by a struct RunRecorder
 // Input:
 //   that: The struct RunRecorder to be freed
 void RunRecorderFree(
@@ -152,7 +151,7 @@ void RunRecorderFree(
 // Input:
 //   that: the struct RunRecorder
 // Output:
-//   Return a new string
+//   Return the version as a new string
 char* RunRecorderGetVersion(
   struct RunRecorder* const that);
 
@@ -175,11 +174,8 @@ bool RunRecorderIsValidValue(
 // Add a new project
 // Input:
 //   that: the struct RunRecorder
-//   name: the name of the new project
-// The project's name must respect the following pattern: 
-// /^[a-zA-Z][a-zA-Z0-9_]*$/ .
-// Output:
-//   Return the reference of the new project
+//   name: the name of the new project, it must respect the following
+//         pattern: /^[a-zA-Z][a-zA-Z0-9_]*$/
 // Raise:
 //   RunRecorderExc_InvalidProjectName
 //   RunRecorderExc_ProjectNameAlreadyUsed
@@ -191,7 +187,8 @@ void RunRecorderAddProject(
 // Input:
 //   that: the struct RunRecorder
 // Output:
-//   Return the projects' reference/label
+//   Return the projects' reference/label as a new struct
+//   RunRecorderPairsRefVal
 struct RunRecorderPairsRefVal* RunRecorderGetProjects(
   struct RunRecorder* const that);
 
@@ -200,7 +197,8 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjects(
 //      that: the struct RunRecorder
 //   project: the project
 // Output:
-//   Return the metrics' reference/label
+//   Return the metrics' reference/label as a new struct
+//   RunRecorderPairsRefVal
 struct RunRecorderPairsRefVal* RunRecorderGetMetrics(
   struct RunRecorder* const that,
           char const* const project);
@@ -208,16 +206,14 @@ struct RunRecorderPairsRefVal* RunRecorderGetMetrics(
 // Add a metric to a project
 // Input:
 //         that: the struct RunRecorder
-//      project: the name of the project to which add the metric
-//        label: the label of the metric. 
-//   defaultVal: the default value of the metric 
-// The label of the metric must respect the following pattern:
-// /^[a-zA-Z][a-zA-Z0-9_]*$/.
-// The default of the metric must be one character long at least.
-// The double quote `"`, equal sign `=` and ampersand `&` can't be used in
-// the default value. There cannot be two metrics with the same label for
-// the same project. A metric label can't be 'action' or 'project' (case
-//  sensitive, so 'Action' is fine).
+//      project: the name of the project to which add to the metric
+//        label: the label of the metric, it must respect the following
+//               pattern: /^[a-zA-Z][a-zA-Z0-9_]*$/
+//               There cannot be two metrics with the same label for the
+//               same project. A metric label can't be 'action' or 'project'
+//               (case sensitive, so 'Action' is fine).
+//   defaultVal: the default value of the metric, it must respect the
+//               following pattern: /^[^"=&]+$*/
 // Raise:
 //   RunRecorderExc_InvalidMetricName
 //   RunRecorderExc_MetricNameAlreadyUsed
@@ -227,7 +223,7 @@ void RunRecorderAddMetric(
           char const* const label,
           char const* const defaultVal);
 
-// Create a struct RunRecorderMeasure
+// Create a new struct RunRecorderMeasure
 // Output:
 //   Return the new struct RunRecorderMeasure
 struct RunRecorderMeasure* RunRecorderMeasureCreate(
@@ -237,9 +233,9 @@ struct RunRecorderMeasure* RunRecorderMeasureCreate(
 // Input:
 //   that: the struct RunRecorderMeasure
 void RunRecorderMeasureFree(
-  struct RunRecorderMeasure** that);
+  struct RunRecorderMeasure** const that);
 
-// Add a string value to a measure
+// Add a string value to a struct RunRecorderMeasure
 // Input:
 //     that: the struct RunRecorderMeasure
 //   metric: the value's metric
@@ -247,29 +243,29 @@ void RunRecorderMeasureFree(
 // Raise
 //   RunRecorderExc_InvalidValue
 void RunRecorderMeasureAddValueStr(
-  struct RunRecorderMeasure* that,
-           char const* const metric,
-           char const* const val);
+  struct RunRecorderMeasure* const that,
+                 char const* const metric,
+                 char const* const val);
 
-// Add an int value converted to a string to a measure
+// Add an int value to a struct RunRecorderMeasure
 // Input:
 //     that: the struct RunRecorderMeasure
 //   metric: the value's metric
 //      val: the value
 void RunRecorderMeasureAddValueInt(
-  struct RunRecorderMeasure* that,
-           char const* const metric,
-                  long const val);
+  struct RunRecorderMeasure* const that,
+                 char const* const metric,
+                        long const val);
 
-// Add a double value converted to a string to a measure
+// Add a double value to a struct RunRecorderMeasure
 // Input:
 //     that: the struct RunRecorderMeasure
 //   metric: the value's metric
 //      val: the value
 void RunRecorderMeasureAddValueDouble(
-  struct RunRecorderMeasure* that,
-           char const* const metric,
-                double const val);
+  struct RunRecorderMeasure* const that,
+                 char const* const metric,
+                      double const val);
 
 // Add a measure to a project
 // Inputs:
@@ -294,7 +290,7 @@ void RunRecorderDeleteMeasure(
 //         that: the struct RunRecorder
 //      project: the project's name
 // Output:
-//   Return the measures as a struct RunRecorderMeasures
+//   Return the measures as a new struct RunRecorderMeasures
 struct RunRecorderMeasures* RunRecorderGetMeasures(
   struct RunRecorder* const that,
           char const* const project);
@@ -305,8 +301,8 @@ struct RunRecorderMeasures* RunRecorderGetMeasures(
 //     project: the project's name
 //   nbMeasure: the number of measures to be returned
 // Output:
-//   Return the measures as a struct RunRecorderMeasures, ordered from the
-//   most recent to the oldest
+//   Return the measures as a new struct RunRecorderMeasures, ordered
+//   from the most recent to the oldest
 struct RunRecorderMeasures* RunRecorderGetLastMeasures(
   struct RunRecorder* const that,
           char const* const project,
@@ -342,7 +338,7 @@ void RunRecorderFlushProject(
 // Input:
 //   that: the struct RunRecorderPairsRefVal
 void RunRecorderPairsRefValFree(
-  struct RunRecorderPairsRefVal** that);
+  struct RunRecorderPairsRefVal** const that);
 
 // ================== Polymorphism =========================
 
