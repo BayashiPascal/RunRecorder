@@ -279,11 +279,11 @@ void RunRecorderAddMeasure(
 
 // Delete a measure
 // Inputs:
-//       that: the struct RunRecorder
-//    measure: the measure to delete
+//          that: the struct RunRecorder
+//    refMeasure: the reference of the measure to delete
 void RunRecorderDeleteMeasure(
   struct RunRecorder* const that,
-                 long const measure);
+                 long const refMeasure);
 
 // Get the measures of a project
 // Inputs:

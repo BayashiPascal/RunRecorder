@@ -305,7 +305,7 @@ static struct RunRecorderPairsRefVal* GetProjectsLocal(
 // Raise:
 //   RunRecorderExc_InvalidJSON
 static struct RunRecorderPairsRefVal* GetPairsRefValFromJSON(
-  char const* json);
+  char const* const json);
 
 // Get the list of projects through the Web API
 // Input:
@@ -421,21 +421,21 @@ static void AddMeasureAPI(
 
 // Delete a measure in a local database
 // Inputs:
-//       that: the struct RunRecorder
-//    measure: the measure to delete
+//          that: the struct RunRecorder
+//    refMeasure: the reference of the measure to delete
 // Raise:
 //   RunRecorderExc_DeleteMeasureFailed
 static void DeleteMeasureLocal(
   struct RunRecorder* const that,
-        long const measure);
+                 long const refMeasure);
 
 // Delete a measure through the Web API
 // Inputs:
-//       that: the struct RunRecorder
-//    measure: the measure to delete
+//          that: the struct RunRecorder
+//    refMeasure: the reference of the measure to delete
 static void DeleteMeasureAPI(
   struct RunRecorder* const that,
-        long const measure);
+                 long const refMeasure);
 
 // Callback to receive the measures from sqlite3
 // Input:
@@ -486,9 +486,9 @@ static struct RunRecorderMeasures* GetMeasuresLocal(
 // Output:
 //   Return a pointer to the end of the row
 static char const* SplitCSVRowToData(
-   char const* csv,
-  char** const tgt,
-    char const sep);
+   char const* const csv,
+        char** const tgt,
+          char const sep);
 
 // Convert CSV data to a new struct RunRecorderMeasures. The CSV data are
 // expected to be formatted as:
@@ -1159,11 +1159,11 @@ void RunRecorderAddMeasure(
 
 // Delete a measure
 // Inputs:
-//       that: the struct RunRecorder
-//    measure: the measure to delete
+//          that: the struct RunRecorder
+//    refMeasure: the reference of the measure to delete
 void RunRecorderDeleteMeasure(
   struct RunRecorder* const that,
-        long const measure) {
+                 long const refMeasure) {
 
   // Ensure the error messages are freed to avoid confusion with
   // eventual previous messages
@@ -1174,14 +1174,14 @@ void RunRecorderDeleteMeasure(
 
     DeleteMeasureLocal(
       that,
-      measure);
+      refMeasure);
 
   // Else, the RunRecorder uses the Web API
   } else {
 
     DeleteMeasureAPI(
       that,
-      measure);
+      refMeasure);
 
   }
 
@@ -2246,7 +2246,7 @@ static struct RunRecorderPairsRefVal* GetProjectsLocal(
 // Raise:
 //   RunRecorderExc_InvalidJSON
 static struct RunRecorderPairsRefVal* GetPairsRefValFromJSON(
-  char const* json) {
+  char const* const json) {
 
   // Create the pairs
   struct RunRecorderPairsRefVal* pairs = RunRecorderPairsRefValCreate();
@@ -2975,12 +2975,12 @@ static void AddMeasureAPI(
 // Delete a measure in a local database
 // Inputs:
 //       that: the struct RunRecorder
-//    measure: the measure to delete
+//    measure: the reference of the measure to delete
 // Raise:
 //   RunRecorderExc_DeleteMeasureFailed
 static void DeleteMeasureLocal(
   struct RunRecorder* const that,
-        long const measure) {
+                 long const refMeasure) {
 
   // Create the SQL command to delete the measure's values
   // '-3' for the replaced '%ld'
@@ -2989,7 +2989,7 @@ static void DeleteMeasureLocal(
       NULL,
       0,
       "%ld",
-      measure);
+      refMeasure);
   char* cmdFormatVal = "DELETE FROM _Value WHERE RefMeasure = %ld";
   SafeMalloc(
     that->cmd,
@@ -2997,7 +2997,7 @@ static void DeleteMeasureLocal(
   sprintf(
     that->cmd,
     cmdFormatVal,
-    measure);
+    refMeasure);
 
   // Execute the command to delete the measure's values
   int retExec =
@@ -3020,7 +3020,7 @@ static void DeleteMeasureLocal(
   sprintf(
     that->cmd,
     cmdFormat,
-    measure);
+    refMeasure);
 
   // Execute the command to delete the measure
   retExec =
@@ -3038,11 +3038,11 @@ static void DeleteMeasureLocal(
 
 // Delete a measure through the Web API
 // Inputs:
-//       that: the struct RunRecorder
-//    measure: the measure to delete
+//          that: the struct RunRecorder
+//    refMeasure: the reference of the measure to delete
 static void DeleteMeasureAPI(
   struct RunRecorder* const that,
-        long const measure) {
+        long const refMeasure) {
 
   // Create the request to the Web API
   // '-3' in the malloc for the replaced '%ld'
@@ -3051,7 +3051,7 @@ static void DeleteMeasureAPI(
       NULL,
       0,
       "%ld",
-      measure);
+      refMeasure);
   char* cmdFormat = "action=delete_measure&measure=%ld";
   SafeMalloc(
     that->cmd,
@@ -3059,7 +3059,7 @@ static void DeleteMeasureAPI(
   sprintf(
     that->cmd,
     cmdFormat,
-    measure);
+    refMeasure);
   SetAPIReqPostVal(
     that,
     that->cmd);
@@ -3296,9 +3296,9 @@ static struct RunRecorderMeasures* GetMeasuresLocal(
 // Output:
 //   Return a pointer to the end of the row
 static char const* SplitCSVRowToData(
-   char const* csv,
-  char** const tgt,
-    char const sep) {
+   char const* const csv,
+        char** const tgt,
+          char const sep) {
 
   // Extract the metrics label
   long iCol = 0;
