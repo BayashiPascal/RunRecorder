@@ -35,6 +35,7 @@ enum RunRecorderException {
   RunRecorderExc_UpdateViewFailed,
   RunRecorderExc_InvalidJSON,
   RunRecorderExc_InvalidMetricName,
+  RunRecorderExc_InvalidValue,
   RunRecorderExc_MetricNameAlreadyUsed,
   RunRecorderExc_AddMeasureFailed,
   RunRecorderExc_DeleteMeasureFailed,
@@ -155,12 +156,20 @@ void RunRecorderFree(
 char* RunRecorderGetVersion(
   struct RunRecorder* const that);
 
-// Check if a string respect the pattern /[a-zA-Z][a-zA-Z0-9_]*/
+// Check if a string respect the pattern /^[a-zA-Z][a-zA-Z0-9_]$*/
 // Input:
 //   str: the string to check
 // Output:
 //   Return true if the string respect the pattern, else false
 bool RunRecorderIsValidLabel(
+  char const* const str);
+
+// Check if a string respect the pattern /^[^"=&]+$*/
+// Input:
+//   str: the string to check
+// Output:
+//   Return true if the string respect the pattern, else false
+bool RunRecorderIsValidValue(
   char const* const str);
 
 // Add a new project
@@ -235,6 +244,8 @@ void RunRecorderMeasureFree(
 //     that: the struct RunRecorderMeasure
 //   metric: the value's metric
 //      val: the value
+// Raise
+//   RunRecorderExc_InvalidValue
 void RunRecorderMeasureAddValueStr(
   struct RunRecorderMeasure* that,
            char const* const metric,
