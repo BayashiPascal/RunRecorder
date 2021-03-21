@@ -6,10 +6,10 @@
 // ================== Macros =========================
 
 // Last version of the database
-#define RUNRECORDER_VERSION_DB "01.00.00"
+#define VERSION_DB "01.00.00"
 
 // Number of tables in the database
-#define RUNRECORDER_NB_TABLE 5
+#define NB_TABLE 5
 
 // Loop from 0 to n
 #define ForZeroTo(I, N) for (long I = 0; I < N; ++I)
@@ -87,7 +87,7 @@ static char* exceptionStr[NbExceptions] = {
 //   that: the struct RunRecorder
 // Raise:
 //   RunRecorderExc_OpenDbFailed
-static void RunRecorderInitLocal(
+static void InitLocal(
   struct RunRecorder* const that);
 
 // Init a struct RunRecorder using the Web API
@@ -96,13 +96,13 @@ static void RunRecorderInitLocal(
 // Raise:
 //   RunRecorderExc_CreateCurlFailed
 //   RunRecorderExc_CurlSetOptFailed
-static void RunRecorderInitWebAPI(
+static void InitWebAPI(
   struct RunRecorder* const that);
 
 // Free the error messages of a struct RunRecorder
 // Input:
 //   that: The struct RunRecorder to be freed
-static void RunRecorderFreeErrMsg(
+static void FreeErrMsg(
   struct RunRecorder* const that);
 
 // Check if a struct RunRecorder uses a local SQLite database or the 
@@ -111,7 +111,7 @@ static void RunRecorderFreeErrMsg(
 //   that: The struct RunRecorder
 // Return:
 //   Return true if the struct RunRecorder uses the Web API, else false
-static bool RunRecorderUsesAPI(
+static bool UsesAPI(
   struct RunRecorder const* const that);
 
 // Reset the curl reply, to be called before sending a new curl request
@@ -119,13 +119,13 @@ static bool RunRecorderUsesAPI(
 // one of the previous request
 // Input:
 //   The struct RunRecorder
-static void RunRecorderResetCurlReply(
+static void ResetCurlReply(
   struct RunRecorder* const that);
 
 // Create the database
 // Input:
 //   that: The struct RunRecorder
-static void RunRecorderCreateDb(
+static void CreateDb(
   struct RunRecorder* const that);
 
 // Create the database locally
@@ -133,13 +133,13 @@ static void RunRecorderCreateDb(
 //   that: The struct RunRecorder
 // Raise:
 //   RunRecorderExc_CreateTableFailed
-static void RunRecorderCreateDbLocal(
+static void CreateDbLocal(
   struct RunRecorder* const that);
 
 // Upgrade the database
 // Input:
 //   that: The struct RunRecorder
-static void RunRecorderUpgradeDb(
+static void UpgradeDb(
   struct RunRecorder* const that);
 
 // Callback for RunRecorderGetVersionLocal
@@ -150,7 +150,7 @@ static void RunRecorderUpgradeDb(
 //   colName: Columns name
 // Output:
 //   Return 0 if successfull, else 1
-static int RunRecorderGetVersionLocalCb(
+static int GetVersionLocalCb(
    void* data,
      int nbCol,
   char** colVal,
@@ -163,7 +163,7 @@ static int RunRecorderGetVersionLocalCb(
 //   Return a new string
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
-static char* RunRecorderGetVersionLocal(
+static char* GetVersionLocal(
   struct RunRecorder* const that);
 
 // Callback to memorise the incoming data from the Web API
@@ -174,7 +174,7 @@ static char* RunRecorderGetVersionLocal(
 //   reply: pointer to memory where to store the incoming data
 // Output:
 //   Return the number of received byte
-static size_t RunRecorderGetReplyAPI(
+static size_t GetReplyAPI(
    char* data,
   size_t size,
   size_t nmemb,
@@ -186,7 +186,7 @@ static size_t RunRecorderGetReplyAPI(
 //    key: the key
 // Output:
 //   Return a new string, or NULL if the key doesn't exist
-static char* RunRecoderGetJSONValOfKey(
+static char* GetJSONValOfKey(
   char const* const json,
   char const* const key);
 
@@ -196,7 +196,7 @@ static char* RunRecoderGetJSONValOfKey(
 //   data: the POST data
 // Raise:
 //   RunRecorderExc_CurlSetOptFailed
-static void RunRecorderSetAPIReqPostVal(
+static void SetAPIReqPostVal(
   struct RunRecorder* const that,
           char const* const data);
 
@@ -207,7 +207,7 @@ static void RunRecorderSetAPIReqPostVal(
 //   Return a new string
 // Raise:
 //   RunRecorderExc_ApiRequestFailed
-static char* RunRecorderGetAPIRetCode(
+static char* GetAPIRetCode(
   struct RunRecorder* const that);
 
 // Send the current request of a struct RunRecorder
@@ -218,7 +218,7 @@ static char* RunRecorderGetAPIRetCode(
 // Raise:
 //   RunRecorderExc_CurlRequestFailed
 //   RunRecorderExc_ApiRequestFailed
-static void RunRecorderSendAPIReq(
+static void SendAPIReq(
   struct RunRecorder* const that,
                  bool const isJsonReq);
 
@@ -227,7 +227,7 @@ static void RunRecorderSendAPIReq(
 //   The struct RunRecorder
 // Output:
 //   Return a new string
-static char* RunRecorderGetVersionAPI(
+static char* GetVersionAPI(
   struct RunRecorder* const that);
 
 // Add a new projet in a local database
@@ -238,7 +238,7 @@ static char* RunRecorderGetVersionAPI(
 // /^[a-zA-Z][a-zA-Z0-9_]*$/ .
 // Raise:
 //   RunRecorderExc_AddProjectFailed
-static void RunRecorderAddProjectLocal(
+static void AddProjectLocal(
   struct RunRecorder* const that,
           char const* const name);
 
@@ -248,7 +248,7 @@ static void RunRecorderAddProjectLocal(
 //   name: the name of the new project
 // The project's name must respect the following pattern: 
 // /^[a-zA-Z][a-zA-Z0-9_]*$/ .
-static void RunRecorderAddProjectAPI(
+static void AddProjectAPI(
   struct RunRecorder* const that,
           char const* const name);
 
@@ -258,7 +258,7 @@ static void RunRecorderAddProjectAPI(
 //    val: the value to check
 // Output:
 //   Return true if the value is present in the pairs, else false
-static bool RunRecorderPairsRefValContainsVal(
+static bool PairsRefValContainsVal(
   struct RunRecorderPairsRefVal const* const that,
                            char const* const val);
 
@@ -267,7 +267,7 @@ static bool RunRecorderPairsRefValContainsVal(
 //   pairs: the struct RunRecorderPairsRefVal
 //     ref: the reference of the pair
 //     val: the val of the pair
-static void RunRecorderPairsRefValAdd(
+static void PairsRefValAdd(
   struct RunRecorderPairsRefVal* const pairs,
                             long const ref,
                      char const* const val);
@@ -280,7 +280,7 @@ static void RunRecorderPairsRefValAdd(
 //   colName: Columns name
 // Output:
 //   Return 0 if successful, else 1
-static int RunRecorderGetPairsLocalCb(
+static int GetPairsLocalCb(
    void* data,
      int nbCol,
   char** colVal,
@@ -293,7 +293,7 @@ static int RunRecorderGetPairsLocalCb(
 //   Return the projects' reference/label
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
-static struct RunRecorderPairsRefVal* RunRecorderGetProjectsLocal(
+static struct RunRecorderPairsRefVal* GetProjectsLocal(
   struct RunRecorder* const that);
 
 // Extract a struct RunRecorderPairsRefVal from a JSON string
@@ -303,7 +303,7 @@ static struct RunRecorderPairsRefVal* RunRecorderGetProjectsLocal(
 //   Return a new struct RunRecorderPairsRefVal
 // Raise:
 //   RunRecorderExc_InvalidJSON
-static struct RunRecorderPairsRefVal* RunRecorderGetPairsRefValFromJSON(
+static struct RunRecorderPairsRefVal* GetPairsRefValFromJSON(
   char const* json);
 
 // Get the list of projects through the Web API
@@ -311,10 +311,10 @@ static struct RunRecorderPairsRefVal* RunRecorderGetPairsRefValFromJSON(
 //   that: the struct RunRecorder
 // Output:
 //   Return the projects' reference/label
-static struct RunRecorderPairsRefVal* RunRecorderGetProjectsAPI(
+static struct RunRecorderPairsRefVal* GetProjectsAPI(
   struct RunRecorder* const that);
 
-// Create a static struct RunRecorderPairsRefVal
+// Create a struct RunRecorderPairsRefVal
 // Output:
 //   Return the new struct RunRecorderPairsRefVal
 static struct RunRecorderPairsRefVal* RunRecorderPairsRefValCreate(
@@ -328,7 +328,7 @@ static struct RunRecorderPairsRefVal* RunRecorderPairsRefValCreate(
 //   Return the metrics' reference/label
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
-static struct RunRecorderPairsRefVal* RunRecorderGetMetricsLocal(
+static struct RunRecorderPairsRefVal* GetMetricsLocal(
   struct RunRecorder* const that,
           char const* const project);
 
@@ -340,7 +340,7 @@ static struct RunRecorderPairsRefVal* RunRecorderGetMetricsLocal(
 //   Return the metrics' reference/label
 // Raise:
 //   RunRecorderExc_ApiRequestFailed
-static struct RunRecorderPairsRefVal* RunRecorderGetMetricsAPI(
+static struct RunRecorderPairsRefVal* GetMetricsAPI(
   struct RunRecorder* const that,
           char const* const project);
 
@@ -350,7 +350,7 @@ static struct RunRecorderPairsRefVal* RunRecorderGetMetricsAPI(
 //      project: the name of the project
 // Raise:
 //   RunRecorderExc_UpdateViewFailed
-static void RunRecorderUpdateViewProject(
+static void UpdateViewProject(
   struct RunRecorder* const that,
           char const* const project);
 
@@ -369,7 +369,7 @@ static void RunRecorderUpdateViewProject(
 //  sensitive, so 'Action' is fine).
 // Raise:
 //   RunRecorderExc_AddMetricFailed
-static void RunRecorderAddMetricLocal(
+static void AddMetricLocal(
   struct RunRecorder* const that,
           char const* const project,
           char const* const label,
@@ -388,7 +388,7 @@ static void RunRecorderAddMetricLocal(
 // the default value. There cannot be two metrics with the same label for
 // the same project. A metric label can't be 'action' or 'project' (case
 //  sensitive, so 'Action' is fine).
-static void RunRecorderAddMetricAPI(
+static void AddMetricAPI(
   struct RunRecorder* const that,
           char const* const project,
           char const* const label,
@@ -401,7 +401,7 @@ static void RunRecorderAddMetricAPI(
 //      measure: the measure to add
 // Raise:
 //   RunRecorderExc_AddMeasureFailed
-static void RunRecorderAddMeasureLocal(
+static void AddMeasureLocal(
                struct RunRecorder* const that,
                        char const* const project,
   struct RunRecorderMeasure const* const measure);
@@ -413,7 +413,7 @@ static void RunRecorderAddMeasureLocal(
 //      measure: the measure to add
 // Raise:
 //   RunRecorderExc_ApiRequestFailed
-static void RunRecorderAddMeasureAPI(
+static void AddMeasureAPI(
                struct RunRecorder* const that,
                        char const* const project,
   struct RunRecorderMeasure const* const measure);
@@ -424,7 +424,7 @@ static void RunRecorderAddMeasureAPI(
 //    measure: the measure to delete
 // Raise:
 //   RunRecorderExc_DeleteMeasureFailed
-static void RunRecorderDeleteMeasureLocal(
+static void DeleteMeasureLocal(
   struct RunRecorder* const that,
         long const measure);
 
@@ -432,7 +432,7 @@ static void RunRecorderDeleteMeasureLocal(
 // Inputs:
 //       that: the struct RunRecorder
 //    measure: the measure to delete
-static void RunRecorderDeleteMeasureAPI(
+static void DeleteMeasureAPI(
   struct RunRecorder* const that,
         long const measure);
 
@@ -444,7 +444,7 @@ static void RunRecorderDeleteMeasureAPI(
 //   colName: Columns name
 // Output:
 //   Return 0 if successfull, else 1
-static int RunRecorderGetMeasuresLocalCb(
+static int GetMeasuresLocalCb(
    void* data,
      int nbCol,
   char** colVal,
@@ -460,7 +460,7 @@ static int RunRecorderGetMeasuresLocalCb(
 // Output:
 //   Set the SQL command in that->cmd to get measures as a struct
 //    RunRecorderMeasures
-static void RunRecorderSetCmdToGetMeasuresLocal(
+static void SetCmdToGetMeasuresLocal(
   struct RunRecorder* const that,
           char const* const project,
                  long const nbMeasure);
@@ -473,7 +473,7 @@ static void RunRecorderSetCmdToGetMeasuresLocal(
 //   Return the measures as a struct RunRecorderMeasures
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
-static struct RunRecorderMeasures* RunRecorderGetMeasuresLocal(
+static struct RunRecorderMeasures* GetMeasuresLocal(
   struct RunRecorder* const that,
           char const* const project);
 
@@ -484,7 +484,7 @@ static struct RunRecorderMeasures* RunRecorderGetMeasuresLocal(
 //   sep: The separator character
 // Output:
 //   Return a pointer to the end of the row
-static char const* RunRecorderSplitCSVRowToData(
+static char const* SplitCSVRowToData(
    char const* csv,
   char** const tgt,
     char const sep);
@@ -500,7 +500,7 @@ static char const* RunRecorderSplitCSVRowToData(
 //   sep: the separator between columns ('&' in the example above)
 // Output:
 //   Return a newly allocated RunRecorderMeasures
-static struct RunRecorderMeasures* RunRecorderCSVToData(
+static struct RunRecorderMeasures* CSVToData(
   char const* const csv,
          char const sep);
 
@@ -510,7 +510,7 @@ static struct RunRecorderMeasures* RunRecorderCSVToData(
 //      project: the project's name
 // Output:
 //   Return the measures as a struct RunRecorderMeasures
-static struct RunRecorderMeasures* RunRecorderGetMeasuresAPI(
+static struct RunRecorderMeasures* GetMeasuresAPI(
   struct RunRecorder* const that,
           char const* const project);
 
@@ -524,7 +524,7 @@ static struct RunRecorderMeasures* RunRecorderGetMeasuresAPI(
 //   most recent to the oldest
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
-static struct RunRecorderMeasures* RunRecorderGetLastMeasuresLocal(
+static struct RunRecorderMeasures* GetLastMeasuresLocal(
   struct RunRecorder* const that,
           char const* const project,
                  long const nbMeasure);
@@ -537,7 +537,7 @@ static struct RunRecorderMeasures* RunRecorderGetLastMeasuresLocal(
 // Output:
 //   Return the measures as a struct RunRecorderMeasures, ordered from the
 //   most recent to the oldest
-static struct RunRecorderMeasures* RunRecorderGetLastMeasuresAPI(
+static struct RunRecorderMeasures* GetLastMeasuresAPI(
   struct RunRecorder* const that,
           char const* const project,
                  long const nbMeasure);
@@ -554,7 +554,7 @@ static struct RunRecorderMeasures* RunRecorderMeasuresCreate(
 //      project: the project's name
 // Raise:
 //   RunRecorderExc_FlushProjectFailed
-static void RunRecorderFlushProjectLocal(
+static void FlushProjectLocal(
   struct RunRecorder* const that,
           char const* const project);
 
@@ -562,12 +562,12 @@ static void RunRecorderFlushProjectLocal(
 // Inputs:
 //         that: the struct RunRecorder
 //      project: the project's name
-static void RunRecorderFlushProjectAPI(
+static void FlushProjectAPI(
   struct RunRecorder* const that,
           char const* const project);
 
 // Function to convert a RunRecorder exception ID to char*
-static char const* RunRecorderExcToStr(
+static char const* ExcToStr(
   // The exception ID
   int exc);
 
@@ -614,22 +614,22 @@ void RunRecorderInit(
   struct RunRecorder* const that) {
 
   // Set the conversion function to string for RunRecorder exceptions
-  TryCatchAddExcToStrFun(RunRecorderExcToStr);
+  TryCatchAddExcToStrFun(ExcToStr);
 
   // Ensure the error message are freed
-  RunRecorderFreeErrMsg(that);
+  FreeErrMsg(that);
 
   // If the recorder doesn't use the API
-  if (RunRecorderUsesAPI(that) == false) {
+  if (UsesAPI(that) == false) {
 
     // Init the local connection to the database
-    RunRecorderInitLocal(that);
+    InitLocal(that);
 
   // Else, the recorder uses the API
   } else {
 
     // Init the Web API
-    RunRecorderInitWebAPI(that);
+    InitWebAPI(that);
 
   }
 
@@ -639,9 +639,9 @@ void RunRecorderInit(
   int cmpVersion =
     strcmp(
       version,
-      RUNRECORDER_VERSION_DB);
+      VERSION_DB);
   PolyFree(version);
-  if (cmpVersion != 0) RunRecorderUpgradeDb(that);
+  if (cmpVersion != 0) UpgradeDb(that);
 
 }
 
@@ -688,17 +688,17 @@ char* RunRecorderGetVersion(
 
   // Ensure the error messages are freed to avoid confusion with
   // eventual previous messages
-  RunRecorderFreeErrMsg(that);
+  FreeErrMsg(that);
 
   // If the RunRecorder uses a local database
-  if (RunRecorderUsesAPI(that) == false) {
+  if (UsesAPI(that) == false) {
 
-    return RunRecorderGetVersionLocal(that);
+    return GetVersionLocal(that);
 
   // Else, the RunRecorder uses the Web API
   } else {
 
-    return RunRecorderGetVersionAPI(that);
+    return GetVersionAPI(that);
 
   }
 
@@ -752,7 +752,7 @@ void RunRecorderAddProject(
 
   // Ensure the error messages are freed to avoid confusion with
   // eventual previous messages
-  RunRecorderFreeErrMsg(that);
+  FreeErrMsg(that);
 
   // Check the name
   bool isValidName = RunRecorderIsValidLabel(name);
@@ -761,23 +761,23 @@ void RunRecorderAddProject(
   // Check if there is no other metric with same name for this project
   struct RunRecorderPairsRefVal* projects = RunRecorderGetProjects(that);
   bool alreadyUsed =
-    RunRecorderPairsRefValContainsVal(
+    PairsRefValContainsVal(
       projects,
       name);
   RunRecorderPairsRefValFree(&projects);
   if (alreadyUsed == true) Raise(RunRecorderExc_ProjectNameAlreadyUsed);
 
   // If the RunRecorder uses a local database
-  if (RunRecorderUsesAPI(that) == false) {
+  if (UsesAPI(that) == false) {
 
-    RunRecorderAddProjectLocal(
+    AddProjectLocal(
       that,
       name);
 
   // Else, the RunRecorder uses the Web API
   } else {
 
-    RunRecorderAddProjectAPI(
+    AddProjectAPI(
       that,
       name);
 
@@ -795,17 +795,17 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjects(
 
   // Ensure the error messages are freed to avoid confusion with
   // eventual previous messages
-  RunRecorderFreeErrMsg(that);
+  FreeErrMsg(that);
 
   // If the RunRecorder uses a local database
-  if (RunRecorderUsesAPI(that) == false) {
+  if (UsesAPI(that) == false) {
 
-    return RunRecorderGetProjectsLocal(that);
+    return GetProjectsLocal(that);
 
   // Else, the RunRecorder uses the Web API
   } else {
 
-    return RunRecorderGetProjectsAPI(that);
+    return GetProjectsAPI(that);
 
   }
 
@@ -823,19 +823,19 @@ struct RunRecorderPairsRefVal* RunRecorderGetMetrics(
 
   // Ensure the error messages are freed to avoid confusion with
   // eventual previous messages
-  RunRecorderFreeErrMsg(that);
+  FreeErrMsg(that);
 
   // If the RunRecorder uses a local database
-  if (RunRecorderUsesAPI(that) == false) {
+  if (UsesAPI(that) == false) {
 
-    return RunRecorderGetMetricsLocal(
+    return GetMetricsLocal(
       that,
       project);
 
   // Else, the RunRecorder uses the Web API
   } else {
 
-    return RunRecorderGetMetricsAPI(
+    return GetMetricsAPI(
       that,
       project);
 
@@ -867,7 +867,7 @@ void RunRecorderAddMetric(
 
   // Ensure the error messages are freed to avoid confusion with
   // eventual previous messages
-  RunRecorderFreeErrMsg(that);
+  FreeErrMsg(that);
 
   // Check the label
   bool isValidLabel = RunRecorderIsValidLabel(label);
@@ -879,17 +879,17 @@ void RunRecorderAddMetric(
       that,
       project);
   bool alreadyUsed =
-    RunRecorderPairsRefValContainsVal(
+    PairsRefValContainsVal(
       metrics,
       label);
   RunRecorderPairsRefValFree(&metrics);
   if (alreadyUsed == true) Raise(RunRecorderExc_MetricNameAlreadyUsed);
 
   // If the RunRecorder uses a local database
-  if (RunRecorderUsesAPI(that) == false) {
+  if (UsesAPI(that) == false) {
 
     return
-      RunRecorderAddMetricLocal(
+      AddMetricLocal(
         that,
         project,
         label,
@@ -899,7 +899,7 @@ void RunRecorderAddMetric(
   } else {
 
     return
-      RunRecorderAddMetricAPI(
+      AddMetricAPI(
         that,
         project,
         label,
@@ -1091,12 +1091,12 @@ void RunRecorderAddMeasure(
   that->refLastAddedMeasure = 0;
 
   // Ensure errMsg is freed
-  RunRecorderFreeErrMsg(that);
+  FreeErrMsg(that);
 
   // If the RunRecorder uses a local database
-  if (RunRecorderUsesAPI(that) == false) {
+  if (UsesAPI(that) == false) {
 
-    RunRecorderAddMeasureLocal(
+    AddMeasureLocal(
       that,
       project,
       measure);
@@ -1104,7 +1104,7 @@ void RunRecorderAddMeasure(
   // Else, the RunRecorder uses the Web API
   } else {
 
-    RunRecorderAddMeasureAPI(
+    AddMeasureAPI(
       that,
       project,
       measure);
@@ -1123,19 +1123,19 @@ void RunRecorderDeleteMeasure(
 
   // Ensure the error messages are freed to avoid confusion with
   // eventual previous messages
-  RunRecorderFreeErrMsg(that);
+  FreeErrMsg(that);
 
   // If the RunRecorder uses a local database
-  if (RunRecorderUsesAPI(that) == false) {
+  if (UsesAPI(that) == false) {
 
-    RunRecorderDeleteMeasureLocal(
+    DeleteMeasureLocal(
       that,
       measure);
 
   // Else, the RunRecorder uses the Web API
   } else {
 
-    RunRecorderDeleteMeasureAPI(
+    DeleteMeasureAPI(
       that,
       measure);
 
@@ -1155,13 +1155,13 @@ struct RunRecorderMeasures* RunRecorderGetMeasures(
 
   // Ensure the error messages are freed to avoid confusion with
   // eventual previous messages
-  RunRecorderFreeErrMsg(that);
+  FreeErrMsg(that);
 
   // If the RunRecorder uses a local database
-  if (RunRecorderUsesAPI(that) == false) {
+  if (UsesAPI(that) == false) {
 
     return
-      RunRecorderGetMeasuresLocal(
+      GetMeasuresLocal(
         that,
         project);
 
@@ -1169,7 +1169,7 @@ struct RunRecorderMeasures* RunRecorderGetMeasures(
   } else {
 
     return
-      RunRecorderGetMeasuresAPI(
+      GetMeasuresAPI(
         that,
         project);
 
@@ -1192,13 +1192,13 @@ struct RunRecorderMeasures* RunRecorderGetLastMeasures(
 
   // Ensure the error messages are freed to avoid confusion with
   // eventual previous messages
-  RunRecorderFreeErrMsg(that);
+  FreeErrMsg(that);
 
   // If the RunRecorder uses a local database
-  if (RunRecorderUsesAPI(that) == false) {
+  if (UsesAPI(that) == false) {
 
     return
-      RunRecorderGetLastMeasuresLocal(
+      GetLastMeasuresLocal(
         that,
         project,
         nbMeasure);
@@ -1207,7 +1207,7 @@ struct RunRecorderMeasures* RunRecorderGetLastMeasures(
   } else {
 
     return
-      RunRecorderGetLastMeasuresAPI(
+      GetLastMeasuresAPI(
         that,
         project,
         nbMeasure);
@@ -1320,19 +1320,19 @@ void RunRecorderFlushProject(
 
   // Ensure the error messages are freed to avoid confusion with
   // eventual previous messages
-  RunRecorderFreeErrMsg(that);
+  FreeErrMsg(that);
 
   // If the RunRecorder uses a local database
-  if (RunRecorderUsesAPI(that) == false) {
+  if (UsesAPI(that) == false) {
 
-    RunRecorderFlushProjectLocal(
+    FlushProjectLocal(
       that,
       project);
 
   // Else, the RunRecorder uses the Web API
   } else {
 
-    RunRecorderFlushProjectAPI(
+    FlushProjectAPI(
       that,
       project);
 
@@ -1371,7 +1371,7 @@ void RunRecorderPairsRefValFree(
 //   that: the struct RunRecorder
 // Raise:
 //   RunRecorderExc_OpenDbFailed
-static void RunRecorderInitLocal(
+static void InitLocal(
   struct RunRecorder* const that) {
 
   // Try to open the file in reading mode to check if it exists
@@ -1399,7 +1399,7 @@ static void RunRecorderInitLocal(
   if (fp == NULL) {
 
     // Create the database
-    RunRecorderCreateDb(that);
+    CreateDb(that);
 
   } else {
 
@@ -1416,7 +1416,7 @@ static void RunRecorderInitLocal(
 // Raise:
 //   RunRecorderExc_CreateCurlFailed
 //   RunRecorderExc_CurlSetOptFailed
-static void RunRecorderInitWebAPI(
+static void InitWebAPI(
   struct RunRecorder* const that) {
 
   // Create the curl instance
@@ -1462,7 +1462,7 @@ static void RunRecorderInitWebAPI(
     curl_easy_setopt(
       that->curl,
       CURLOPT_WRITEFUNCTION,
-      RunRecorderGetReplyAPI);
+      GetReplyAPI);
   if (res != CURLE_OK) {
 
     curl_easy_cleanup(that->curl);
@@ -1479,7 +1479,7 @@ static void RunRecorderInitWebAPI(
 // Free the error messages of a struct RunRecorder
 // Input:
 //   that: The struct RunRecorder to be freed
-static void RunRecorderFreeErrMsg(
+static void FreeErrMsg(
   struct RunRecorder* const that) {
 
   // Free the error messages
@@ -1497,7 +1497,7 @@ static void RunRecorderFreeErrMsg(
 //   that: The struct RunRecorder
 // Return:
 //   Return true if the struct RunRecorder uses the Web API, else false
-static bool RunRecorderUsesAPI(
+static bool UsesAPI(
   struct RunRecorder const* const that) {
 
   // If the url starts with http the struct RunRecorder uses the Web API
@@ -1514,7 +1514,7 @@ static bool RunRecorderUsesAPI(
 // one of the previous request
 // Input:
 //   The struct RunRecorder
-static void RunRecorderResetCurlReply(
+static void ResetCurlReply(
   struct RunRecorder* const that) {
 
   PolyFree(that->curlReply);
@@ -1525,11 +1525,11 @@ static void RunRecorderResetCurlReply(
 // Create the database
 // Input:
 //   that: The struct RunRecorder
-static void RunRecorderCreateDb(
+static void CreateDb(
   struct RunRecorder* const that) {
 
   // If the RunRecorder uses a local database
-  if (RunRecorderUsesAPI(that) == false) RunRecorderCreateDbLocal(that);
+  if (UsesAPI(that) == false) CreateDbLocal(that);
 
   // If the RunRecorder uses the Web API there is
   // nothing to do as the remote API will take care of creating the
@@ -1542,14 +1542,14 @@ static void RunRecorderCreateDb(
 //   that: The struct RunRecorder
 // Raise:
 //   RunRecorderExc_CreateTableFailed
-static void RunRecorderCreateDbLocal(
+static void CreateDbLocal(
   struct RunRecorder* const that) {
 
   // Ensure the error messages are freed
-  RunRecorderFreeErrMsg(that);
+  FreeErrMsg(that);
 
   // List of commands to create the table
-  char* sqlCmd[RUNRECORDER_NB_TABLE + 1] = {
+  char* sqlCmd[NB_TABLE + 1] = {
 
     "CREATE TABLE _Version ("
     "  Ref INTEGER PRIMARY KEY,"
@@ -1572,12 +1572,12 @@ static void RunRecorderCreateDbLocal(
     "  Label TEXT NOT NULL,"
     "  DefaultValue TEXT NOT NULL)",
     "INSERT INTO _Version (Ref, Label) "
-    "VALUES (NULL, '" RUNRECORDER_VERSION_DB "')"
+    "VALUES (NULL, '" VERSION_DB "')"
 
   };
 
   // Loop on the commands
-  ForZeroTo(iCmd, RUNRECORDER_NB_TABLE + 1) {
+  ForZeroTo(iCmd, NB_TABLE + 1) {
 
     // Execute the command to create the table
     int retExec =
@@ -1598,7 +1598,7 @@ static void RunRecorderCreateDbLocal(
 // Upgrade the database
 // Input:
 //   that: The struct RunRecorder
-static void RunRecorderUpgradeDb(
+static void UpgradeDb(
   struct RunRecorder* const that) {
 
   // Unused argument
@@ -1617,7 +1617,7 @@ static void RunRecorderUpgradeDb(
 //   colName: Columns name
 // Output:
 //   Return 0 if successfull, else 1
-static int RunRecorderGetVersionLocalCb(
+static int GetVersionLocalCb(
    void* data,
      int nbCol,
   char** colVal,
@@ -1659,7 +1659,7 @@ static int RunRecorderGetVersionLocalCb(
 //   Return a new string
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
-static char* RunRecorderGetVersionLocal(
+static char* GetVersionLocal(
   struct RunRecorder* const that) {
 
   // Declare a variable to memeorise the version
@@ -1671,7 +1671,7 @@ static char* RunRecorderGetVersionLocal(
     sqlite3_exec(
       that->db,
       sqlCmd,
-      RunRecorderGetVersionLocalCb,
+      GetVersionLocalCb,
       &version,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_SQLRequestFailed);
@@ -1689,7 +1689,7 @@ static char* RunRecorderGetVersionLocal(
 //   reply: pointer to memory where to store the incoming data
 // Output:
 //   Return the number of received byte
-static size_t RunRecorderGetReplyAPI(
+static size_t GetReplyAPI(
    char* data,
   size_t size,
   size_t nmemb,
@@ -1737,7 +1737,7 @@ static size_t RunRecorderGetReplyAPI(
 //    key: the key
 // Output:
 //   Return a new string, or NULL if the key doesn't exist
-static char* RunRecoderGetJSONValOfKey(
+static char* GetJSONValOfKey(
   char const* const json,
   char const* const key) {
 
@@ -1844,7 +1844,7 @@ static char* RunRecoderGetJSONValOfKey(
 //   data: the POST data
 // Raise:
 //   RunRecorderExc_CurlSetOptFailed
-static void RunRecorderSetAPIReqPostVal(
+static void SetAPIReqPostVal(
   struct RunRecorder* const that,
   char const* const data) {
 
@@ -1872,12 +1872,12 @@ static void RunRecorderSetAPIReqPostVal(
 //   Return a new string
 // Raise:
 //   RunRecorderExc_ApiRequestFailed
-static char* RunRecorderGetAPIRetCode(
+static char* GetAPIRetCode(
   struct RunRecorder* const that) {
 
   // Extract the return code from the JSON reply
   char* retCode =
-    RunRecoderGetJSONValOfKey(
+    GetJSONValOfKey(
       that->curlReply,
       "ret");
   if (retCode == NULL) {
@@ -1902,12 +1902,12 @@ static char* RunRecorderGetAPIRetCode(
 // Raise:
 //   RunRecorderExc_CurlRequestFailed
 //   RunRecorderExc_ApiRequestFailed
-static void RunRecorderSendAPIReq(
+static void SendAPIReq(
   struct RunRecorder* const that,
                  bool const isJsonReq) {
 
   // Send the request
-  RunRecorderResetCurlReply(that);
+  ResetCurlReply(that);
   CURLcode res = curl_easy_perform(that->curl);
   if (res != CURLE_OK) {
 
@@ -1922,7 +1922,7 @@ static void RunRecorderSendAPIReq(
   if (isJsonReq == true) {
 
     // Check the returned code
-    char* retCode = RunRecorderGetAPIRetCode(that);
+    char* retCode = GetAPIRetCode(that);
     int cmpRet =
       strcmp(
         retCode,
@@ -1932,7 +1932,7 @@ static void RunRecorderSendAPIReq(
 
       PolyFree(that->errMsg);
       that->errMsg =
-        RunRecoderGetJSONValOfKey(
+        GetJSONValOfKey(
           that->curlReply,
           "errMsg");
       Raise(RunRecorderExc_ApiRequestFailed);
@@ -1948,22 +1948,23 @@ static void RunRecorderSendAPIReq(
 //   The struct RunRecorder
 // Output:
 //   Return a new string
-static char* RunRecorderGetVersionAPI(
+static char* GetVersionAPI(
   struct RunRecorder* const that) {
 
   // Create the request to the Web API
-  RunRecorderSetAPIReqPostVal(
+  SetAPIReqPostVal(
     that,
     "action=version");
 
   // Send the request to the API
-  RunRecorderSendAPIReq(
+  bool isJsonReq = true;
+  SendAPIReq(
     that,
-    true);
+    isJsonReq);
 
   // Extract the version number from the JSON reply
   char* version =
-    RunRecoderGetJSONValOfKey(
+    GetJSONValOfKey(
       that->curlReply,
       "version");
 
@@ -1980,7 +1981,7 @@ static char* RunRecorderGetVersionAPI(
 // /^[a-zA-Z][a-zA-Z0-9_]*$/ .
 // Raise:
 //   RunRecorderExc_AddProjectFailed
-static void RunRecorderAddProjectLocal(
+static void AddProjectLocal(
   struct RunRecorder* const that,
   char const* const name) {
 
@@ -2017,7 +2018,7 @@ static void RunRecorderAddProjectLocal(
 //   name: the name of the new project
 // The project's name must respect the following pattern: 
 // /^[a-zA-Z][a-zA-Z0-9_]*$/ .
-static void RunRecorderAddProjectAPI(
+static void AddProjectAPI(
   struct RunRecorder* const that,
   char const* const name) {
 
@@ -2033,14 +2034,15 @@ static void RunRecorderAddProjectAPI(
     that->cmd,
     cmdFormat,
     name);
-  RunRecorderSetAPIReqPostVal(
+  SetAPIReqPostVal(
     that,
     that->cmd);
 
   // Send the request to the API
-  RunRecorderSendAPIReq(
+  bool isJsonReq = true;
+  SendAPIReq(
     that,
-    true);
+    isJsonReq);
 
 }
 
@@ -2050,7 +2052,7 @@ static void RunRecorderAddProjectAPI(
 //    val: the value to check
 // Output:
 //   Return true if the value is present in the pairs, else false
-static bool RunRecorderPairsRefValContainsVal(
+static bool PairsRefValContainsVal(
   struct RunRecorderPairsRefVal const* const that,
                            char const* const val) {
 
@@ -2081,7 +2083,7 @@ static bool RunRecorderPairsRefValContainsVal(
 //   pairs: the struct RunRecorderPairsRefVal
 //     ref: the reference of the pair
 //     val: the val of the pair
-static void RunRecorderPairsRefValAdd(
+static void PairsRefValAdd(
   struct RunRecorderPairsRefVal* const pairs,
                             long const ref,
                      char const* const val) {
@@ -2114,7 +2116,7 @@ static void RunRecorderPairsRefValAdd(
 //   colName: Columns name
 // Output:
 //   Return 0 if successful, else 1
-static int RunRecorderGetPairsLocalCb(
+static int GetPairsLocalCb(
    void* data,
      int nbCol,
   char** colVal,
@@ -2142,7 +2144,7 @@ static int RunRecorderGetPairsLocalCb(
   if (errno != 0) return 1;
   Try {
 
-    RunRecorderPairsRefValAdd(
+    PairsRefValAdd(
       pairs,
       ref,
       colVal[1]);
@@ -2165,7 +2167,7 @@ static int RunRecorderGetPairsLocalCb(
 //   Return the projects' reference/label
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
-static struct RunRecorderPairsRefVal* RunRecorderGetProjectsLocal(
+static struct RunRecorderPairsRefVal* GetProjectsLocal(
   struct RunRecorder* const that) {
 
   // Declare a variable to memorise the projects
@@ -2177,7 +2179,7 @@ static struct RunRecorderPairsRefVal* RunRecorderGetProjectsLocal(
     sqlite3_exec(
       that->db,
       sqlCmd,
-      RunRecorderGetPairsLocalCb,
+      GetPairsLocalCb,
       projects,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) {
@@ -2199,7 +2201,7 @@ static struct RunRecorderPairsRefVal* RunRecorderGetProjectsLocal(
 //   Return a new struct RunRecorderPairsRefVal
 // Raise:
 //   RunRecorderExc_InvalidJSON
-static struct RunRecorderPairsRefVal* RunRecorderGetPairsRefValFromJSON(
+static struct RunRecorderPairsRefVal* GetPairsRefValFromJSON(
   char const* json) {
 
   // Create the pairs
@@ -2272,7 +2274,7 @@ static struct RunRecorderPairsRefVal* RunRecorderGetPairsRefValFromJSON(
 
         // Add the pair
 
-        RunRecorderPairsRefValAdd(
+        PairsRefValAdd(
           pairs,
           ref,
           val);
@@ -2300,18 +2302,19 @@ static struct RunRecorderPairsRefVal* RunRecorderGetPairsRefValFromJSON(
 //   that: the struct RunRecorder
 // Output:
 //   Return the projects' reference/label
-static struct RunRecorderPairsRefVal* RunRecorderGetProjectsAPI(
+static struct RunRecorderPairsRefVal* GetProjectsAPI(
   struct RunRecorder* const that) {
 
   // Create the request to the Web API
-  RunRecorderSetAPIReqPostVal(
+  SetAPIReqPostVal(
     that,
     "action=projects");
 
   // Send the request to the API
-  RunRecorderSendAPIReq(
+  bool isJsonReq = true;
+  SendAPIReq(
     that,
-    true);
+    isJsonReq);
 
   // Variable to memorise the value of the 'projects' key
   char* json = NULL;
@@ -2323,13 +2326,13 @@ static struct RunRecorderPairsRefVal* RunRecorderGetProjectsAPI(
 
     // Get the projects list in the JSON reply
     char* json =
-      RunRecoderGetJSONValOfKey(
+      GetJSONValOfKey(
         that->curlReply,
         "projects");
     if (json == NULL) Raise(RunRecorderExc_ApiRequestFailed);
 
     // Extract the projects
-    projects = RunRecorderGetPairsRefValFromJSON(json);
+    projects = GetPairsRefValFromJSON(json);
 
     // Free memory
     PolyFree(json);
@@ -2346,7 +2349,7 @@ static struct RunRecorderPairsRefVal* RunRecorderGetProjectsAPI(
 
 }
 
-// Create a static struct RunRecorderPairsRefVal
+// Create a struct RunRecorderPairsRefVal
 // Output:
 //   Return the new struct RunRecorderPairsRefVal
 static struct RunRecorderPairsRefVal* RunRecorderPairsRefValCreate(
@@ -2376,7 +2379,7 @@ static struct RunRecorderPairsRefVal* RunRecorderPairsRefValCreate(
 //   Return the metrics' reference/label
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
-static struct RunRecorderPairsRefVal* RunRecorderGetMetricsLocal(
+static struct RunRecorderPairsRefVal* GetMetricsLocal(
   struct RunRecorder* const that,
           char const* const project) {
 
@@ -2406,7 +2409,7 @@ static struct RunRecorderPairsRefVal* RunRecorderGetMetricsLocal(
       sqlite3_exec(
         that->db,
         that->cmd,
-        RunRecorderGetPairsLocalCb,
+        GetPairsLocalCb,
         metrics,
         &(that->sqliteErrMsg));
     if (retExec != SQLITE_OK) Raise(RunRecorderExc_SQLRequestFailed);
@@ -2431,7 +2434,7 @@ static struct RunRecorderPairsRefVal* RunRecorderGetMetricsLocal(
 //   Return the metrics' reference/label
 // Raise:
 //   RunRecorderExc_ApiRequestFailed
-static struct RunRecorderPairsRefVal* RunRecorderGetMetricsAPI(
+static struct RunRecorderPairsRefVal* GetMetricsAPI(
   struct RunRecorder* const that,
           char const* const project) {
 
@@ -2445,14 +2448,15 @@ static struct RunRecorderPairsRefVal* RunRecorderGetMetricsAPI(
     that->cmd,
     cmdFormat,
     project);
-  RunRecorderSetAPIReqPostVal(
+  SetAPIReqPostVal(
     that,
     that->cmd);
 
   // Send the request to the API
-  RunRecorderSendAPIReq(
+  bool isJsonReq = true;
+  SendAPIReq(
     that,
-    true);
+    isJsonReq);
 
   // Variable to memorise the value of the 'metrics' key
   char* json = NULL;
@@ -2464,13 +2468,13 @@ static struct RunRecorderPairsRefVal* RunRecorderGetMetricsAPI(
 
     // Get the metrics list in the JSON reply
     json =
-      RunRecoderGetJSONValOfKey(
+      GetJSONValOfKey(
         that->curlReply,
         "metrics");
     if (json == NULL) Raise(RunRecorderExc_ApiRequestFailed);
 
     // Extract the metrics
-    metrics = RunRecorderGetPairsRefValFromJSON(json);
+    metrics = GetPairsRefValFromJSON(json);
 
     // Free memory
     PolyFree(json);
@@ -2494,7 +2498,7 @@ static struct RunRecorderPairsRefVal* RunRecorderGetMetricsAPI(
 //      project: the name of the project
 // Raise:
 //   RunRecorderExc_UpdateViewFailed
-static void RunRecorderUpdateViewProject(
+static void UpdateViewProject(
   struct RunRecorder* const that,
           char const* const project) {
 
@@ -2645,7 +2649,7 @@ static void RunRecorderUpdateViewProject(
 //  sensitive, so 'Action' is fine).
 // Raise:
 //   RunRecorderExc_AddMetricFailed
-static void RunRecorderAddMetricLocal(
+static void AddMetricLocal(
   struct RunRecorder* const that,
           char const* const project,
           char const* const label,
@@ -2680,7 +2684,7 @@ static void RunRecorderAddMetricLocal(
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_AddMetricFailed);
 
   // Update the view for this project
-  RunRecorderUpdateViewProject(
+  UpdateViewProject(
     that,
     project);
 
@@ -2699,7 +2703,7 @@ static void RunRecorderAddMetricLocal(
 // the default value. There cannot be two metrics with the same label for
 // the same project. A metric label can't be 'action' or 'project' (case
 //  sensitive, so 'Action' is fine).
-static void RunRecorderAddMetricAPI(
+static void AddMetricAPI(
   struct RunRecorder* const that,
           char const* const project,
           char const* const label,
@@ -2718,13 +2722,13 @@ static void RunRecorderAddMetricAPI(
     project,
     label,
     defaultVal);
-  RunRecorderSetAPIReqPostVal(
+  SetAPIReqPostVal(
     that,
     that->cmd);
 
   // Send the request to the API
   bool isJsonReq = true;
-  RunRecorderSendAPIReq(
+  SendAPIReq(
     that,
     isJsonReq);
 
@@ -2737,7 +2741,7 @@ static void RunRecorderAddMetricAPI(
 //      measure: the measure to add
 // Raise:
 //   RunRecorderExc_AddMeasureFailed
-static void RunRecorderAddMeasureLocal(
+static void AddMeasureLocal(
                struct RunRecorder* const that,
                        char const* const project,
   struct RunRecorderMeasure const* const measure) {
@@ -2852,7 +2856,7 @@ static void RunRecorderAddMeasureLocal(
 //      measure: the measure to add
 // Raise:
 //   RunRecorderExc_ApiRequestFailed
-static void RunRecorderAddMeasureAPI(
+static void AddMeasureAPI(
                struct RunRecorder* const that,
                        char const* const project,
   struct RunRecorderMeasure const* const measure) {
@@ -2897,18 +2901,19 @@ static void RunRecorderAddMeasureAPI(
 
   }
 
-  RunRecorderSetAPIReqPostVal(
+  SetAPIReqPostVal(
     that,
     that->cmd);
 
   // Send the request to the API
-  RunRecorderSendAPIReq(
+  bool isJsonReq = true;
+  SendAPIReq(
     that,
-    true);
+    isJsonReq);
 
   // Extract the reference of the measure from the JSON reply
   char* version =
-    RunRecoderGetJSONValOfKey(
+    GetJSONValOfKey(
       that->curlReply,
       "refMeasure");
   if (version == NULL) Raise(RunRecorderExc_ApiRequestFailed);
@@ -2929,7 +2934,7 @@ static void RunRecorderAddMeasureAPI(
 //    measure: the measure to delete
 // Raise:
 //   RunRecorderExc_DeleteMeasureFailed
-static void RunRecorderDeleteMeasureLocal(
+static void DeleteMeasureLocal(
   struct RunRecorder* const that,
         long const measure) {
 
@@ -2991,7 +2996,7 @@ static void RunRecorderDeleteMeasureLocal(
 // Inputs:
 //       that: the struct RunRecorder
 //    measure: the measure to delete
-static void RunRecorderDeleteMeasureAPI(
+static void DeleteMeasureAPI(
   struct RunRecorder* const that,
         long const measure) {
 
@@ -3011,14 +3016,15 @@ static void RunRecorderDeleteMeasureAPI(
     that->cmd,
     cmdFormat,
     measure);
-  RunRecorderSetAPIReqPostVal(
+  SetAPIReqPostVal(
     that,
     that->cmd);
 
   // Send the request to the API
-  RunRecorderSendAPIReq(
+  bool isJsonReq = true;
+  SendAPIReq(
     that,
-    true);
+    isJsonReq);
 
 }
 
@@ -3030,7 +3036,7 @@ static void RunRecorderDeleteMeasureAPI(
 //   colName: Columns name
 // Output:
 //   Return 0 if successfull, else 1
-static int RunRecorderGetMeasuresLocalCb(
+static int GetMeasuresLocalCb(
    void* data,
      int nbCol,
   char** colVal,
@@ -3117,7 +3123,7 @@ static int RunRecorderGetMeasuresLocalCb(
 // Output:
 //   Set the SQL command in that->cmd to get measures as a struct
 //    RunRecorderMeasures
-static void RunRecorderSetCmdToGetMeasuresLocal(
+static void SetCmdToGetMeasuresLocal(
   struct RunRecorder* const that,
           char const* const project,
                  long const nbMeasure) {
@@ -3209,7 +3215,7 @@ static void RunRecorderSetCmdToGetMeasuresLocal(
 //   Return the measures as a struct RunRecorderMeasures
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
-static struct RunRecorderMeasures* RunRecorderGetMeasuresLocal(
+static struct RunRecorderMeasures* GetMeasuresLocal(
   struct RunRecorder* const that,
           char const* const project) {
 
@@ -3218,7 +3224,7 @@ static struct RunRecorderMeasures* RunRecorderGetMeasuresLocal(
 
   // Create the request with no limit on the number of returned measures
   long nbMeasure = 0;
-  RunRecorderSetCmdToGetMeasuresLocal(
+  SetCmdToGetMeasuresLocal(
     that,
     project,
     nbMeasure);
@@ -3228,7 +3234,7 @@ static struct RunRecorderMeasures* RunRecorderGetMeasuresLocal(
     sqlite3_exec(
       that->db,
       that->cmd,
-      RunRecorderGetMeasuresLocalCb,
+      GetMeasuresLocalCb,
       &measures,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_SQLRequestFailed);
@@ -3245,7 +3251,7 @@ static struct RunRecorderMeasures* RunRecorderGetMeasuresLocal(
 //   sep: The separator character
 // Output:
 //   Return a pointer to the end of the row
-static char const* RunRecorderSplitCSVRowToData(
+static char const* SplitCSVRowToData(
    char const* csv,
   char** const tgt,
     char const sep) {
@@ -3335,7 +3341,7 @@ static char const* RunRecorderSplitCSVRowToData(
 //   sep: the separator between columns ('&' in the example above)
 // Output:
 //   Return a newly allocated RunRecorderMeasures
-static struct RunRecorderMeasures* RunRecorderCSVToData(
+static struct RunRecorderMeasures* CSVToData(
   char const* const csv,
          char const sep) {
 
@@ -3389,7 +3395,7 @@ static struct RunRecorderMeasures* RunRecorderCSVToData(
 
     // Extract the metrics label
     ptr =
-      RunRecorderSplitCSVRowToData(
+      SplitCSVRowToData(
         csv,
         measures->metrics,
         sep);
@@ -3399,7 +3405,7 @@ static struct RunRecorderMeasures* RunRecorderCSVToData(
     while (*ptr != '\0') {
 
       ptr =
-        RunRecorderSplitCSVRowToData(
+        SplitCSVRowToData(
           ptr,
           measures->values[iMeasure],
           sep);
@@ -3425,7 +3431,7 @@ static struct RunRecorderMeasures* RunRecorderCSVToData(
 //      project: the project's name
 // Output:
 //   Return the measures as a struct RunRecorderMeasures
-static struct RunRecorderMeasures* RunRecorderGetMeasuresAPI(
+static struct RunRecorderMeasures* GetMeasuresAPI(
   struct RunRecorder* const that,
           char const* const project) {
 
@@ -3439,18 +3445,19 @@ static struct RunRecorderMeasures* RunRecorderGetMeasuresAPI(
     that->cmd,
     cmdFormat,
     project);
-  RunRecorderSetAPIReqPostVal(
+  SetAPIReqPostVal(
     that,
     that->cmd);
 
   // Send the request to the API
-  RunRecorderSendAPIReq(
+  bool isJsonReq = false;
+  SendAPIReq(
     that,
-    false);
+    isJsonReq);
 
   // Convert the CSV data into a struct RunRecorderMeasures
   struct RunRecorderMeasures* data =
-    RunRecorderCSVToData(
+    CSVToData(
       that->curlReply,
       '&');
 
@@ -3469,7 +3476,7 @@ static struct RunRecorderMeasures* RunRecorderGetMeasuresAPI(
 //   most recent to the oldest
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
-static struct RunRecorderMeasures* RunRecorderGetLastMeasuresLocal(
+static struct RunRecorderMeasures* GetLastMeasuresLocal(
   struct RunRecorder* const that,
           char const* const project,
                  long const nbMeasure) {
@@ -3478,7 +3485,7 @@ static struct RunRecorderMeasures* RunRecorderGetLastMeasuresLocal(
   struct RunRecorderMeasures* measures = NULL;
 
   // Create the request with no limit on the number of returned measures
-  RunRecorderSetCmdToGetMeasuresLocal(
+  SetCmdToGetMeasuresLocal(
     that,
     project,
     nbMeasure);
@@ -3488,7 +3495,7 @@ static struct RunRecorderMeasures* RunRecorderGetLastMeasuresLocal(
     sqlite3_exec(
       that->db,
       that->cmd,
-      RunRecorderGetMeasuresLocalCb,
+      GetMeasuresLocalCb,
       &measures,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_SQLRequestFailed);
@@ -3506,7 +3513,7 @@ static struct RunRecorderMeasures* RunRecorderGetLastMeasuresLocal(
 // Output:
 //   Return the measures as a struct RunRecorderMeasures, ordered from the
 //   most recent to the oldest
-static struct RunRecorderMeasures* RunRecorderGetLastMeasuresAPI(
+static struct RunRecorderMeasures* GetLastMeasuresAPI(
   struct RunRecorder* const that,
           char const* const project,
                  long const nbMeasure) {
@@ -3531,18 +3538,19 @@ static struct RunRecorderMeasures* RunRecorderGetLastMeasuresAPI(
     cmdFormat,
     project,
     nbMeasure);
-  RunRecorderSetAPIReqPostVal(
+  SetAPIReqPostVal(
     that,
     that->cmd);
 
   // Send the request to the API
-  RunRecorderSendAPIReq(
+  bool isJsonReq = false;
+  SendAPIReq(
     that,
-    false);
+    isJsonReq);
 
   // Convert the CSV data into a struct RunRecorderMeasures
   struct RunRecorderMeasures* data =
-    RunRecorderCSVToData(
+    CSVToData(
       that->curlReply,
       '&');
 
@@ -3580,7 +3588,7 @@ static struct RunRecorderMeasures* RunRecorderMeasuresCreate(
 //      project: the project's name
 // Raise:
 //   RunRecorderExc_FlushProjectFailed
-static void RunRecorderFlushProjectLocal(
+static void FlushProjectLocal(
   struct RunRecorder* const that,
           char const* const project) {
 
@@ -3691,7 +3699,7 @@ static void RunRecorderFlushProjectLocal(
 // Inputs:
 //         that: the struct RunRecorder
 //      project: the project's name
-static void RunRecorderFlushProjectAPI(
+static void FlushProjectAPI(
   struct RunRecorder* const that,
           char const* const project) {
 
@@ -3705,19 +3713,20 @@ static void RunRecorderFlushProjectAPI(
     that->cmd,
     cmdFormat,
     project);
-  RunRecorderSetAPIReqPostVal(
+  SetAPIReqPostVal(
     that,
     that->cmd);
 
   // Send the request to the API
-  RunRecorderSendAPIReq(
+  bool isJsonReq = true;
+  SendAPIReq(
     that,
-    true);
+    isJsonReq);
 
 }
 
 // Function to convert a RunRecorder exception ID to char*
-static char const* RunRecorderExcToStr(
+static char const* ExcToStr(
   // The exception ID
   int exc) {
 
