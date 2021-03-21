@@ -303,6 +303,11 @@ function AddMetric($db, $project, $label, $default) {
       throw new Exception("The label " . $label. " is invalid.");
     }
 
+    // Check the default value
+    if (preg_match('/^[^"=&]+$/', $default) == false) {
+      throw new Exception("The default value " . $default . " is invalid.");
+    }
+
     // If the metric doesn't already exists
     $rows = $db->query('SELECT COUNT(*) as nb FROM _Metric WHERE Label = "' .
                        $label . '" AND RefProject = ' . $refProject);
@@ -411,23 +416,32 @@ function AddMeasure($db, $project, $values) {
     // Loop on the metrics in argument
     foreach ($values as $metric => $value) {
 
-      // Get the reference of the metric
-      $rows = $db->query('SELECT Ref FROM _Metric WHERE Label = "' .
-                         $metric . '" AND RefProject = ' . $refProject);
-      if ($rows === false) {
-        throw new Exception("query() failed");
-      }
+      // Check the value
+      if (preg_match('/^[^"=&]+$/', $value) == false) {
 
-      // If this metric exists
-      $row = $rows->fetchArray();
-      if ($row !== false) {
+        $hasFailed = true;
 
-        // Add the value
-        $cmd = 'INSERT INTO _Value(RefMeasure, RefMetric, Value) VALUES (' .
-               $refMeasure . ', ' . $row["Ref"] . ', "' . $value . '")';
-        $success = $db->exec($cmd);
-        if ($success === false) {
-          $hasFailed = true;
+      } else {
+
+        // Get the reference of the metric
+        $rows = $db->query('SELECT Ref FROM _Metric WHERE Label = "' .
+                           $metric . '" AND RefProject = ' . $refProject);
+        if ($rows === false) {
+          throw new Exception("query() failed");
+        }
+
+        // If this metric exists
+        $row = $rows->fetchArray();
+        if ($row !== false) {
+
+          // Add the value
+          $cmd = 'INSERT INTO _Value(RefMeasure, RefMetric, Value) VALUES (' .
+                 $refMeasure . ', ' . $row["Ref"] . ', "' . $value . '")';
+          $success = $db->exec($cmd);
+          if ($success === false) {
+            $hasFailed = true;
+          }
+
         }
 
       }

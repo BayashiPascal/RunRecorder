@@ -76,7 +76,8 @@ static char* exceptionStr[NbExceptions] = {
   "RunRecorderExc_AddMetricFailed",
   "RunRecorderExc_UpdateViewFailed",
   "RunRecorderExc_InvalidJSON",
-  "RunRecorderExc_InvalidMetricName",
+  "RunRecorderExc_InvalidMetricLabel",
+  "RunRecorderExc_InvalidMetricDefVal",
   "RunRecorderExc_InvalidValue",
   "RunRecorderExc_MetricNameAlreadyUsed",
   "RunRecorderExc_AddMeasureFailed",
@@ -375,7 +376,7 @@ static void UpdateViewProject(
 //   defaultVal: the default value of the metric, it must respect the
 //               following pattern: /^[^"=&]+$*/
 // Raise:
-//   RunRecorderExc_InvalidMetricName
+//   RunRecorderExc_InvalidMetricLabel
 //   RunRecorderExc_MetricNameAlreadyUsed
 static void AddMetricLocal(
   struct RunRecorder* const that,
@@ -395,7 +396,7 @@ static void AddMetricLocal(
 //   defaultVal: the default value of the metric, it must respect the
 //               following pattern: /^[^"=&]+$*/
 // Raise:
-//   RunRecorderExc_InvalidMetricName
+//   RunRecorderExc_InvalidMetricLabel
 //   RunRecorderExc_MetricNameAlreadyUsed
 static void AddMetricAPI(
   struct RunRecorder* const that,
@@ -720,7 +721,7 @@ char* RunRecorderGetVersion(
 
 }
 
-// Check if a string respects the pattern /^[a-zA-Z][a-zA-Z0-9_]$*/
+// Check if a string respects the pattern /^[a-zA-Z][a-zA-Z0-9_]*$/
 // Input:
 //   str: the string to check
 // Output:
@@ -751,7 +752,7 @@ bool RunRecorderIsValidLabel(
 
 }
 
-// Check if a string respects the pattern /^[^"=&]+$*/
+// Check if a string respects the pattern /^[^"=&]+$/
 // Input:
 //   str: the string to check
 // Output:
@@ -899,7 +900,8 @@ struct RunRecorderPairsRefVal* RunRecorderGetMetrics(
 //   defaultVal: the default value of the metric, it must respect the
 //               following pattern: /^[^"=&]+$*/
 // Raise:
-//   RunRecorderExc_InvalidMetricName
+//   RunRecorderExc_InvalidMetricLabel
+//   RunRecorderExc_InvalidMetricDefVal
 //   RunRecorderExc_MetricNameAlreadyUsed
 void RunRecorderAddMetric(
   struct RunRecorder* const that,
@@ -913,19 +915,19 @@ void RunRecorderAddMetric(
 
   // Check the label
   bool isValidLabel = RunRecorderIsValidLabel(label);
-  if (isValidLabel == false) Raise(RunRecorderExc_InvalidMetricName);
+  if (isValidLabel == false) Raise(RunRecorderExc_InvalidMetricLabel);
 
   // Check if the label is one of the reserved keywords
   int retCmp =
     strcmp(
       label,
       "action");
-  if (retCmp == 0) Raise(RunRecorderExc_InvalidMetricName);
+  if (retCmp == 0) Raise(RunRecorderExc_InvalidMetricLabel);
   retCmp =
     strcmp(
       label,
       "project");
-  if (retCmp == 0) Raise(RunRecorderExc_InvalidMetricName);
+  if (retCmp == 0) Raise(RunRecorderExc_InvalidMetricLabel);
 
   // Check if there is no other metric with same label for this project
   struct RunRecorderPairsRefVal* metrics =
@@ -938,6 +940,10 @@ void RunRecorderAddMetric(
       label);
   RunRecorderPairsRefValFree(&metrics);
   if (alreadyUsed == true) Raise(RunRecorderExc_MetricNameAlreadyUsed);
+
+  // Check the default value
+  bool isValidDefVal = RunRecorderIsValidValue(defaultVal);
+  if (isValidDefVal == false) Raise(RunRecorderExc_InvalidMetricDefVal);
 
   // If the RunRecorder uses a local database
   if (UsesAPI(that) == false) {
@@ -1918,6 +1924,17 @@ static char* GetJSONValOfKey(
         // returned by the API are invalid and it will be catched later.
         while (*ptr != '\0' && *ptr != '}') ++ptr;
 
+      // Else, if the value is an array
+      } else if (ptrKey[strlen(keyDecorated)] == '[') {
+
+        // Loop on the characters of the value until the closing bracket
+        // or end of string
+        // Presume the data are well formatted here, if there are brackets
+        // in string in the object definition, or sub-array
+        // definition, or any other special case, it means the data
+        // returned by the API are invalid and it will be catched later.
+        while (*ptr != '\0' && *ptr != ']') ++ptr;
+
       // Else, this JSON encoded string is not supported, the API request
       // has returned invalid data
       } else {
@@ -2771,7 +2788,7 @@ static void UpdateViewProject(
 //   defaultVal: the default value of the metric, it must respect the
 //               following pattern: /^[^"=&]+$*/
 // Raise:
-//   RunRecorderExc_InvalidMetricName
+//   RunRecorderExc_InvalidMetricLabel
 //   RunRecorderExc_MetricNameAlreadyUsed
 static void AddMetricLocal(
   struct RunRecorder* const that,
@@ -2824,7 +2841,7 @@ static void AddMetricLocal(
 //   defaultVal: the default value of the metric, it must respect the
 //               following pattern: /^[^"=&]+$*/
 // Raise:
-//   RunRecorderExc_InvalidMetricName
+//   RunRecorderExc_InvalidMetricLabel
 //   RunRecorderExc_MetricNameAlreadyUsed
 static void AddMetricAPI(
   struct RunRecorder* const that,

@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include "runrecorder.h"
 
+// Switch between test on local or remote database
+#define TEST_REMOTE 1
+
 // Helper function to commonalize code during exception management
 // Inputs:
 //     caller: string to identify the calling portion of code
@@ -44,9 +47,12 @@ int main(
   (void)argc; (void)argv;
 
   // Path to the SQLite database local file or Web API
+#if TEST_REMOTE==0
   char const* pathDb = "./runrecorder.db";
+#else
   //char const* pathApi = "https://localhost/RunRecorder/api.php";
   char const* pathApi = "http://www.bayashiinjapan.net/RunRecorder/api.php";
+#endif
 
   // Create the RunRecorder instance
   struct RunRecorder* recorder = NULL;
@@ -54,8 +60,11 @@ int main(
 
     // Give pathApi in argument if you want to use the Web API instead
     // of a local file
+#if TEST_REMOTE==0
     recorder = RunRecorderCreate(pathDb);
-    //recorder = RunRecorderCreate(pathApi);
+#else
+    recorder = RunRecorderCreate(pathApi);
+#endif
 
     // Initialise the struct RunRecorder
     RunRecorderInit(recorder);
