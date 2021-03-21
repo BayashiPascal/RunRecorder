@@ -11,7 +11,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
-#include <sqlite3/sqlite3.h>
+#include <SQLite3/sqlite3.h>
 #include <curl/curl.h>
 #include <errno.h>
 #include <TryCatchC/trycatchc.h>
