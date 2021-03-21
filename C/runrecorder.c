@@ -11,6 +11,9 @@
 // Number of tables in the database
 #define NB_TABLE 5
 
+// Default CSV separator
+#define CSV_SEP '&'
+
 // Loop from 0 to n
 #define ForZeroTo(I, N) for (long I = 0; I < N; ++I)
 
@@ -56,7 +59,7 @@
 
 // ================== Static variables =========================
 
-// Labels for the convertion of RunRecorderException to char*
+// Labels for the conversion of RunRecorderException to char*
 static char* exceptionStr[NbExceptions] = {
 
   "RunRecorderExc_CreateTableFailed",
@@ -582,13 +585,13 @@ static char const* ExcToStr(
 struct RunRecorder* RunRecorderCreate(
   char const* const url) {
 
-  // Declare the struct RunRecorder
+  // Allocate the struct RunRecorder
   struct RunRecorder* that = NULL;
   SafeMalloc(
     that,
     sizeof(struct RunRecorder));
 
-  // Initialise the other properties
+  // Initialise the properties
   that->errMsg = NULL;
   that->db = NULL;
   that->url = NULL;
@@ -598,7 +601,7 @@ struct RunRecorder* RunRecorderCreate(
   that->sqliteErrMsg = NULL;
   that->refLastAddedMeasure = 0;
 
-  // Duplicate the url
+  // Copy the url
   SafeStrDup(
     that->url,
     url);
@@ -614,10 +617,13 @@ struct RunRecorder* RunRecorderCreate(
 void RunRecorderInit(
   struct RunRecorder* const that) {
 
-  // Set the conversion function to string for RunRecorder exceptions
+  // Set the conversion function of RunRecorderException to char* to
+  // have their name displayed instead of their id and help detecting
+  // ID collision
   TryCatchAddExcToStrFun(ExcToStr);
 
-  // Ensure the error message are freed
+  // Ensure the error messages are freed to avoid confusion with
+  // eventual previous messages
   FreeErrMsg(that);
 
   // If the recorder doesn't use the API
@@ -705,11 +711,11 @@ char* RunRecorderGetVersion(
 
 }
 
-// Check if a string respect the pattern /^[a-zA-Z][a-zA-Z0-9_]$*/
+// Check if a string respects the pattern /^[a-zA-Z][a-zA-Z0-9_]$*/
 // Input:
 //   str: the string to check
 // Output:
-//   Return true if the string respect the pattern, else false
+//   Return true if the string respects the pattern, else false
 bool RunRecorderIsValidLabel(
   char const* const str) {
 
@@ -736,15 +742,15 @@ bool RunRecorderIsValidLabel(
 
 }
 
-// Check if a string respect the pattern /^[^"=&]+$*/
+// Check if a string respects the pattern /^[^"=&]+$*/
 // Input:
 //   str: the string to check
 // Output:
-//   Return true if the string respect the pattern, else false
+//   Return true if the string respects the pattern, else false
 bool RunRecorderIsValidValue(
   char const* const str) {
 
-  // Check if the string contains at least one charatect
+  // Check if the string contains at least one character
   if (*str == '\0') return false;
 
   // Loop on the characters
@@ -785,7 +791,7 @@ void RunRecorderAddProject(
   bool isValidName = RunRecorderIsValidLabel(name);
   if (isValidName == false) Raise(RunRecorderExc_InvalidProjectName);
 
-  // Check if there is no other metric with same name for this project
+  // Check if there is no other project with same name
   struct RunRecorderPairsRefVal* projects = RunRecorderGetProjects(that);
   bool alreadyUsed =
     PairsRefValContainsVal(
@@ -900,7 +906,7 @@ void RunRecorderAddMetric(
   bool isValidLabel = RunRecorderIsValidLabel(label);
   if (isValidLabel == false) Raise(RunRecorderExc_InvalidMetricName);
 
-  // Check if the label if one of the reserved keywords
+  // Check if the label is one of the reserved keywords
   int retCmp =
     strcmp(
       label,
@@ -954,7 +960,7 @@ void RunRecorderAddMetric(
 struct RunRecorderMeasure* RunRecorderMeasureCreate(
   void) {
 
-  // Declare the new struct RunRecorderMeasure
+  // Allocate the new struct RunRecorderMeasure
   struct RunRecorderMeasure* measure = NULL;
   SafeMalloc(
     measure,
@@ -979,6 +985,7 @@ void RunRecorderMeasureFree(
   // If it's already freed, nothing to do
   if (that == NULL || *that == NULL) return;
 
+  // If there was metrics
   if ((*that)->metrics != NULL) {
 
     // Free the metrics
@@ -986,6 +993,7 @@ void RunRecorderMeasureFree(
 
   }
 
+  // If there was values
   if ((*that)->values != NULL) {
 
     // Free the values
@@ -1016,7 +1024,7 @@ void RunRecorderMeasureAddValueStr(
   // If the value is valid
   if (RunRecorderIsValidValue(val) == false) Raise(RunRecorderExc_InvalidValue);
 
-  // Allocate memory
+  // Reallocate memory for the added value and its metric
   SafeRealloc(
     that->metrics,
     sizeof(char*) * (that->nbMetric + 1));
@@ -1026,10 +1034,10 @@ void RunRecorderMeasureAddValueStr(
   that->metrics[that->nbMetric] = NULL;
   that->values[that->nbMetric] = NULL;
 
-  // Update the number of values
+  // Update the number of metric in the measure
   ++(that->nbMetric);
 
-  // Set the reference and value of the measure
+  // Copy the value and its metric in the measure
   SafeStrDup(
     that->metrics[that->nbMetric - 1],
     metric);
@@ -1050,7 +1058,12 @@ void RunRecorderMeasureAddValueInt(
                         long const val) {
 
   // Convert the value to a string
-  int lenStr = snprintf(NULL, 0, "%ld", val);
+  int lenStr =
+    snprintf(
+      NULL,
+      0,
+      "%ld",
+      val);
   char* str = NULL;
   SafeMalloc(
     str,
@@ -1091,7 +1104,12 @@ void RunRecorderMeasureAddValueDouble(
                       double const val) {
 
   // Convert the value to a string
-  int lenStr = snprintf(NULL, 0, "%lf", val);
+  int lenStr =
+    snprintf(
+      NULL,
+      0,
+      "%lf",
+      val);
   char* str = NULL;
   SafeMalloc(
     str,
@@ -1134,7 +1152,8 @@ void RunRecorderAddMeasure(
   // Reset the reference of the last added measure
   that->refLastAddedMeasure = 0;
 
-  // Ensure errMsg is freed
+  // Ensure the error messages are freed to avoid confusion with
+  // eventual previous messages
   FreeErrMsg(that);
 
   // If the RunRecorder uses a local database
@@ -1269,34 +1288,39 @@ void RunRecorderMeasuresFree(
   // If it's already freed, nothing to do
   if (that == NULL || *that == NULL) return;
 
-  // Free the metrics label
+  // If there was metrics
   if ((*that)->metrics != NULL) {
 
+    // Free the metrics label
     ForZeroTo(iMetric, (*that)->nbMetric) PolyFree((*that)->metrics[iMetric]);
-    PolyFree((*that)->metrics);
 
   }
 
-  // Free the values
+  // If there was measures
   if ((*that)->values != NULL) {
 
+    // Loop on the measures
     ForZeroTo(iMeasure, (*that)->nbMeasure) {
 
+      // If there was values for the measure
       if ((*that)->values[iMeasure] != NULL) {
 
+        // Free the values
         ForZeroTo(iMetric, (*that)->nbMetric)
           PolyFree((*that)->values[iMeasure][iMetric]);
+
+        // Free the measure
         PolyFree((*that)->values[iMeasure]);
 
       }
 
     }
 
-    PolyFree((*that)->values);
-
   }
 
   // Free memory
+  PolyFree((*that)->metrics);
+  PolyFree((*that)->values);
   PolyFree(*that);
   *that = NULL;
 
@@ -1314,13 +1338,19 @@ void RunRecorderMeasuresPrintCSV(
   struct RunRecorderMeasures const* const that,
                           FILE* const stream) {
 
-  // Print the metrics label
+  // If there are metrics
   if (that->metrics != NULL) {
 
-    char sep = '&';
+    // Declare a variable to memorise the separator after the column
+    char sep = CSV_SEP;
+
+    // Loop on the metrics
     ForZeroTo(iMetric, that->nbMetric) {
 
+      // If it's the last column, change the separator to line return
       if (iMetric == that->nbMetric - 1) sep = '\n';
+
+      // Print the column value and its separator
       fprintf(
         stream,
         "%s%c",
@@ -1331,15 +1361,22 @@ void RunRecorderMeasuresPrintCSV(
 
   }
 
-  // Print the values
+  // If there are measures
   if (that->values != NULL) {
 
+    // Loop on the measures
     ForZeroTo(iMeasure, that->nbMeasure) {
 
-      char sep = '&';
+      // Declare a variable to memorise the separator after the column
+      char sep = CSV_SEP;
+
+      // Loop on the metrics
       ForZeroTo(iMetric, that->nbMetric) {
 
+        // If it's the last column, change the separator to line return
         if (iMetric == that->nbMetric - 1) sep = '\n';
+
+        // Print the column value and its separator
         fprintf(
           stream,
           "%s%c",
@@ -1393,9 +1430,10 @@ void RunRecorderPairsRefValFree(
   // If it's already freed, nothing to do
   if (that == NULL || *that == NULL) return;
 
+  // If there values
   if ((*that)->values != NULL) {
 
-    // Free the pairs
+    // Free the values
     ForZeroTo(iPair, (*that)->nb) PolyFree((*that)->values[iPair]);
 
   }
@@ -1589,7 +1627,8 @@ static void CreateDb(
 static void CreateDbLocal(
   struct RunRecorder* const that) {
 
-  // Ensure the error messages are freed
+  // Ensure the error messages are freed to avoid confusion with
+  // eventual previous messages
   FreeErrMsg(that);
 
   // List of commands to create the table

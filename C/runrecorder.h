@@ -155,19 +155,19 @@ void RunRecorderFree(
 char* RunRecorderGetVersion(
   struct RunRecorder* const that);
 
-// Check if a string respect the pattern /^[a-zA-Z][a-zA-Z0-9_]$*/
+// Check if a string respects the pattern /^[a-zA-Z][a-zA-Z0-9_]$*/
 // Input:
 //   str: the string to check
 // Output:
-//   Return true if the string respect the pattern, else false
+//   Return true if the string respects the pattern, else false
 bool RunRecorderIsValidLabel(
   char const* const str);
 
-// Check if a string respect the pattern /^[^"=&]+$*/
+// Check if a string respects the pattern /^[^"=&]+$*/
 // Input:
 //   str: the string to check
 // Output:
-//   Return true if the string respect the pattern, else false
+//   Return true if the string respects the pattern, else false
 bool RunRecorderIsValidValue(
   char const* const str);
 
@@ -340,8 +340,9 @@ void RunRecorderFlushProject(
 void RunRecorderPairsRefValFree(
   struct RunRecorderPairsRefVal** const that);
 
-// ================== Polymorphism =========================
+// ================== Macros =========================
 
+// Polymorphic RunRecorderMeasureAddValue
 #define RunRecorderMeasureAddValue(T, M, V) _Generic(V, \
   char*: RunRecorderMeasureAddValueStr, \
   char const*: RunRecorderMeasureAddValueStr, \
