@@ -36,6 +36,12 @@ main: runrecorder.o main.o Makefile
 main.o: main.c runrecorder.h Makefile
 	$(COMPILER) $(BUILD_ARG) -c main.c 
 
+runrecorder: runrecorder.o cli.o Makefile
+	$(COMPILER) cli.o runrecorder.o $(LINK_ARG) -o runrecorder 
+
+cli.o: cli.c runrecorder.h Makefile
+	$(COMPILER) $(BUILD_ARG) -c cli.c 
+
 runrecorder.o: runrecorder.c runrecorder.h Makefile
 	$(COMPILER) $(BUILD_ARG) -c runrecorder.c
 

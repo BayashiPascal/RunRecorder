@@ -1,5 +1,6 @@
 C/*.o
 C/main
+C/runrecorder
 C/runrecorder.db
 C/sqlite*
 C/curl*
