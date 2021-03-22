@@ -2,7 +2,7 @@
 #include "runrecorder.h"
 
 // Switch between test on local or remote database
-#define TEST_REMOTE 1
+#define TEST_REMOTE 0
 
 // Helper function to commonalize code during exception management
 // Inputs:
@@ -18,23 +18,17 @@ void PrintCaughtException(
     "Caught exception %s during %s.\n",
     TryCatchExcToStr(TryCatchGetLastExc()),
     caller);
-  if (recorder->errMsg != NULL) {
-
+  if (recorder->errMsg != NULL)
     fprintf(
       stderr,
       "%s\n",
       recorder->errMsg);
 
-  }
-
-  if (recorder->sqliteErrMsg != NULL) {
-
+  if (recorder->sqliteErrMsg != NULL)
     fprintf(
       stderr,
       "%s\n",
       recorder->sqliteErrMsg);
-
-  }
 
 }
 
@@ -54,12 +48,11 @@ int main(
   char const* pathApi = "http://www.bayashiinjapan.net/RunRecorder/api.php";
 #endif
 
-  // Create the RunRecorder instance
+  // Variable to memorise the RunRecorder instance
   struct RunRecorder* recorder = NULL;
   Try {
 
-    // Give pathApi in argument if you want to use the Web API instead
-    // of a local file
+    // Create the RunRecorder instance
 #if TEST_REMOTE==0
     recorder = RunRecorderCreate(pathDb);
 #else
@@ -101,17 +94,13 @@ int main(
   // Create a new project
   Try {
 
-    Try {
+    RunRecorderAddProject(
+      recorder,
+      "RoomTemperature");
 
-      RunRecorderAddProject(
-        recorder,
-        "RoomTemperature");
+  } Catch (RunRecorderExc_ProjectNameAlreadyUsed) {
 
-    } Catch (RunRecorderExc_ProjectNameAlreadyUsed) {
-
-      printf("Project RoomTemperature already in the database\n");
-
-    } EndTry;
+    printf("Project RoomTemperature already in the database\n");
 
   } CatchDefault {
 
@@ -154,7 +143,6 @@ int main(
     exit(EXIT_FAILURE);
 
   } EndTryWithDefault;
-
 
   // Create new metrics
   Try {

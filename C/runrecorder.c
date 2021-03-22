@@ -110,7 +110,7 @@ static void InitWebAPI(
 static void FreeErrMsg(
   struct RunRecorder* const that);
 
-// Check if a struct RunRecorder uses a local SQLite database or the 
+// Check if a struct RunRecorder uses a local SQLite database or the
 // Web API
 // Input:
 //   that: The struct RunRecorder
@@ -1037,7 +1037,8 @@ void RunRecorderMeasureAddValueStr(
                  char const* const val) {
 
   // If the value is valid
-  if (RunRecorderIsValidValue(val) == false) Raise(RunRecorderExc_InvalidValue);
+  if (RunRecorderIsValidValue(val) == false)
+    Raise(RunRecorderExc_InvalidValue);
 
   // Reallocate memory for the added value and its metric
   SafeRealloc(
@@ -1086,7 +1087,7 @@ void RunRecorderMeasureAddValueInt(
   sprintf(
     str,
     "%ld",
-    val); 
+    val);
 
   // Add the value
   Try {
@@ -1132,7 +1133,7 @@ void RunRecorderMeasureAddValueDouble(
   sprintf(
     str,
     "%lf",
-    val); 
+    val);
 
   // Add the value
   Try {
@@ -1351,7 +1352,7 @@ void RunRecorderMeasuresFree(
 //   stream: the stream to write on
 void RunRecorderMeasuresPrintCSV(
   struct RunRecorderMeasures const* const that,
-                          FILE* const stream) {
+                              FILE* const stream) {
 
   // If there are metrics
   if (that->metrics != NULL) {
@@ -1606,7 +1607,7 @@ static void FreeErrMsg(
 
 }
 
-// Check if a struct RunRecorder uses a local SQLite database or the 
+// Check if a struct RunRecorder uses a local SQLite database or the
 // Web API
 // Input:
 //   that: The struct RunRecorder
@@ -1700,9 +1701,7 @@ static void CreateDbLocal(
       sqlite3_exec(
         that->db,
         sqlCmd[iCmd],
-        // No callback
         NULL,
-        // No user data
         NULL,
         &(that->sqliteErrMsg));
     if (retExec != SQLITE_OK) Raise(RunRecorderExc_CreateTableFailed);
@@ -1975,7 +1974,7 @@ static char* GetJSONValOfKey(
     PolyFree(keyDecorated);
 
   } CatchDefault {
-    
+
     PolyFree(keyDecorated);
     PolyFree(val);
     Raise(TryCatchGetLastExc());
@@ -1995,7 +1994,7 @@ static char* GetJSONValOfKey(
 //   RunRecorderExc_CurlSetOptFailed
 static void SetAPIReqPostVal(
   struct RunRecorder* const that,
-  char const* const data) {
+          char const* const data) {
 
   // Set the data in the Curl fields
   CURLcode res =
@@ -2135,7 +2134,7 @@ static char* GetVersionAPI(
 //   RunRecorderExc_ProjectNameAlreadyUsed
 static void AddProjectLocal(
   struct RunRecorder* const that,
-  char const* const name) {
+          char const* const name) {
 
   // Create the SQL command
   char* cmdFormat =
@@ -2172,7 +2171,7 @@ static void AddProjectLocal(
 //   RunRecorderExc_ProjectNameAlreadyUsed
 static void AddProjectAPI(
   struct RunRecorder* const that,
-  char const* const name) {
+          char const* const name) {
 
   // Create the request to the Web API
   char* cmdFormat = "action=add_project&label=%s";
@@ -2492,7 +2491,7 @@ static struct RunRecorderPairsRefVal* GetProjectsAPI(
 
     PolyFree(json);
     Raise(TryCatchGetLastExc());
-    
+
   } EndTryWithDefault;
 
   // Return the projects
@@ -2632,7 +2631,7 @@ static struct RunRecorderPairsRefVal* GetMetricsAPI(
     PolyFree(json);
     RunRecorderPairsRefValFree(&metrics);
     Raise(TryCatchGetLastExc());
-    
+
   } EndTryWithDefault;
 
   // Return the metrics
@@ -2732,7 +2731,7 @@ static void UpdateViewProject(
       // Extend the command with the metric related body part
       SafeRealloc(
         that->cmd,
-        strlen(that->cmd) + strlen(cmdAddFormatVal) - 3 + 
+        strlen(that->cmd) + strlen(cmdAddFormatVal) - 3 +
         lenRefMetricStr - 3 + lenRefMetricStr + 1);
       SPrintfAtEnd(
         that->cmd,
@@ -3044,7 +3043,7 @@ static void AddMeasureAPI(
       "refMeasure");
   if (version == NULL) Raise(RunRecorderExc_ApiRequestFailed);
   errno = 0;
-  that->refLastAddedMeasure = 
+  that->refLastAddedMeasure =
     strtol(
       version,
       NULL,
@@ -3118,7 +3117,7 @@ static void DeleteMeasureLocal(
 //    refMeasure: the reference of the measure to delete
 static void DeleteMeasureAPI(
   struct RunRecorder* const that,
-        long const refMeasure) {
+                 long const refMeasure) {
 
   // Create the request to the Web API
   size_t lenMeasureStr =
@@ -3271,13 +3270,14 @@ static void SetCmdToGetMeasuresLocal(
     ForZeroTo(iMetric, metrics->nb) {
 
       // Append the metric label to the command
-      size_t len = strlen(that->cmd) + strlen(metrics->values[iMetric]) + 1 + 1;
+      size_t len =
+        strlen(that->cmd) + strlen(metrics->values[iMetric]) + 1 + 1;
       SafeRealloc(
         that->cmd,
         len);
       char sep = ',';
       if (iMetric == metrics->nb - 1) sep = ' ';
-      SPrintfAtEnd( 
+      SPrintfAtEnd(
         that->cmd,
         "%s%c",
         metrics->values[iMetric],
@@ -3403,7 +3403,7 @@ static char const* SplitCSVRowToData(
           1);
         tgt[iCol][0] = '\0';
 
-      // Else, the current position is not a separator 
+      // Else, the current position is not a separator
       } else {
 
         // The column is one character wide
@@ -3874,4 +3874,3 @@ static char const* ExcToStr(
 }
 
 // ------------------ runrecorder.c ------------------
-
