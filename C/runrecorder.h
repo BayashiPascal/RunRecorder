@@ -93,6 +93,23 @@ struct RunRecorderPairsRefVal {
 
 };
 
+// Structure to memorise pairs of ref/value with their default value
+struct RunRecorderPairsRefValDef {
+
+  // Number of pairs
+  long nb;
+
+  // Array of reference
+  long* refs;
+
+  // Array of value as string
+  char** values;
+
+  // Array of default value as string
+  char** defaultValues;
+
+};
+
 // Structure to add one measurement (i.e. a set of metrics and their
 // value for one project)
 struct RunRecorderMeasure {
@@ -198,9 +215,9 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjects(
 //      that: the struct RunRecorder
 //   project: the project
 // Output:
-//   Return the metrics' reference/label as a new struct
-//   RunRecorderPairsRefVal
-struct RunRecorderPairsRefVal* RunRecorderGetMetrics(
+//   Return the metrics' reference/label/default value as a new struct
+//   RunRecorderPairsRefValDef
+struct RunRecorderPairsRefValDef* RunRecorderGetMetrics(
   struct RunRecorder* const that,
           char const* const project);
 
@@ -340,6 +357,12 @@ void RunRecorderFlushProject(
 //   that: the struct RunRecorderPairsRefVal
 void RunRecorderPairsRefValFree(
   struct RunRecorderPairsRefVal** const that);
+
+// Free a struct RunRecorderPairsRefValDef
+// Input:
+//   that: the struct RunRecorderPairsRefValDef
+void RunRecorderPairsRefValDefFree(
+  struct RunRecorderPairsRefValDef** const that);
 
 // ================== Macros =========================
 

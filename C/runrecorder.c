@@ -21,6 +21,7 @@
 #define PolyFree(P) _Generic(P, \
   struct RunRecorder**: RunRecorderFree, \
   struct RunRecorderPairsRefVal**: RunRecorderPairsRefValFree, \
+  struct RunRecorderPairsRefValDef**: RunRecorderPairsRefValDefFree, \
   struct RunRecorderMeasure**: RunRecorderMeasureFree, \
   struct RunRecorderMeasures**: RunRecorderMeasuresFree, \
   default: free)((void*)P)
@@ -271,15 +272,37 @@ static bool PairsRefValContainsVal(
   struct RunRecorderPairsRefVal const* const that,
                            char const* const val);
 
+// Check if a value is present in pairs ref/val with default value
+// Inputs:
+//   that: the struct RunRecorderPairsRefValDef
+//    val: the value to check
+// Output:
+//   Return true if the value is present in the pairs, else false
+static bool PairsRefValDefContainsVal(
+  struct RunRecorderPairsRefValDef const* const that,
+                              char const* const val);
+
 // Add a new pair in a struct RunRecorderPairsRefVal
 // Inputs:
 //   pairs: the struct RunRecorderPairsRefVal
 //     ref: the reference of the pair
-//     val: the val of the pair
+//     val: the value of the pair
 static void PairsRefValAdd(
   struct RunRecorderPairsRefVal* const pairs,
                             long const ref,
                      char const* const val);
+
+// Add a new pair in a struct RunRecorderPairsRefValDef
+// Inputs:
+//        pairs: the struct RunRecorderPairsRefValDef
+//          ref: the reference of the pair
+//          val: the value of the pair
+//   defaultVal: the default value of the pair
+static void PairsRefValDefAdd(
+  struct RunRecorderPairsRefValDef* const pairs,
+                               long const ref,
+                        char const* const val,
+                        char const* const defaultVal);
 
 // Callback to receive pairs of ref/value from sqlite3
 // Input:
@@ -291,6 +314,22 @@ static void PairsRefValAdd(
 // Output:
 //   Return 0 if successful, else 1
 static int GetPairsLocalCb(
+   void* data,
+     int nbCol,
+  char** colVal,
+  char** colName);
+
+// Callback to receive pairs of ref/value and their default value
+// from sqlite3
+// Input:
+//      data: The pairs
+//     nbCol: Number of columns in the returned rows
+//    colVal: Row values, the reference is expected to be in the first
+//            column and the value in the second column
+//   colName: Columns name
+// Output:
+//   Return 0 if successful, else 1
+static int GetPairsWithDefaultLocalCb(
    void* data,
      int nbCol,
   char** colVal,
@@ -316,6 +355,17 @@ static struct RunRecorderPairsRefVal* GetProjectsLocal(
 static struct RunRecorderPairsRefVal* GetPairsRefValFromJSON(
   char const* const json);
 
+// Extract a struct RunRecorderPairsRefValDef from a JSON string
+// Input:
+//   json: the JSON string for the metricss, expected to be formatted
+//         as "1":["Label":"A","DefaultValue":"B"],...
+// Output:
+//   Return a new struct RunRecorderPairsRefValDef
+// Raise:
+//   RunRecorderExc_InvalidJSON
+static struct RunRecorderPairsRefValDef* GetPairsRefValDefFromJSON(
+  char const* const json);
+
 // Get the list of projects through the Web API
 // Input:
 //   that: the struct RunRecorder
@@ -330,15 +380,21 @@ static struct RunRecorderPairsRefVal* GetProjectsAPI(
 static struct RunRecorderPairsRefVal* RunRecorderPairsRefValCreate(
   void);
 
+// Create a struct RunRecorderPairsRefValDef
+// Output:
+//   Return the new struct RunRecorderPairsRefValDef
+static struct RunRecorderPairsRefValDef* RunRecorderPairsRefValDefCreate(
+  void);
+
 // Get the list of metrics for a project from a local database
 // Input:
 //      that: the struct RunRecorder
 //   project: the project
 // Output:
-//   Return the metrics' reference/label
+//   Return the metrics' reference/label/default value
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
-static struct RunRecorderPairsRefVal* GetMetricsLocal(
+static struct RunRecorderPairsRefValDef* GetMetricsLocal(
   struct RunRecorder* const that,
           char const* const project);
 
@@ -347,10 +403,10 @@ static struct RunRecorderPairsRefVal* GetMetricsLocal(
 //      that: the struct RunRecorder
 //   project: the project
 // Output:
-//   Return the metrics' reference/label
+//   Return the metrics' reference/label/default value
 // Raise:
 //   RunRecorderExc_ApiRequestFailed
-static struct RunRecorderPairsRefVal* GetMetricsAPI(
+static struct RunRecorderPairsRefValDef* GetMetricsAPI(
   struct RunRecorder* const that,
           char const* const project);
 
@@ -806,7 +862,7 @@ void RunRecorderAddProject(
     PairsRefValContainsVal(
       projects,
       name);
-  RunRecorderPairsRefValFree(&projects);
+  PolyFree(&projects);
   if (alreadyUsed == true) Raise(RunRecorderExc_ProjectNameAlreadyUsed);
 
   // If the RunRecorder uses a local database
@@ -859,9 +915,9 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjects(
 //      that: the struct RunRecorder
 //   project: the project
 // Output:
-//   Return the metrics' reference/label as a new struct
-//   RunRecorderPairsRefVal
-struct RunRecorderPairsRefVal* RunRecorderGetMetrics(
+//   Return the metrics' reference/label/default value as a new struct
+//   RunRecorderPairsRefValDef
+struct RunRecorderPairsRefValDef* RunRecorderGetMetrics(
   struct RunRecorder* const that,
           char const* const project) {
 
@@ -929,15 +985,15 @@ void RunRecorderAddMetric(
   if (retCmp == 0) Raise(RunRecorderExc_InvalidMetricLabel);
 
   // Check if there is no other metric with same label for this project
-  struct RunRecorderPairsRefVal* metrics =
+  struct RunRecorderPairsRefValDef* metrics =
     RunRecorderGetMetrics(
       that,
       project);
   bool alreadyUsed =
-    PairsRefValContainsVal(
+    PairsRefValDefContainsVal(
       metrics,
       label);
-  RunRecorderPairsRefValFree(&metrics);
+  PolyFree(&metrics);
   if (alreadyUsed == true) Raise(RunRecorderExc_MetricNameAlreadyUsed);
 
   // Check the default value
@@ -1445,15 +1501,37 @@ void RunRecorderPairsRefValFree(
   // If it's already freed, nothing to do
   if (that == NULL || *that == NULL) return;
 
-  // If there values
-  if ((*that)->values != NULL) {
-
-    // Free the values
+  // If there are values, free the values
+  if ((*that)->values != NULL)
     ForZeroTo(iPair, (*that)->nb) PolyFree((*that)->values[iPair]);
 
-  }
+  // Free memory
+  PolyFree((*that)->values);
+  PolyFree((*that)->refs);
+  PolyFree(*that);
+  *that = NULL;
+
+}
+
+// Free a struct RunRecorderPairsRefValDef
+// Input:
+//   that: the struct RunRecorderPairsRefValDef
+void RunRecorderPairsRefValDefFree(
+  struct RunRecorderPairsRefValDef** const that) {
+
+  // If it's already freed, nothing to do
+  if (that == NULL || *that == NULL) return;
+
+  // If there are values, free the values
+  if ((*that)->values != NULL)
+    ForZeroTo(iPair, (*that)->nb) PolyFree((*that)->values[iPair]);
+
+  // If there are default values, free the default values
+  if ((*that)->defaultValues != NULL)
+    ForZeroTo(iPair, (*that)->nb) PolyFree((*that)->defaultValues[iPair]);
 
   // Free memory
+  PolyFree((*that)->defaultValues);
   PolyFree((*that)->values);
   PolyFree((*that)->refs);
   PolyFree(*that);
@@ -1916,11 +1994,33 @@ static char* GetJSONValOfKey(
 
         // Loop on the characters of the value until the closing curly
         // brace or end of string
-        // Presume the data are well formatted here, if there are curly
-        // braces in string in the object definition, or sub-object
-        // definition, or any other special case, it means the data
-        // returned by the API are invalid and it will be catched later.
-        while (*ptr != '\0' && *ptr != '}') ++ptr;
+        int curlyLvl = 1;
+        while (*ptr != '\0' && (curlyLvl > 0 || *ptr != '}')) {
+
+          // Update the curly brace level
+          if (*ptr == '{') curlyLvl++;
+
+          // If the character is a double quote, move to the end of the
+          // string
+          if (*ptr == '"') {
+
+            ++ptr;
+            while (*ptr != '\0' && *ptr != '"') {
+
+              ++ptr;
+              if (*ptr == '\\') ++ptr;
+
+            }
+
+          }
+
+          // Move to the next character
+          ++ptr;
+
+          // Update the curly brace level
+          if (*ptr == '}') curlyLvl--;
+
+        }
 
       // Else, if the value is an array
       } else if (ptrKey[strlen(keyDecorated)] == '[') {
@@ -2222,6 +2322,33 @@ static bool PairsRefValContainsVal(
 
 }
 
+// Check if a value is present in pairs ref/val with default value
+// Inputs:
+//   that: the struct RunRecorderPairsRefValDef
+//    val: the value to check
+// Output:
+//   Return true if the value is present in the pairs, else false
+static bool PairsRefValDefContainsVal(
+  struct RunRecorderPairsRefValDef const* const that,
+                              char const* const val) {
+
+  // Loop on the pairs
+  ForZeroTo(iPair, that->nb) {
+
+    // If the pair's value is the checked value, return true
+    int retCmp =
+      strcmp(
+        val,
+        that->values[iPair]);
+    if (retCmp == 0) return true;
+
+  }
+
+  // If we reach here, we haven't found the checked value, return false
+  return false;
+
+}
+
 // Add a new pair in a struct RunRecorderPairsRefVal
 // Inputs:
 //   pairs: the struct RunRecorderPairsRefVal
@@ -2249,6 +2376,45 @@ static void PairsRefValAdd(
   SafeStrDup(
     pairs->values[pairs->nb - 1],
     val);
+
+}
+
+// Add a new pair in a struct RunRecorderPairsRefValDef
+// Inputs:
+//        pairs: the struct RunRecorderPairsRefValDef
+//          ref: the reference of the pair
+//          val: the value of the pair
+//   defaultVal: the default value of the pair
+static void PairsRefValDefAdd(
+  struct RunRecorderPairsRefValDef* const pairs,
+                               long const ref,
+                        char const* const val,
+                        char const* const defaultVal) {
+
+  // Allocate memory for the new value
+  SafeRealloc(
+    pairs->refs,
+    sizeof(long) * (pairs->nb + 1));
+  SafeRealloc(
+    pairs->values,
+    sizeof(char*) * (pairs->nb + 1));
+  pairs->values[pairs->nb] = NULL;
+  SafeRealloc(
+    pairs->defaultValues,
+    sizeof(char*) * (pairs->nb + 1));
+  pairs->defaultValues[pairs->nb] = NULL;
+
+  // Update the number of pairs
+  ++(pairs->nb);
+
+  // Set the reference, value and default value of the pair
+  pairs->refs[pairs->nb - 1] = ref;
+  SafeStrDup(
+    pairs->values[pairs->nb - 1],
+    val);
+  SafeStrDup(
+    pairs->defaultValues[pairs->nb - 1],
+    defaultVal);
 
 }
 
@@ -2310,6 +2476,67 @@ static int GetPairsLocalCb(
 
 }
 
+// Callback to receive pairs of ref/value and their default value
+// from sqlite3
+// Input:
+//      data: The pairs
+//     nbCol: Number of columns in the returned rows
+//    colVal: Row values, the reference is expected to be in the first
+//            column and the value in the second column
+//   colName: Columns name
+// Output:
+//   Return 0 if successful, else 1
+static int GetPairsWithDefaultLocalCb(
+   void* data,
+     int nbCol,
+  char** colVal,
+  char** colName) {
+
+  // Unused argument
+  (void)colName;
+
+  // If the arguments are invalid
+  // Return non zero to trigger SQLITE_ABORT in the calling function
+  if (
+    nbCol != 3 || colVal == NULL || colVal[0] == NULL ||
+    colVal[1] == NULL || colVal[2] == NULL) return 1;
+
+  // Cast the data
+  struct RunRecorderPairsRefValDef* pairs =
+    (struct RunRecorderPairsRefValDef*)data;
+
+  // Convert the reference contained in the first column from char* to long
+  errno = 0;
+  long ref =
+    strtol(
+      colVal[0],
+      NULL,
+      10);
+
+  // If the conversion failed, return non zero to trigger SQLITE_ABORT
+  // in the calling function
+  if (errno != 0) return 1;
+
+  // Add the pair ref/value and default value to the pairs
+  Try {
+
+    PairsRefValDefAdd(
+      pairs,
+      ref,
+      colVal[1],
+      colVal[2]);
+
+  } CatchDefault {
+
+    return 1;
+
+  } EndTryWithDefault;
+
+  // Return success code
+  return 0;
+
+}
+
 // Get the list of projects in the local database
 // Input:
 //   that: the struct RunRecorder
@@ -2334,7 +2561,7 @@ static struct RunRecorderPairsRefVal* GetProjectsLocal(
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) {
 
-    RunRecorderPairsRefValFree(&projects);
+    PolyFree(&projects);
     Raise(RunRecorderExc_SQLRequestFailed);
 
   }
@@ -2447,6 +2674,114 @@ static struct RunRecorderPairsRefVal* GetPairsRefValFromJSON(
 
 }
 
+// Extract a struct RunRecorderPairsRefValDef from a JSON string
+// Input:
+//   json: the JSON string for the metricss, expected to be formatted
+//         as "1":["Label":"A","DefaultValue":"B"],...
+// Output:
+//   Return a new struct RunRecorderPairsRefValDef
+// Raise:
+//   RunRecorderExc_InvalidJSON
+static struct RunRecorderPairsRefValDef* GetPairsRefValDefFromJSON(
+  char const* const json) {
+
+  // Create the pairs
+  struct RunRecorderPairsRefValDef* pairs =
+    RunRecorderPairsRefValDefCreate();
+
+  // Declare a pointer to loop on the json string
+  char const* ptr = json;
+
+  // Loop until the end of the json string
+  while (*ptr != '\0') {
+
+    // Go to the next double quote or end of string
+    while (*ptr != '\0' && *ptr != '"') ++ptr;
+
+    // If we have found the double quote
+    if (*ptr == '"') {
+
+      // Skip the opening double quote of the reference
+      ++ptr;
+
+      // Get the reference
+      char* ptrEnd = NULL;
+      errno = 0;
+      long ref =
+        strtol(
+          ptr,
+          &ptrEnd,
+          10);
+      if (errno != 0 || *ptrEnd != '"') Raise(RunRecorderExc_InvalidJSON);
+
+      // Move to the character after the closing double quote
+      ptr = ptrEnd + 1;
+
+      // Check it is the expected ':'
+      if (*ptr != ':') Raise(RunRecorderExc_InvalidJSON);
+
+      // Move to the next character
+      ++ptr;
+
+      // Check it is the expected '{'
+      if (*ptr != '{') Raise(RunRecorderExc_InvalidJSON);
+
+      // Move to the next character
+      ++ptr;
+
+      // Declare two variables to extract the value of the label and
+      // default value
+      char* label = NULL;
+      char* defaultVal = NULL;
+
+      Try {
+
+        // Get the value of the key 'Label'
+        label =
+          GetJSONValOfKey(
+            ptr,
+            "Label");
+
+        // Get the value of the key 'DefaultValue'
+        defaultVal =
+          GetJSONValOfKey(
+            ptr,
+            "DefaultValue");
+
+        // Add the pair
+        PairsRefValDefAdd(
+          pairs,
+          ref,
+          label,
+          defaultVal);
+
+        // Free memory
+        PolyFree(label);
+        PolyFree(defaultVal);
+
+      } CatchDefault {
+
+        PolyFree(label);
+        PolyFree(defaultVal);
+        Raise(TryCatchGetLastExc());
+
+      } EndTryWithDefault;
+
+      // Go to the closing curly brace for the metric
+      while (*ptr != '\0' && *ptr != '}') ++ptr;
+
+      // If we couldn't find the closing curly brace for the metric
+      if (*ptr == '\0') Raise(RunRecorderExc_InvalidJSON);
+
+    }
+
+  }
+
+  // Return the pairs
+  return pairs;
+
+}
+
 // Get the list of projects through the Web API
 // Input:
 //   that: the struct RunRecorder
@@ -2520,21 +2855,45 @@ static struct RunRecorderPairsRefVal* RunRecorderPairsRefValCreate(
 
 }
 
+// Create a struct RunRecorderPairsRefValDef
+// Output:
+//   Return the new struct RunRecorderPairsRefValDef
+static struct RunRecorderPairsRefValDef* RunRecorderPairsRefValDefCreate(
+  void) {
+
+  // Declare the new struct RunRecorderPairsRefValDef
+  struct RunRecorderPairsRefValDef* pairs = NULL;
+  SafeMalloc(
+    pairs,
+    sizeof(struct RunRecorderPairsRefValDef));
+
+  // Initialise properties
+  pairs->nb = 0;
+  pairs->refs = NULL;
+  pairs->values = NULL;
+  pairs->defaultValues = NULL;
+
+  // Return the new struct RunRecorderPairsRefValDef
+  return pairs;
+
+}
+
 // Get the list of metrics for a project from a local database
 // Input:
 //      that: the struct RunRecorder
 //   project: the project
 // Output:
-//   Return the metrics' reference/label
+//   Return the metrics' reference/label/default value
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
-static struct RunRecorderPairsRefVal* GetMetricsLocal(
+static struct RunRecorderPairsRefValDef* GetMetricsLocal(
   struct RunRecorder* const that,
           char const* const project) {
 
   // Create the request
   char* cmdFormat =
-    "SELECT _Metric.Ref, _Metric.Label FROM _Metric, _Project "
+    "SELECT _Metric.Ref, _Metric.Label, _Metric.DefaultValue "
+    "FROM _Metric, _Project "
     "WHERE _Metric.RefProject = _Project.Ref AND "
     "_Project.Label = \"%s\"";
   SafeMalloc(
@@ -2546,25 +2905,25 @@ static struct RunRecorderPairsRefVal* GetMetricsLocal(
     project);
 
   // Declare a variable to memorise the metrics
-  struct RunRecorderPairsRefVal* metrics = NULL;
+  struct RunRecorderPairsRefValDef* metrics = NULL;
   Try {
 
-    // Create the struct RunRecorderPairsRefVal to memorise the metrics
-    metrics = RunRecorderPairsRefValCreate();
+    // Create the struct RunRecorderPairsRefValDef to memorise the metrics
+    metrics = RunRecorderPairsRefValDefCreate();
 
     // Execute the request
     int retExec =
       sqlite3_exec(
         that->db,
         that->cmd,
-        GetPairsLocalCb,
+        GetPairsWithDefaultLocalCb,
         metrics,
         &(that->sqliteErrMsg));
     if (retExec != SQLITE_OK) Raise(RunRecorderExc_SQLRequestFailed);
 
   } CatchDefault {
 
-      RunRecorderPairsRefValFree(&metrics);
+      PolyFree(&metrics);
       Raise(TryCatchGetLastExc());
 
   } EndTryWithDefault;
@@ -2579,10 +2938,10 @@ static struct RunRecorderPairsRefVal* GetMetricsLocal(
 //      that: the struct RunRecorder
 //   project: the project
 // Output:
-//   Return the metrics' reference/label
+//   Return the metrics' reference/label/default value
 // Raise:
 //   RunRecorderExc_ApiRequestFailed
-static struct RunRecorderPairsRefVal* GetMetricsAPI(
+static struct RunRecorderPairsRefValDef* GetMetricsAPI(
   struct RunRecorder* const that,
           char const* const project) {
 
@@ -2609,10 +2968,10 @@ static struct RunRecorderPairsRefVal* GetMetricsAPI(
   char* json = NULL;
 
   // Variable to memorise the metrics
-  struct RunRecorderPairsRefVal* metrics = NULL;
+  struct RunRecorderPairsRefValDef* metrics = NULL;
   Try {
 
-    // Get the metrics list in the JSON reply
+    // Get the labels and default values in the JSON reply
     json =
       GetJSONValOfKey(
         that->curlReply,
@@ -2620,7 +2979,7 @@ static struct RunRecorderPairsRefVal* GetMetricsAPI(
     if (json == NULL) Raise(RunRecorderExc_ApiRequestFailed);
 
     // Extract the metrics
-    metrics = GetPairsRefValFromJSON(json);
+    metrics = GetPairsRefValDefFromJSON(json);
 
     // Free memory
     PolyFree(json);
@@ -2628,7 +2987,7 @@ static struct RunRecorderPairsRefVal* GetMetricsAPI(
   } CatchDefault {
 
     PolyFree(json);
-    RunRecorderPairsRefValFree(&metrics);
+    PolyFree(&metrics);
     Raise(TryCatchGetLastExc());
 
   } EndTryWithDefault;
@@ -2669,7 +3028,7 @@ static void UpdateViewProject(
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_UpdateViewFailed);
 
   // Get the list of metrics for the project
-  struct RunRecorderPairsRefVal* metrics =
+  struct RunRecorderPairsRefValDef* metrics =
     RunRecorderGetMetrics(
       that,
       project);
@@ -2741,11 +3100,11 @@ static void UpdateViewProject(
     }
 
     // Free memory
-    RunRecorderPairsRefValFree(&metrics);
+    PolyFree(&metrics);
 
   } CatchDefault {
 
-    RunRecorderPairsRefValFree(&metrics);
+    PolyFree(&metrics);
     Raise(TryCatchGetLastExc());
 
   } EndTryWithDefault;
@@ -3248,7 +3607,7 @@ static void SetCmdToGetMeasuresLocal(
                  long const nbMeasure) {
 
   // Get the list of metrics for the project
-  struct RunRecorderPairsRefVal* metrics =
+  struct RunRecorderPairsRefValDef* metrics =
     RunRecorderGetMetrics(
       that,
       project);
@@ -3285,7 +3644,7 @@ static void SetCmdToGetMeasuresLocal(
     }
 
     // Free memory
-    RunRecorderPairsRefValFree(&metrics);
+    PolyFree(&metrics);
 
     // Append the tail of the command
     char* cmdFormatTail = "FROM %s";
@@ -3324,7 +3683,7 @@ static void SetCmdToGetMeasuresLocal(
 
   } CatchDefault {
 
-    RunRecorderPairsRefValFree(&metrics);
+    PolyFree(&metrics);
     Raise(TryCatchGetLastExc());
 
   } EndTryWithDefault;
@@ -3547,7 +3906,7 @@ static struct RunRecorderMeasures* CSVToData(
 
   } CatchDefault {
 
-    RunRecorderMeasuresFree(&measures);
+    PolyFree(&measures);
     Raise(TryCatchGetLastExc());
 
   } EndTryWithDefault;

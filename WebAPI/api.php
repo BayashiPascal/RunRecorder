@@ -386,7 +386,8 @@ function AddMetric(
 //   project: the project's name
 // Output:
 //   If successful returns the dictionary {"ret":"0",
-//   "metrics":["...", "...", ...]}.
+//   "metrics":["Ref1":["Label":"Label1", "DefaultValue":"Value1"],
+//   "Ref2":["Label":"Label2", "DefaultValue":"Value2"],...]}.
 //   Else, returns the dictionary {"ret":"1", "errMsg":"..."}.
 function GetMetrics(
   $db,
@@ -399,13 +400,17 @@ function GetMetrics(
 
     // Get the metrics for the project
     $rows = $db->query(
-      'SELECT _Metric.Ref, _Metric.Label FROM _Metric, _Project ' .
+      'SELECT _Metric.Ref, _Metric.Label, _Metric.DefaultValue ' .
+      'FROM _Metric, _Project ' .
       'WHERE _Metric.RefProject = _Project.Ref AND ' . 
       '_Project.Label = "' . $project . '"');
     if ($rows === false) throw new Exception("query() failed");
     $res["metrics"] = [];
-    while ($row = $rows->fetchArray())
-      $res["metrics"][$row["Ref"]] = $row["Label"];
+    while ($row = $rows->fetchArray()) {
+      $res["metrics"][$row["Ref"]] = [];
+      $res["metrics"][$row["Ref"]]["Label"] = $row["Label"];
+      $res["metrics"][$row["Ref"]]["DefaultValue"] = $row["DefaultValue"];
+    }
 
     // Set the success code in the result dictionary
     $res["ret"] = "0";

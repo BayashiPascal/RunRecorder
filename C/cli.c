@@ -8,6 +8,7 @@
 #define PolyFree(P) _Generic(P, \
   struct RunRecorder**: RunRecorderFree, \
   struct RunRecorderPairsRefVal**: RunRecorderPairsRefValFree, \
+  struct RunRecorderPairsRefValDef**: RunRecorderPairsRefValDefFree, \
   struct RunRecorderMeasure**: RunRecorderMeasureFree, \
   struct RunRecorderMeasures**: RunRecorderMeasuresFree, \
   struct CLI**: CLIFree, \
@@ -74,7 +75,7 @@ struct CLI {
   char* curProject;
 
   // List of the metrics for the current project
-  struct RunRecorderPairsRefVal* metrics;
+  struct RunRecorderPairsRefValDef* metrics;
 
 };
 
@@ -367,7 +368,7 @@ void PrintMenuMain(
 
     printf(
       "4 - List the metrics of %s\n"
-      "5 - Add a metric to %s\n",
+      "5 - Add a metric to %s\n"
       "6 - Add one measurement to %s\n",
       that->curProject,
       that->curProject,
@@ -696,9 +697,10 @@ void ListMetrics(
   printf("\nMetrics:\n");
   ForZeroTo(iMetric, that->metrics->nb)
     printf(
-      "ref: %ld label: %s\n",
+      "ref: %ld, label: %s, default value: %s\n",
       that->metrics->refs[iMetric],
-      that->metrics->values[iMetric]);
+      that->metrics->values[iMetric],
+      that->metrics->defaultValues[iMetric]);
   if (that->metrics->nb == 0) printf("No metrics\n");
   printf("\n");
 

@@ -2,7 +2,7 @@
 #include "runrecorder.h"
 
 // Switch between test on local or remote database
-#define TEST_REMOTE 0
+#define TEST_REMOTE 1
 
 // Helper function to commonalize code during exception management
 // Inputs:
@@ -44,7 +44,8 @@ int main(
 #if TEST_REMOTE==0
   char const* pathDb = "./runrecorder.db";
 #else
-  char const* pathApi = "https://localhost/RunRecorder/api.php";
+  //char const* pathApi = "https://localhost/RunRecorder/api.php";
+  char const* pathApi = "http://www.bayashiinjapan.net/RunRecorder/api.php";
 #endif
 
   // Variable to memorise the RunRecorder instance
@@ -185,7 +186,7 @@ int main(
   } EndTryWithDefault;
 
   // Get the list of metrics
-  struct RunRecorderPairsRefVal* metrics = NULL;
+  struct RunRecorderPairsRefValDef* metrics = NULL;
   Try {
 
     metrics =
@@ -199,21 +200,22 @@ int main(
       ++iMetric) {
 
       printf(
-        "ref: %ld label: %s\n",
+        "ref: %ld label: %s default: %s\n",
         metrics->refs[iMetric],
-        metrics->values[iMetric]);
+        metrics->values[iMetric],
+        metrics->defaultValues[iMetric]);
 
     }
 
     // Free memory
-    RunRecorderPairsRefValFree(&metrics);
+    RunRecorderPairsRefValDefFree(&metrics);
 
   } CatchDefault {
 
     PrintCaughtException(
       "RunRecorderGetMetrics",
       recorder);
-    RunRecorderPairsRefValFree(&metrics);
+    RunRecorderPairsRefValDefFree(&metrics);
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
