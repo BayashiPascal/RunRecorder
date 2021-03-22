@@ -768,8 +768,7 @@ bool RunRecorderIsValidValue(
   while (*ptr != '\0') {
 
     // Check the character
-    if (*ptr == '"' || *ptr == '=' ||
-        *ptr == '&') return false;
+    if (*ptr == '"' || *ptr == '=' || *ptr == '&') return false;
 
     // Move to the next character
     ++ptr;

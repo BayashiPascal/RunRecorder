@@ -28,7 +28,7 @@ endif
 all: /usr/local/lib/libcurl.a \
 	/usr/local/lib/libtrycatchc.a \
 	/usr/local/lib/libsqlite3.a \
-	main
+	main runrecorder
 
 main: runrecorder.o main.o Makefile
 	$(COMPILER) main.o runrecorder.o $(LINK_ARG) -o main 
