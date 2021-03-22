@@ -2,7 +2,7 @@
 #include "runrecorder.h"
 
 // Switch between test on local or remote database
-#define TEST_REMOTE 0
+#define TEST_REMOTE 1
 
 // Helper function to commonalize code during exception management
 // Inputs:
