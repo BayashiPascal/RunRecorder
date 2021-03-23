@@ -255,7 +255,7 @@ function UpdateViewProject(
   $project) {
 
   // Ensure the view doesn't exist
-  $cmd = "DROP VIEW IF EXISTS " . $project;
+  $cmd = "DROP VIEW IF EXISTS \"" . $project . "\"";
   $success = $db->exec($cmd);
   if ($success === false) throw new Exception("exec() failed for " . $cmd);
 
@@ -285,8 +285,8 @@ function UpdateViewProject(
   }
 
   // Create the command for the view
-  $cmd = "CREATE VIEW " . $project . " (Ref";
-  foreach($labels as $label) $cmd .= "," . $label;
+  $cmd = "CREATE VIEW \"" . $project . "\" (Ref";
+  foreach($labels as $label) $cmd .= ",\"" . $label . "\"";
   $cmd .= ") AS SELECT _Measure.Ref ";
   foreach($refs as $ref) {
 
@@ -664,8 +664,8 @@ function GetMeasures(
 
     // Create the command to get the measures for the project
     $cmd = 'SELECT Ref';
-    foreach ($res["labels"] as $label) $cmd .= ', ' . $label;
-    $cmd .= ' FROM ' . $project;
+    foreach ($res["labels"] as $label) $cmd .= ',"' . $label . '"';
+    $cmd .= ' FROM "' . $project . '"';
 
     // Order the measures according to the number of returned measures
     if ($nbMeasure > 0)
