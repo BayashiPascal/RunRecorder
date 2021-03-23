@@ -1,5 +1,5 @@
 # Compiler
-COMPILER=gcc-7
+COMPILER=gcc
 
 # Sqlite version (refer to https://www.sqlite.org/download.html for the last one)
 SQLITE_VERSION=3340100
@@ -12,14 +12,14 @@ CURL_VERSION=7.75.0
 CURL_URL=https://curl.se/download/curl-$(CURL_VERSION).zip
 
 # Build mode 0:dev, 1:prod
-BUILD_MODE=0
+BUILD_MODE=1
 
 # Compiler arguments depending on BUILD_MODE
 ifeq ($(BUILD_MODE), 0)
 	BUILD_ARG=-I./ -Wall -Wextra -Og -ggdb -g3 -DBUILDMODE=$(BUILD_MODE)
 	LINK_ARG=-lsqlite3 -lm -lpthread -ldl -lcurl -ltrycatchc
 else ifeq ($(BUILD_MODE), 1)
-	BUILD_ARG=-I./ -Wall -Wextra -Werror -Wfatal-errors -O3 -DBUILDMODE=$(BUILD_MODE)
+	BUILD_ARG=-I./ -Wall -Wextra -Werror -Wfatal-errors -Wno-clobbered -O3 -DBUILDMODE=$(BUILD_MODE)
 	LINK_ARG=-lsqlite3 -lm -lpthread -ldl -lcurl -ltrycatchc
 endif
 
