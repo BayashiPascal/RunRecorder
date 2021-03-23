@@ -46,15 +46,16 @@ RunRecorder is currently in beta version. It has been tested and dynamically ana
 2.2.9 Get the measures
 2.2.10 Delete a project
 2.3 From the command line, with Curl
-2.3.1 Get the version
-2.3.2 Create a new project
-2.3.3 Get the list of projects
-2.3.4 Create a new metric
-2.3.5 Get the list of metrics
-2.3.6 Add a measure
-2.3.7 Delete a measure
-2.3.8 Get the measures
-2.3.9 Delete a project
+2.3.1 Help
+2.3.2 Get the version
+2.3.3 Create a new project
+2.3.4 Get the list of projects
+2.3.5 Create a new metric
+2.3.6 Get the list of metrics
+2.3.7 Add a measure
+2.3.8 Delete a measure
+2.3.9 Get the measures
+2.3.10 Delete a project
 2.4 From the command line, with the RunRecorder CLI
 2.4.1 Get the version
 2.4.2 Create a new project
@@ -781,120 +782,187 @@ Return:
 
 ## 2.3 From the command line, with Curl
 
-### 2.3.1 Get the version
+Section 2.2 gives the parameters of the HTTP request used to interact with the Web API. The present section shows how to use the Curl command line tool to actually interact with the Web API from your terminal.
+
+The Curl command looks like below, where `<PARAMETERS>` is to be replaced with the parameters given in section 2.2
+
+```
+curl -d "<PARAMETERS>" -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
+```
+
+### 2.3.1 Help
+
+If you have forgotten the list of actions and their parameters you can get their list as follow
+
+```
+curl -d "action=help" -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
+```
+Return:
+```
+{"ret":"0","actions":"version, add_project&label=..., projects, add_metric&project=...&label=...&default=..., metrics&project=..., add_measure&project=...&...=...&..., delete_measure&measure=..., measures&project=...[&last=...(default: 0)], csv&project=...[&sep=...(default: &)&last=...(default: 0)], flush&project=..."}
+```
+
+### 2.3.2 Get the version
 
 A first simple test to check if everything is working fine is to request the version of the database.
 
 The database version is automatically checked each a RunRecorder instance is created and the database is automatically upgraded if needed.
 
 ```
+curl -d "action=version" -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
 ```
 Return:
 ```
-01.00.00
+{"version":"01.00.00","ret":"0"}
 ```
 
-### 2.3.2 Create a new project
+### 2.3.3 Create a new project
 
 In RunRecorder, data are grouped by projects. To start recording data, the first thing you need to do is to create the project they belong to.
 
 The project's name must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`.
 
 ```
+curl -d "action=add_project&label=RoomTemperature" -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
+```
+Return:
+```
+{"ret":"0"}
 ```
 
-### 2.3.3 Get the list of projects
+### 2.3.4 Get the list of projects
 
 You can check the list of projects in the database as follow.
 
 ```
+curl -d "action=projects" -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
 ```
 Return:
 ```
-ref: 1 label: RoomTemperature
+{"projects":{"1":"RoomTemperature"},"ret":"0"}
 ```
 
-### 2.3.4 Create a new metric
+### 2.3.5 Create a new metric
 
 After adding a new project you'll want to add the metrics that defines this project. In the example below there are two metrics: the date and time of the recording, and the recorded room temperature.
 
 *The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).*
 
 ```
+curl -d "action=add_metric&project=RoomTemperature&label=Date&default=-" -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
+```
+Return:
+```
+{"ret":"0"}
+```
+Second metric:
+```
+curl -d "action=add_metric&project=RoomTemperature&label=Temperature&default=0.0" -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
+```
+Return:
+```
+{"ret":"0"}
 ```
 
 You can add more metrics even after having recorded some data. A measurement with no value for a given metric automatically get attributed the default value of this metric.
 
-### 2.3.5 Get the list of metrics
+### 2.3.6 Get the list of metrics
 
 You can get the list of metrics for a project as follow.
 
 ```
+curl -d "action=metrics&project=RoomTemperature" -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
 ```
 Return:
 ```
-ref: 1 label: Date default: -
-ref: 2 label: Temperature default: 0.0
+{"metrics":{"1":{"Label":"Date","DefaultValue":"-"},"2":{"Label":"Temperature","DefaultValue":"0.0"}},"ret":"0"}
 ```
 
-### 2.3.6 Add a measure
+### 2.3.7 Add a measure
 
 Once you've created a project and set its metrics, you're ready to add measures!
 
 The values of the measure must respect the following pattern: `/^[^"=&]+$*/`. It is not mandatory to provide a value for all the metrics of the project (if missing, the default value is used instead).
 
 ```
+curl -d "action=add_measure&project=RoomTemperature&Date=2021-03-08 15:45:00&Temperature=18.5" -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
 ```
 Return:
 ```
-Added measure ref. 1
+{"refMeasure":"1","ret":"0"}
 ```
 
-### 2.3.7 Delete a measure
+### 2.3.8 Delete a measure
 
 If you've mistakenly added a measure, or if an error occured when addind a measure and it may be partially saved in the database, you can delete the measure.
 
 RunRecorder ensures as much as possible the database stays coherent even if there is an error, so you can use the partially saved data. In the other hand if you don't want to keep potentially incomplete measurement, you should always try to delete it.
 
 ```
+curl -d "action=delete_measure&project=RoomTemperature&measure=1" -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
 ```
 Return:
 ```
-Added measure ref. 1
-Error occured, delete the last added measure ref. 1
+{"ret":"0"}
 ```
 
-### 2.3.8 Get the measures
+### 2.3.9 Get the measures
 
 After adding your measurements you'll want to retrieve them. You can do so as follow.
 
 RunRecorder retrieve the data as a structure which you could use according to your needs. For convenience, it also provides a function to convert this structure to CSV format and print it to a stream.
 
 ```
+curl -d "action=csv&project=RoomTemperature" -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
 ```
 Return:
 ```
 Ref&Date&Temperature
-1&2021-03-08 15:45:00&18.500000
+1&2021-03-08 15:45:00&18.5
 ```
 
+The optional argument `sep` can be given to use another separator for columns.
+
+```
+curl -d "action=csv&project=RoomTemperature&sep=," -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
+```
+Return:
+```
+Ref,Date,Temperature
+1,2021-03-08 15:45:00,18.5
+```
 Metrics (columns) are ordered alphabetically (except for the first column which is always the reference of the measure), measures (rows) are ordered by time of creation in the database. The delimiter of columns for the CSV conversion is ampersand `&`, and the first line contains the label of metrics. All metrics of the project are present, and their default value is used in rows containing missing values.
 
-If you have a lot of data and want to retrieve only the most recent ones, it is possible to do so as follow. In that case, rows are ordered from the most recent to the oldest.
+It is also possible to get the data returned in JSON format:
 
 ```
+curl -d "action=measures&project=RoomTemperature" -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
 ```
 Return:
 ```
-Ref&Date&Temperature
-1&2021-03-08 15:45:00&18.500000
+{"labels":["Ref","Date","Temperature"],"values":[[1,"2021-03-08 15:45:00","18.5"]],"ret":"0"}
 ```
 
-### 2.3.9 Delete a project
+If you have a lot of data and want to retrieve only the most recent ones, it is possible to do so with the optional parameters `last` (for both `measures` and `csv` commands). In that case, rows are ordered from the most recent to the oldest.
+
+```
+curl -d "action=measures&project=RoomTemperature&last=2" -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
+```
+Return:
+```
+{"labels":["Ref","Date","Temperature"],"values":[[1,"2021-03-08 15:45:00","18.5"]],"ret":"0"}
+```
+
+### 2.3.10 Delete a project
 
 Once you've finished collecting data for a project and want to free space in the database, you can delete the project and all the associated metrics and measurements as follow. 
 
 ```
+curl -d "action=flush&project=RoomTemperature" -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
+```
+Return:
+```
+{"ret":"0"}
 ```
 
 ## 2.4 From the command line, with the RunRecorder CLI
