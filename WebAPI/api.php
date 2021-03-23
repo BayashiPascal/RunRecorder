@@ -403,7 +403,7 @@ function GetMetrics(
       'SELECT _Metric.Ref, _Metric.Label, _Metric.DefaultValue ' .
       'FROM _Metric, _Project ' .
       'WHERE _Metric.RefProject = _Project.Ref AND ' . 
-      '_Project.Label = "' . $project . '"');
+      '_Project.Label = "' . $project . '" ORDER BY _Metric.Label');
     if ($rows === false) throw new Exception("query() failed");
     $res["metrics"] = [];
     while ($row = $rows->fetchArray()) {

@@ -2,24 +2,24 @@
 
 RunRecorder is a C library and a Web API helping to interface the acquisition of textual data and their recording in a remote or local SQLite database.
 
-The C library allows the user to record data with a small and simple set of functions, hiding the commands and management of the database.
+The C library allows the user to record data with a small and simple set of functions, hiding the commands to and management of the database.
 
 The Web API allows the user to use a remote database, making RunRecorder suitable for distributed environments where several applications in a network of devices record and access data in a shared and centralized scheme.
 
-The C library can interact directly with a database, or remotely with it through the Web API. It acts as an abstraction layer for the difference between the two modes, allowing the user to develop data recording application without worrying whether the database is local or remote.
+The C library can interact directly with the database, or remotely with it through the Web API. It acts as an abstraction layer for the difference between the two modes, allowing the user to develop data recording application without worrying whether the database is local or remote.
 
-The Web API being agnostic to the source of the requests it responds, it can also be used with programming languages or tools able to perform HTTP requests. The [Curl](https://curl.se/) project provides such tools and libraries in more than 50 languages. Then, the Web API can also easily be reused in other projects and environments.
+The Web API responding consistently regardless of the source of the requests, it can also be used with programming languages or tools able to perform HTTP requests. The [Curl](https://curl.se/) project provides such tools and libraries in more than 50 languages. Then, the Web API can also easily be reused in other projects and environments.
 
-RunRecorder uses SQLite databases to store recorded data. [SQLite](https://www.sqlite.org/) is the most widely deployed database engine and benefits of tools and libraries in all OS and many programming languages. Then, the recorded data can easily be used after recording.
+RunRecorder uses SQLite databases to store recorded data. [SQLite](https://www.sqlite.org/) is the most widely deployed database engine and benefits of tools and libraries in all OS and many programming languages. Then, the recorded data can easily be used after recording.j with third party software and libraries.
 
 RunRecorder provides a simple functionality to retrieve the recorded data in CSV format, and a basic Web viewer using the Web API to display the recorded data in a Web browser.
 
 ## Table Of Content
 
-* 1. Install
+* 1 Install
 * 1.1 C library
 * 1.2 Web API
-* 2. Usage
+* 2 Usage
 * 2.1 Through the C library
 * 2.1.1 Get the version
 * 2.1.2 Create a new project
@@ -70,8 +70,10 @@ RunRecorder provides a simple functionality to retrieve the recorded data in CSV
 * 2.5.7 Delete a measure
 * 2.5.8 Get the measures
 * 2.5.9 Delete a project
+* 3 Web viewer
+* 4 License
 
-# 1. Install
+# 1 Install
 
 Download this repository into a folder of your choice, in the examples below I'll call it `Repos`, as follow:
 ```
@@ -92,7 +94,7 @@ make all
 sudo make install
 ```
 
-*The [SQLite](https://www.sqlite.org/), [Curl](https://curl.se/) and [TryCatchC](https://github.com/BayashiPascal/TryCatchC) libraries will automatically be installed during installation. You may be asked for your password during installation.*
+The [SQLite](https://www.sqlite.org/), [Curl](https://curl.se/) and [TryCatchC](https://github.com/BayashiPascal/TryCatchC) libraries will automatically be installed during installation. You may be asked for your password during installation.
 
 ## 1.2 Web API
 
@@ -103,7 +105,7 @@ sudo ln -s Repos/RunRecorder/WebAPI /var/www/html/RunRecorder
 
 *If you use a web server, be aware that the Web API doesn't implement any kind of security mechanism. Anyone knowing the URL of the API will be able to interact with it. If you have security concerns, use the API on a secured local network, or use it after modifying the code of the API according to your security policy.*
 
-# 2. Usage
+# 2 Usage
 
 ## 2.1 Through the C library
 
@@ -144,7 +146,7 @@ int main() {
 }
 ```
 
-*In examples below the Try/Catch blocks are omitted to shorten this documentation. Refer to `Repos/RunRecorder/C/main.c` for more information.*
+In examples below the Try/Catch blocks are omitted to shorten this documentation. Refer to `Repos/RunRecorder/C/main.c` for more information.
 
 Compile with the following Makefile:
 
@@ -160,7 +162,7 @@ main.o: main.c
 
 A first simple test to check if everything is working fine is to request the version of the database.
 
-*The database version is automatically checked and the database is automatically upgraded if needed.*
+The database version is automatically checked each a RunRecorder instance is created and the database is automatically upgraded if needed.
 
 ```
 #include <stdio.h>
@@ -197,7 +199,7 @@ Output:
 
 In RunRecorder, data are grouped by projects. To start recording data, the first thing you need to do is to create the project they belong to.
 
-*The project's name must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`.*
+The project's name must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`.
 
 ```
 #include <RunRecorder/runrecorder.h>
@@ -234,11 +236,8 @@ You can check the list of projects in the database as follow.
 int main() {
 
   char const* pathDb = "./runrecorder.db";
-  char const* pathApi = "https://localhost/RunRecorder/api.php";
 
   // Create the RunRecorder instance
-  // Give pathApi in argument if you want to use the Web API instead
-  // of a local file
   struct RunRecorder* recorder = RunRecorderCreate(pathDb);
   RunRecorderInit(recorder);
 
@@ -252,7 +251,7 @@ int main() {
     printf(
       "ref: %ld label: %s\n",
       projects->refs[iProject],
-      projects->vals[iProject]);
+      projects->values[iProject]);
 
   }
 
@@ -271,7 +270,7 @@ ref: 1 label: RoomTemperature
 
 ### 2.1.4 Create a new metric
 
-After adding a new project you'll want to add the metrics that defines this project. In our example project there are two metrics: the date and time of the recording, and the recorded room temperature.
+After adding a new project you'll want to add the metrics that defines this project. In the example below there are two metrics: the date and time of the recording, and the recorded room temperature.
 
 *The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).*
 
@@ -307,7 +306,7 @@ int main() {
 }
 ```
 
-*You can add more metrics even after having recorded some data. A measurement with no value for a given metric automatically get attributed the default value of this metric.*
+You can add more metrics even after having recorded some data. A measurement with no value for a given metric automatically get attributed the default value of this metric.
 
 ### 2.1.5 Get the list of metrics
 
@@ -343,7 +342,6 @@ int main() {
 
   }
 
-
   // Free memory
   RunRecorderPairsRefValDefFree(&metrics);
   RunRecorderFree(&recorder);
@@ -362,7 +360,7 @@ ref: 2 label: Temperature default: 0.0
 
 Once you've created a project and set its metrics, you're ready to add measures!
 
-*The values of the measure must respect the following pattern: `/^[^"=&]+$*/`. It is not mandatory to provide a value for all the metrics of the project (if missing, the default value is used instead).*
+The values of the measure must respect the following pattern: `/^[^"=&]+$*/`. It is not mandatory to provide a value for all the metrics of the project (if missing, the default value is used instead).
 
 ```
 #include <stdio.h>
@@ -411,7 +409,9 @@ Added measure ref. 1
 
 ### 2.1.7 Delete a measure
 
-If you've mistakenly added a measure and want to delete it, you can do so as long as you have memorised its reference (returned when you add it). Also, if an error occured when addind a measure, it may be partially saved in the database, depending on the error. RunRecorder ensures as much as possible the database stays coherent even if there is an error, so you can use the partially saved data. In the other hand if you don't want to keep potentially incomplete measurement, you should always try to delete it with the returned reference if an error occured.
+If you've mistakenly added a measure, or if an error occured when addind a measure and it may be partially saved in the database, you can delete the measure.
+
+RunRecorder ensures as much as possible the database stays coherent even if there is an error, so you can use the partially saved data. In the other hand if you don't want to keep potentially incomplete measurement, you should always try to delete it.
 
 ```
 #include <stdio.h>
@@ -477,9 +477,9 @@ Error occured, delete the last added measure ref. 1
 
 ### 2.1.8 Get the measures
 
-After adding your measurements you'll want to use retrieve them. You can do so as follow.
+After adding your measurements you'll want to retrieve them. You can do so as follow.
 
-*RunRecorder retrieve the data as a structure which you could use according to your needs. For convenience, it also provides a function to convert this structure to CSV format and print it to a stream.*
+RunRecorder retrieve the data as a structure which you could use according to your needs. For convenience, it also provides a function to convert this structure to CSV format and print it to a stream.
 
 ```
 #include <stdio.h>
@@ -518,9 +518,9 @@ Ref&Date&Temperature
 1&2021-03-08 15:45:00&18.500000
 ```
 
-*Metrics (columns) are ordered alphabetically, measures (rows) are ordered by time of creation in the database. The delimiter of columns for the CSV conversion is ampersand `&`, and the first line contains the label of metrics. All metrics of the project are present, and their default value is used in rows containing missing values.*
+Metrics (columns) are ordered alphabetically (except for the first column which is always the reference of the measure), measures (rows) are ordered by time of creation in the database. The delimiter of columns for the CSV conversion is ampersand `&`, and the first line contains the label of metrics. All metrics of the project are present, and their default value is used in rows containing missing values.
 
-If you have a lot of data and want to retrieve only the last few ones, it is possible to do so as follow. In that case, rows are ordered from the most recent to the oldest.
+If you have a lot of data and want to retrieve only the most recent ones, it is possible to do so as follow. In that case, rows are ordered from the most recent to the oldest.
 
 ```
 #include <stdio.h>
@@ -933,7 +933,9 @@ On failure, an error message is returned.
 {"errMsg":"something went wrong","ret":"0"}
 ```
 
-## License
+## 3 Web viewer
+
+## 4 License
 
 RunRecorder, a C library and a Web API helping to interface the acquisition of textual data and their recording in a remote or local SQLite database.
 Copyright (C) 2021  Pascal Baillehache
@@ -949,5 +951,5 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+along with this program. If not, see <http://www.gnu.org/licenses/>.
 

@@ -2924,7 +2924,7 @@ static struct RunRecorderPairsRefValDef* GetMetricsLocal(
     "SELECT _Metric.Ref, _Metric.Label, _Metric.DefaultValue "
     "FROM _Metric, _Project "
     "WHERE _Metric.RefProject = _Project.Ref AND "
-    "_Project.Label = \"%s\"";
+    "_Project.Label = \"%s\" ORDER BY _Metric.Label";
   SafeMalloc(
     that->cmd,
     strlen(cmdFormat) - 2 + strlen(project) + 1);
