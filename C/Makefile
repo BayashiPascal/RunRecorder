@@ -87,6 +87,10 @@ valgrind :
 	valgrind -v --track-origins=yes --leak-check=full \
 	--gen-suppressions=yes --show-leak-kinds=all ./main
 
+valgrindB :
+	valgrind -v --track-origins=yes --leak-check=full \
+	--gen-suppressions=yes --show-leak-kinds=all ./runrecorder runrecorder.db
+
 install: runrecorder.o
 	rm -rf /usr/local/include/RunRecorder
 	mkdir /usr/local/include/RunRecorder

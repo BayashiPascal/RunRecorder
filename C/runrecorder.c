@@ -1055,21 +1055,13 @@ void RunRecorderMeasureFree(
   // If it's already freed, nothing to do
   if (that == NULL || *that == NULL) return;
 
-  // If there was metrics
-  if ((*that)->metrics != NULL) {
-
-    // Free the metrics
+  // If there was metrics, free the metrics
+  if ((*that)->metrics != NULL)
     ForZeroTo(iMetric, (*that)->nbMetric) PolyFree((*that)->metrics[iMetric]);
 
-  }
-
-  // If there was values
-  if ((*that)->values != NULL) {
-
-    // Free the values
+  // If there was values, free the values
+  if ((*that)->values != NULL)
     ForZeroTo(iVal, (*that)->nbMetric) PolyFree((*that)->values[iVal]);
-
-  }
 
   // Free memory
   PolyFree((*that)->metrics);
@@ -1079,7 +1071,8 @@ void RunRecorderMeasureFree(
 
 }
 
-// Add a string value to a struct RunRecorderMeasure
+// Add a string value to a struct RunRecorderMeasure if there is not yet a
+// value for the metric, or replace its value else
 // Input:
 //     that: the struct RunRecorderMeasure
 //   metric: the value's metric
@@ -1095,30 +1088,61 @@ void RunRecorderMeasureAddValueStr(
   if (RunRecorderIsValidValue(val) == false)
     Raise(RunRecorderExc_InvalidValue);
 
-  // Reallocate memory for the added value and its metric
-  SafeRealloc(
-    that->metrics,
-    sizeof(char*) * (that->nbMetric + 1));
-  SafeRealloc(
-    that->values,
-    sizeof(char*) * (that->nbMetric + 1));
-  that->metrics[that->nbMetric] = NULL;
-  that->values[that->nbMetric] = NULL;
+  // Flag to memorise if the metric is already present in the measure
+  bool flagAlreadyHere = false;
 
-  // Update the number of metric in the measure
-  ++(that->nbMetric);
+  // Loop on the metric
+  ForZeroTo(iMetric, that->nbMetric) {
 
-  // Copy the value and its metric in the measure
-  SafeStrDup(
-    that->metrics[that->nbMetric - 1],
-    metric);
-  SafeStrDup(
-    that->values[that->nbMetric - 1],
-    val);
+    // If this is the requested metric, return the value
+    int retCmp =
+      strcmp(
+        that->metrics[iMetric],
+        metric);
+    if (retCmp == 0) {
+
+      // Replace the value
+      SafeStrDup(
+        that->values[iMetric],
+        val);
+
+      // Update the flag to memorise the metric is already in the measure
+      flagAlreadyHere = true;
+
+    }
+
+  }
+
+  // If the metric wasn't already in the measure
+  if (flagAlreadyHere == false) {
+
+    // Reallocate memory for the added value and its metric
+    SafeRealloc(
+      that->metrics,
+      sizeof(char*) * (that->nbMetric + 1));
+    SafeRealloc(
+      that->values,
+      sizeof(char*) * (that->nbMetric + 1));
+    that->metrics[that->nbMetric] = NULL;
+    that->values[that->nbMetric] = NULL;
+
+    // Update the number of metric in the measure
+    ++(that->nbMetric);
+
+    // Copy the value and its metric in the measure
+    SafeStrDup(
+      that->metrics[that->nbMetric - 1],
+      metric);
+    SafeStrDup(
+      that->values[that->nbMetric - 1],
+      val);
+
+  }
 
 }
 
-// Add an int value to a struct RunRecorderMeasure
+// Add an int value to a struct RunRecorderMeasure if there is not yet a
+// value for the metric, or replace its value else
 // Input:
 //     that: the struct RunRecorderMeasure
 //   metric: the value's metric
@@ -1164,7 +1188,8 @@ void RunRecorderMeasureAddValueInt(
 
 }
 
-// Add a double value to a struct RunRecorderMeasure
+// Add a double value to a struct RunRecorderMeasure if there is not yet a
+// value for the metric, or replace its value else
 // Input:
 //     that: the struct RunRecorderMeasure
 //   metric: the value's metric
@@ -2238,7 +2263,6 @@ static void AddProjectLocal(
   // Create the SQL command
   char* cmdFormat =
     "INSERT INTO _Project (Ref, Label) VALUES (NULL, \"%s\")";
-  PolyFree(that->cmd);
   size_t lenCmd = strlen(cmdFormat) - 2 + strlen(name) + 1;
   SafeMalloc(
     that->cmd,
@@ -2274,7 +2298,6 @@ static void AddProjectAPI(
 
   // Create the request to the Web API
   char* cmdFormat = "action=add_project&label=%s";
-  PolyFree(that->cmd);
   size_t lenCmd = strlen(cmdFormat) - 2 + strlen(name) + 1;
   SafeMalloc(
     that->cmd,
@@ -3722,6 +3745,10 @@ static struct RunRecorderMeasures* GetMeasuresLocal(
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_SQLRequestFailed);
 
+  // If there is no measures GetMeasuresLocalCb won't get called and
+  // an empty struct RunRecorderMeasures needs to be allocated here
+  if (measures == NULL) measures = RunRecorderMeasuresCreate();
+
   // Return the measures
   return measures;
 
@@ -3989,6 +4016,10 @@ static struct RunRecorderMeasures* GetLastMeasuresLocal(
       &measures,
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_SQLRequestFailed);
+
+  // If there is no measures GetMeasuresLocalCb won't get called and
+  // an empty struct RunRecorderMeasures needs to be allocated here
+  if (measures == NULL) measures = RunRecorderMeasuresCreate();
 
   // Return the measures
   return measures;

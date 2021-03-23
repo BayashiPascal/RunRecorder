@@ -2,7 +2,7 @@
 #include "runrecorder.h"
 
 // Switch between test on local or remote database
-#define TEST_REMOTE 1
+#define TEST_REMOTE 0
 
 // Helper function to commonalize code during exception management
 // Inputs:
@@ -44,8 +44,7 @@ int main(
 #if TEST_REMOTE==0
   char const* pathDb = "./runrecorder.db";
 #else
-  //char const* pathApi = "https://localhost/RunRecorder/api.php";
-  char const* pathApi = "http://www.bayashiinjapan.net/RunRecorder/api.php";
+  char const* pathApi = "https://localhost/RunRecorder/api.php";
 #endif
 
   // Variable to memorise the RunRecorder instance

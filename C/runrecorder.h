@@ -253,7 +253,8 @@ struct RunRecorderMeasure* RunRecorderMeasureCreate(
 void RunRecorderMeasureFree(
   struct RunRecorderMeasure** const that);
 
-// Add a string value to a struct RunRecorderMeasure
+// Add a string value to a struct RunRecorderMeasure if there is not yet a
+// value for the metric, or replace its value else
 // Input:
 //     that: the struct RunRecorderMeasure
 //   metric: the value's metric
@@ -265,7 +266,8 @@ void RunRecorderMeasureAddValueStr(
                  char const* const metric,
                  char const* const val);
 
-// Add an int value to a struct RunRecorderMeasure
+// Add an int value to a struct RunRecorderMeasure if there is not yet a
+// value for the metric, or replace its value else
 // Input:
 //     that: the struct RunRecorderMeasure
 //   metric: the value's metric
@@ -275,7 +277,8 @@ void RunRecorderMeasureAddValueInt(
                  char const* const metric,
                         long const val);
 
-// Add a double value to a struct RunRecorderMeasure
+// Add a double value to a struct RunRecorderMeasure if there is not yet a
+// value for the metric, or replace its value else
 // Input:
 //     that: the struct RunRecorderMeasure
 //   metric: the value's metric

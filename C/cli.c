@@ -43,6 +43,10 @@ enum CLIStatus {
   CLIStatus_addProject,
   CLIStatus_selectProject,
   CLIStatus_addMetric,
+  CLIStatus_addMeasure,
+  CLIStatus_listMeasure,
+  CLIStatus_deleteMeasure,
+  CLIStatus_deleteProject,
   CLIStatus_quit,
   CLIStatus_lastID,
 
@@ -77,6 +81,9 @@ struct CLI {
   // List of the metrics for the current project
   struct RunRecorderPairsRefValDef* metrics;
 
+  // Variable to memorise the measure to add
+  struct RunRecorderMeasure* measure;
+
 };
 
 // ================== Functions declaration =========================
@@ -100,6 +107,13 @@ void CLIFree(
 //   that: the struct CLI
 void PrintCaughtException(
   struct CLI const* const that);
+
+// Get the user input for stdin
+// Output:
+//   Return the user input (without the line return) or NULL if the user
+//   pressed ctrl-d
+char* GetUserInput(
+  void);
 
 // Main loop of the CLI
 // Input:
@@ -129,6 +143,30 @@ void PrintMenuAddMetric(
 // Input:
 //   that: the struct CLI
 void PrintMenuSelectProject(
+  struct CLI* const that);
+
+// Print the menu to add a measure
+// Input:
+//   that: the struct CLI
+void PrintMenuAddMeasure(
+  struct CLI* const that);
+
+// Print the menu to list measures
+// Input:
+//   that: the struct CLI
+void PrintMenuListMeasure(
+  struct CLI* const that);
+
+// Print the menu to delete a measure
+// Input:
+//   that: the struct CLI
+void PrintMenuDeleteMeasure(
+  struct CLI* const that);
+
+// Print the menu to delete a project
+// Input:
+//   that: the struct CLI
+void PrintMenuDeleteProject(
   struct CLI* const that);
 
 // Process the user input in the main menu
@@ -163,6 +201,38 @@ void ProcessInputSelectProject(
   struct CLI* const that,
   char const* const input);
 
+// Process the user input in the menu to add a measure
+// Input:
+//    that: the struct CLI
+//   input: the user input
+void ProcessInputAddMeasure(
+  struct CLI* const that,
+  char const* const input);
+
+// Process the user input in the menu to list measures
+// Input:
+//    that: the struct CLI
+//   input: the user input
+void ProcessInputListMeasure(
+  struct CLI* const that,
+  char const* const input);
+
+// Process the user input in the menu to delete a measure
+// Input:
+//    that: the struct CLI
+//   input: the user input
+void ProcessInputDeleteMeasure(
+  struct CLI* const that,
+  char const* const input);
+
+// Process the user input in the menu to delete a project
+// Input:
+//    that: the struct CLI
+//   input: the user input
+void ProcessInputDeleteProject(
+  struct CLI* const that,
+  char const* const input);
+
 // Print the list of projects
 // Input:
 //    that: the struct CLI
@@ -173,6 +243,29 @@ void ListProjects(
 // Input:
 //    that: the struct CLI
 void ListMetrics(
+  struct CLI* const that);
+
+// Initialise a new measure to add
+// Input:
+//    that: the struct CLI
+void InitMeasureToAdd(
+  struct CLI* const that);
+
+// Get the value input by the user for the measure to add for a metric
+// Inputs:
+//      that: the struct CLI
+//    metric: the metric's label
+// Output:
+//   Return the user input value if any, or NULL if the user hasn't input value
+//   for this metric
+char const* GetMeasureValue(
+  struct CLI* const that,
+  char const* const metric);
+
+// Save the measure to the project
+// Inputs:
+//      that: the struct CLI
+void SaveMeasure(
   struct CLI* const that);
 
 // ================== Functions definition =========================
@@ -200,15 +293,24 @@ struct CLI* CLICreate(
   cli->printMenu[CLIStatus_addProject] = PrintMenuAddProject;
   cli->printMenu[CLIStatus_selectProject] = PrintMenuSelectProject;
   cli->printMenu[CLIStatus_addMetric] = PrintMenuAddMetric;
+  cli->printMenu[CLIStatus_addMeasure] = PrintMenuAddMeasure;
+  cli->printMenu[CLIStatus_listMeasure] = PrintMenuListMeasure;
+  cli->printMenu[CLIStatus_deleteMeasure] = PrintMenuDeleteMeasure;
+  cli->printMenu[CLIStatus_deleteProject] = PrintMenuDeleteProject;
   cli->printMenu[CLIStatus_quit] = NULL;
   cli->processInput[CLIStatus_main] = ProcessInputMain;
   cli->processInput[CLIStatus_addProject] = ProcessInputAddProject;
   cli->processInput[CLIStatus_selectProject] = ProcessInputSelectProject;
   cli->processInput[CLIStatus_addMetric] = ProcessInputAddMetric;
+  cli->processInput[CLIStatus_addMeasure] = ProcessInputAddMeasure;
+  cli->processInput[CLIStatus_listMeasure] = ProcessInputListMeasure;
+  cli->processInput[CLIStatus_deleteMeasure] = ProcessInputDeleteMeasure;
+  cli->processInput[CLIStatus_deleteProject] = ProcessInputDeleteProject;
   cli->processInput[CLIStatus_quit] = NULL;
   cli->projects = NULL;
   cli->curProject = NULL;
   cli->metrics = NULL;
+  cli->measure = NULL;
 
   // Create the RunRecorder instance
   printf(
@@ -243,6 +345,7 @@ void CLIFree(
   if (that == NULL || *that == NULL) return;
 
   // Free memory
+  PolyFree(&((*that)->measure));
   PolyFree(&((*that)->metrics));
   PolyFree((*that)->curProject);
   PolyFree(&((*that)->projects));
@@ -360,7 +463,7 @@ void PrintMenuMain(
 
   // Print the menu
   printf(
-    "--- Main menu ---\n"
+    "\n--- Main menu ---\n"
     "1 - List the projects\n"
     "2 - Add a project\n"
     "3 - Select a project\n");
@@ -369,7 +472,13 @@ void PrintMenuMain(
     printf(
       "4 - List the metrics of %s\n"
       "5 - Add a metric to %s\n"
-      "6 - Add one measurement to %s\n",
+      "6 - Add one measure to %s\n"
+      "7 - List measures in %s\n"
+      "8 - Delete a measure in %s\n"
+      "9 - Delete the project %s\n",
+      that->curProject,
+      that->curProject,
+      that->curProject,
       that->curProject,
       that->curProject,
       that->curProject);
@@ -386,9 +495,12 @@ void PrintMenuMain(
 void PrintMenuAddProject(
   struct CLI* const that) {
 
+  // Unused argument
+  (void)that;
+
   // Print the menu
   printf(
-    "--- Add a project ---\n"
+    "\n--- Add a project ---\n"
     "Enter the name of the project, or leave blank to cancel\n");
 
 }
@@ -399,9 +511,12 @@ void PrintMenuAddProject(
 void PrintMenuAddMetric(
   struct CLI* const that) {
 
+  // Unused argument
+  (void)that;
+
   // Print the menu
   printf(
-    "--- Add a metric ---\n"
+    "\n--- Add a metric ---\n"
     "Enter the label of the metric, or leave blank to cancel\n");
 
 }
@@ -412,10 +527,109 @@ void PrintMenuAddMetric(
 void PrintMenuSelectProject(
   struct CLI* const that) {
 
+  // Unused argument
+  (void)that;
+
   // Print the menu
   printf(
-    "--- Select a project ---\n"
+    "\n--- Select a project ---\n"
     "Enter the name of the project, or leave blank to cancel\n");
+
+}
+
+// Print the menu to add a measure
+// Input:
+//   that: the struct CLI
+void PrintMenuAddMeasure(
+  struct CLI* const that) {
+
+  // Print the menu
+  printf(
+    "\n--- Add a measure ---\n"
+    "c - Cancel and go back to main menu\n"
+    "s - Save the measure\n");
+
+  // Loop on the metrics
+  ForZeroTo(iMetric, that->metrics->nb) {
+
+    // Print the menu index and the metric label
+    printf(
+      "%ld - %s: ",
+      iMetric + 1,
+      that->metrics->values[iMetric]);
+
+    // If the user has given a value for this metric
+    char const* value =
+      GetMeasureValue(
+        that,
+        that->metrics->values[iMetric]);
+    if (value != NULL) {
+
+      // Print the value input by the user
+      printf(
+        "%s\n",
+        value);
+
+    // Else, the user has not given a value for this metric
+    } else {
+
+      // Print the default value of the metric
+      printf(
+        "%s (default value)\n",
+        that->metrics->defaultValues[iMetric]);
+
+    }
+
+  }
+
+}
+
+// Print the menu to list measures
+// Input:
+//   that: the struct CLI
+void PrintMenuListMeasure(
+  struct CLI* const that) {
+
+  // Unused argument
+  (void)that;
+
+  // Print the menu
+  printf(
+    "\n--- List measures ---\n"
+    "Input the number of last recent measures to display or leave blank for "
+    "all the measures\n");
+
+}
+
+// Print the menu to delete a measure
+// Input:
+//   that: the struct CLI
+void PrintMenuDeleteMeasure(
+  struct CLI* const that) {
+
+  // Unused argument
+  (void)that;
+
+  // Print the menu
+  printf(
+    "\n--- Delete a measure ---\n"
+    "Input the reference of the measure to delete, "
+    "or leave blank to cancel\n");
+
+}
+
+// Print the menu to delete a project
+// Input:
+//   that: the struct CLI
+void PrintMenuDeleteProject(
+  struct CLI* const that) {
+
+  // Print the menu
+  printf(
+    "\n--- Delete a project ---\n"
+    "The project %s and all its data will be deleted, enter 'Y' to confirm "
+    "or anything else to cancel\n",
+    that->curProject);
 
 }
 
@@ -427,58 +641,93 @@ void ProcessInputMain(
   struct CLI* const that,
   char const* const input) {
 
-  // Variable to memorise the acceptable commands
-  #define NbCmdMain 6
-  char* cmds[NbCmdMain] = {
+  // If there was a user input
+  if (input != NULL) {
 
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "q"
+    // Variable to memorise the acceptable commands
+    #define NbCmdMain 10
+    char* cmds[NbCmdMain] = {
 
-  };
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "q"
 
-  // Loop on the acceptable commands
-  ForZeroTo(iCmd, NbCmdMain) {
+    };
 
-    // If the user input is this command
-    int retCmp =
-      strcmp(
-        input,
-        cmds[iCmd]);
-    if (retCmp == 0) {
+    // Loop on the acceptable commands
+    ForZeroTo(iCmd, NbCmdMain) {
 
-      // Switch on the command
-      switch(iCmd) {
+      // If the user input is this command
+      int retCmp =
+        strcmp(
+          input,
+          cmds[iCmd]);
+      if (retCmp == 0) {
 
-        case 0:
-          ListProjects(that);
-          break;
+        // Switch on the command
+        switch(iCmd) {
 
-        case 1:
-          that->status = CLIStatus_addProject;
-          break;
+          case 0:
+            ListProjects(that);
+            break;
 
-        case 2:
-          that->status = CLIStatus_selectProject;
-          break;
+          case 1:
+            that->status = CLIStatus_addProject;
+            break;
 
-        case 3:
-          if (that->curProject != NULL) ListMetrics(that);
-          break;
+          case 2:
+            that->status = CLIStatus_selectProject;
+            break;
 
-        case 4:
-          if (that->curProject != NULL) that->status = CLIStatus_addMetric;
-          break;
+          case 3:
+            if (that->curProject != NULL) ListMetrics(that);
+            break;
 
-        case 5:
-          that->status = CLIStatus_quit;
-          break;
+          case 4:
+            if (that->curProject != NULL) that->status = CLIStatus_addMetric;
+            break;
 
-        default:
-          break;
+          case 5:
+            if (that->curProject != NULL) {
+
+              // Initialise the measure
+              InitMeasureToAdd(that);
+
+              // Set the status of the CLI
+              that->status = CLIStatus_addMeasure;
+
+            }
+            break;
+
+          case 6:
+            if (that->curProject != NULL) that->status = CLIStatus_listMeasure;
+            break;
+
+          case 7:
+            if (that->curProject != NULL)
+              that->status = CLIStatus_deleteMeasure;
+            break;
+
+          case 8:
+            if (that->curProject != NULL)
+              that->status = CLIStatus_deleteProject;
+            break;
+
+          case 9:
+            that->status = CLIStatus_quit;
+            break;
+
+          default:
+            break;
+
+        }
 
       }
 
@@ -576,7 +825,13 @@ void ProcessInputAddMetric(
 
             // Update the list of metrics
             PolyFree(&(that->metrics));
-            that->projects = RunRecorderGetProjects(that->runRecorder);
+            that->metrics =
+              RunRecorderGetMetrics(
+                that->runRecorder,
+                that->curProject);
+
+            // Reset the measure
+            PolyFree(&(that->measure));
 
           } Catch (RunRecorderExc_MetricNameAlreadyUsed) {
 
@@ -594,6 +849,9 @@ void ProcessInputAddMetric(
           printf("This default value is invalid\n");
 
         }
+
+        // Free memory
+        PolyFree(defaultVal);
 
       }
 
@@ -649,11 +907,317 @@ void ProcessInputSelectProject(
           that->runRecorder,
           that->curProject);
 
+      // Reset the measure
+      PolyFree(&(that->measure));
+
     }
 
   }
 
   // Set the CLI back to the main menu
+  that->status = CLIStatus_main;
+
+}
+
+// Process the user input in the menu to add a measure
+// Input:
+//    that: the struct CLI
+//   input: the user input
+void ProcessInputAddMeasure(
+  struct CLI* const that,
+  char const* const input) {
+
+  // If there was a user input
+  if (input != NULL) {
+
+    // Variable to memorise the acceptable commands
+    #define NbCmdAddMeasure 2
+    char* cmds[NbCmdAddMeasure] = {
+
+      "s",
+      "c"
+
+    };
+
+    // Flag to memorise if the user input was a commnad
+    bool flagCmd = false;
+
+    // Loop on the acceptable commands
+    ForZeroTo(iCmd, NbCmdAddMeasure) {
+
+      // If the user input is this command
+      int retCmp =
+        strcmp(
+          input,
+          cmds[iCmd]);
+      if (retCmp == 0) {
+
+        // Switch on the command
+        switch(iCmd) {
+
+          case 0:
+            flagCmd = true;
+            SaveMeasure(that);
+            PolyFree(&(that->measure));
+            that->status = CLIStatus_main;
+            break;
+
+          case 1:
+            flagCmd = true;
+            PolyFree(&(that->measure));
+            that->status = CLIStatus_main;
+            break;
+
+          default:
+            break;
+
+        }
+
+      }
+
+    }
+
+    // If the user input was not a command
+    if (flagCmd == false) {
+
+      // If the user input is an integer
+      errno = 0;
+      long iMetric =
+        strtol(
+          input,
+          NULL,
+          10);
+      if (errno == 0) {
+
+        // Decrement the input to match the index in the array
+        iMetric--;
+
+        // If the index is in the range of the metrics
+        if (iMetric >= 0 && iMetric < that->metrics->nb) {
+
+          // Ask the user to input the value of the measure for this metric
+          printf(
+            "Enter the value of the measure for %s, or ctrl-d to cancel\n"
+            " > ",
+            that->metrics->values[iMetric]);
+          char* val = GetUserInput();
+
+          // If the user has entered a value
+          if (val != NULL) {
+
+            // If the value is valid
+            bool isValid = RunRecorderIsValidValue(val);
+            if (isValid == true) {
+
+              Try {
+
+                RunRecorderMeasureAddValue(
+                  that->measure,
+                  that->metrics->values[iMetric],
+                  val);
+
+              } CatchDefault {
+
+                PrintCaughtException(that);
+
+              } EndTryWithDefault;
+
+            // Else, the value is invalid
+            } else {
+
+              printf("This value is invalid\n");
+
+            }
+
+            // Free memory
+            PolyFree(val);
+
+          }
+
+        }
+
+      }
+
+    }
+
+  }
+
+}
+
+// Process the user input in the menu to list measures
+// Input:
+//    that: the struct CLI
+//   input: the user input
+void ProcessInputListMeasure(
+  struct CLI* const that,
+  char const* const input) {
+
+  // If there was a user input
+  if (input != NULL) {
+
+    // Declare a variable to memorise the number of input to display
+    long nbMeasure = 0;
+
+    // Ensure the errno is null here for the next next if() even if we
+    // don't try the conversion in the next if()
+    errno = 0;
+
+    // If the user input wasn't empty
+    if (*input != '\0') {
+
+      // Convert the user input to an integer
+      nbMeasure =
+        strtol(
+          input,
+          NULL,
+          10);
+
+    }
+
+    // If the conversion fails or the integer is invalid
+    if (errno != 0 || nbMeasure < 0) {
+
+      printf("Invalid number of measure\n");
+
+    // Else, we have the correct number of requested measures
+    } else {
+
+      // Variable to memorise the measures
+      struct RunRecorderMeasures* measures = NULL;
+
+      Try {
+
+        // Get the measures
+        measures =
+          RunRecorderGetLastMeasures(
+            that->runRecorder,
+            that->curProject,
+            nbMeasure);
+
+        // If there measures
+        if (measures->nbMeasure > 0) {
+
+          // Print the measures
+          RunRecorderMeasuresPrintCSV(
+            measures,
+            stdout);
+
+        // Else, there are no measures
+        } else {
+
+          printf(
+            "No measures in %s\n",
+            that->curProject);
+
+        }
+
+        // Free memory
+        RunRecorderMeasuresFree(&measures);
+
+      } CatchDefault {
+
+        PrintCaughtException(that);
+        RunRecorderMeasuresFree(&measures);
+
+      } EndTryWithDefault;
+
+    }
+
+  }
+
+  // Move back to main menu
+  that->status = CLIStatus_main;
+
+}
+
+// Process the user input in the menu to delete a measure
+// Input:
+//    that: the struct CLI
+//   input: the user input
+void ProcessInputDeleteMeasure(
+  struct CLI* const that,
+  char const* const input) {
+
+  // If there was a user input
+  if (input != NULL && *input != '\0') {
+
+    // Convert the user input to an integer
+    errno = 0;
+    long refMeasure =
+      strtol(
+        input,
+        NULL,
+        10);
+
+    // If the conversion fails
+    if (errno != 0) {
+
+      printf("Invalid reference\n");
+
+    // Else, the conversion succeeded
+    } else {
+
+      Try {
+
+        // Delete the measure
+        RunRecorderDeleteMeasure(
+          that->runRecorder,
+          refMeasure);
+        printf(
+          "Deleted measure %ld\n",
+          refMeasure);
+
+      } CatchDefault {
+
+        PrintCaughtException(that);
+
+      } EndTryWithDefault;
+    }
+
+  }
+
+  // Move back to main menu
+  that->status = CLIStatus_main;
+
+}
+
+// Process the user input in the menu to delete a project
+// Input:
+//    that: the struct CLI
+//   input: the user input
+void ProcessInputDeleteProject(
+  struct CLI* const that,
+  char const* const input) {
+
+  // If there was a user input and it was 'Y'
+  if (input != NULL && *input == 'Y') {
+
+    Try {
+
+      // Delete the current project
+      RunRecorderFlushProject(
+        that->runRecorder,
+        that->curProject);
+      printf(
+        "Deleted project %s\n",
+        that->curProject);
+
+      // Refresh the list of projects
+      PolyFree(&(that->projects));
+      PolyFree(&(that->metrics));
+      PolyFree(that->curProject);
+      that->curProject = NULL;
+      that->projects = RunRecorderGetProjects(that->runRecorder);
+
+    } CatchDefault {
+
+      PrintCaughtException(that);
+
+    } EndTryWithDefault;
+
+  }
+
+  // Move back to main menu
   that->status = CLIStatus_main;
 
 }
@@ -703,6 +1267,69 @@ void ListMetrics(
       that->metrics->defaultValues[iMetric]);
   if (that->metrics->nb == 0) printf("No metrics\n");
   printf("\n");
+
+}
+
+// Initialise a new measure to add
+// Input:
+//    that: the struct CLI
+void InitMeasureToAdd(
+  struct CLI* const that) {
+
+  // Ensure the measure is freed
+  PolyFree(&(that->measure));
+
+  // Allocate memory for the new measure to add
+  that->measure = RunRecorderMeasureCreate();
+
+}
+
+// Get the value input by the user for the measure to add for a metric
+// Inputs:
+//      that: the struct CLI
+//    metric: the metric's label
+// Output:
+//   Return the user input value if any, or NULL if the user hasn't input value
+//   for this metric
+char const* GetMeasureValue(
+  struct CLI* const that,
+  char const* const metric) {
+
+  // Loop on the metric already input
+  ForZeroTo(iMetric, that->measure->nbMetric) {
+
+    // If this is the requested metric, return the value
+    int retCmp =
+      strcmp(
+        that->measure->metrics[iMetric],
+        metric);
+    if (retCmp == 0) return that->measure->values[iMetric];
+
+  }
+
+  // If we reach here, the metric hasn't been found, return NULL
+  return NULL;
+
+}
+
+// Save the measure to the project
+// Inputs:
+//      that: the struct CLI
+void SaveMeasure(
+  struct CLI* const that) {
+
+  Try {
+
+    RunRecorderAddMeasure(
+      that->runRecorder,
+      that->curProject,
+      that->measure);
+
+  } CatchDefault {
+
+    PrintCaughtException(that);
+
+  } EndTryWithDefault;
 
 }
 
