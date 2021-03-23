@@ -299,14 +299,10 @@ int main(
       RunRecorderGetMeasures(
         recorder,
         "RoomTemperature");
-    if (measures != NULL) {
-
-      RunRecorderMeasuresPrintCSV(
-        measures,
-        stdout);
-      RunRecorderMeasuresFree(&measures);
-
-    }
+    RunRecorderMeasuresPrintCSV(
+      measures,
+      stdout);
+    RunRecorderMeasuresFree(&measures);
 
   } CatchDefault {
 
