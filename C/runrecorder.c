@@ -801,6 +801,7 @@ bool RunRecorderIsValidLabel(
     // Check the character
     if (*ptr < 'a' && *ptr > 'z' &&
         *ptr < 'A' && *ptr > 'Z' &&
+        *ptr < '0' && *ptr > '9' &&
         *ptr != '_') return false;
 
     // Move to the next character
