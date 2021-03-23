@@ -3037,7 +3037,7 @@ static void UpdateViewProject(
           char const* const project) {
 
   // Create the SQL command to delete the view
-  char* cmdDelFormat = "DROP VIEW IF EXISTS %s";
+  char* cmdDelFormat = "DROP VIEW IF EXISTS \"%s\"";
   SafeMalloc(
     that->cmd,
     strlen(cmdDelFormat) - 2 + strlen(project) + 1);
@@ -3064,7 +3064,7 @@ static void UpdateViewProject(
   Try {
 
     // Declare the format strings to create the SQL command to add the view
-    char* cmdAddFormatHead = "CREATE VIEW %s (Ref";
+    char* cmdAddFormatHead = "CREATE VIEW \"%s\" (Ref";
     char* cmdAddFormatBody = ") AS SELECT _Measure.Ref ";
     char* cmdAddFormatVal =
       ",IFNULL((SELECT Value FROM _Value "
@@ -3087,10 +3087,10 @@ static void UpdateViewProject(
       // Extend the command with the metric label
       SafeRealloc(
         that->cmd,
-        strlen(that->cmd) + 1 + strlen(metrics->values[iMetric]) + 1);
+        strlen(that->cmd) + 3 + strlen(metrics->values[iMetric]) + 1);
       SPrintfAtEnd(
         that->cmd,
-        ",%s",
+        ",\"%s\"",
         metrics->values[iMetric]);
 
     }
@@ -3658,7 +3658,7 @@ static void SetCmdToGetMeasuresLocal(
 
       // Append the metric label to the command
       size_t len =
-        strlen(that->cmd) + strlen(metrics->values[iMetric]) + 1 + 1;
+        strlen(that->cmd) + strlen(metrics->values[iMetric]) + 3 + 1;
       SafeRealloc(
         that->cmd,
         len);
@@ -3666,7 +3666,7 @@ static void SetCmdToGetMeasuresLocal(
       if (iMetric == metrics->nb - 1) sep = ' ';
       SPrintfAtEnd(
         that->cmd,
-        "%s%c",
+        "\"%s\"%c",
         metrics->values[iMetric],
         sep);
 
@@ -3676,7 +3676,7 @@ static void SetCmdToGetMeasuresLocal(
     PolyFree(&metrics);
 
     // Append the tail of the command
-    char* cmdFormatTail = "FROM %s";
+    char* cmdFormatTail = "FROM \"%s\"";
     SafeRealloc(
       that->cmd,
       strlen(that->cmd) +
