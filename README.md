@@ -613,7 +613,7 @@ action=help
 ```
 Return:
 ```
-{"ret":"0","actions":"version, add_project&label=..., projects, add_metric&project=...&label=...&default=..., metrics&project=..., add_measure&project=...&...=...&..., delete_measure&measure=..., measures&project=...[&last=...(default: 0)], csv&project=...[&sep=...(default: &)], flush&project=..."}
+{"ret":"0","actions":"version, add_project&label=..., projects, add_metric&project=...&label=...&default=..., metrics&project=..., add_measure&project=...&...=...&..., delete_measure&measure=..., measures&project=...[&last=...(default: 0)], csv&project=...[&sep=...(default: &)&last=...(default: 0)], flush&project=..."}
 ```
 
 ### 2.2.2 Get the version
@@ -713,11 +713,11 @@ If you've mistakenly added a measure, or if an error occured when addind a measu
 RunRecorder ensures as much as possible the database stays coherent even if there is an error, so you can use the partially saved data. In the other hand if you don't want to keep potentially incomplete measurement, you should always try to delete it.
 
 ```
+action=delete_measure&project=RoomTemperature&measure=1
 ```
 Return:
 ```
-Added measure ref. 1
-Error occured, delete the last added measure ref. 1
+{"ret":"0"}
 ```
 
 ### 2.2.9 Get the measures
@@ -727,23 +727,44 @@ After adding your measurements you'll want to retrieve them. You can do so as fo
 RunRecorder retrieve the data as a structure which you could use according to your needs. For convenience, it also provides a function to convert this structure to CSV format and print it to a stream.
 
 ```
+action=csv&project=RoomTemperature
 ```
 Return:
 ```
 Ref&Date&Temperature
-1&2021-03-08 15:45:00&18.500000
+1&2021-03-08 15:45:00&18.5
 ```
 
+The optional argument `sep` can be given to use another separator for columns.
+
+```
+action=csv&project=RoomTemperature&sep=,
+```
+Return:
+```
+Ref,Date,Temperature
+1,2021-03-08 15:45:00,18.5
+```
 Metrics (columns) are ordered alphabetically (except for the first column which is always the reference of the measure), measures (rows) are ordered by time of creation in the database. The delimiter of columns for the CSV conversion is ampersand `&`, and the first line contains the label of metrics. All metrics of the project are present, and their default value is used in rows containing missing values.
 
-If you have a lot of data and want to retrieve only the most recent ones, it is possible to do so as follow. In that case, rows are ordered from the most recent to the oldest.
+It is also possible to get the data returned in JSON format:
 
 ```
+action=measures&project=RoomTemperature
 ```
 Return:
 ```
-Ref&Date&Temperature
-1&2021-03-08 15:45:00&18.500000
+{"labels":["Ref","Date","Temperature"],"values":[[1,"2021-03-08 15:45:00","18.5"]],"ret":"0"}
+```
+
+If you have a lot of data and want to retrieve only the most recent ones, it is possible to do so with the optional parameters `last` (for both `measures` and `csv` commands). In that case, rows are ordered from the most recent to the oldest.
+
+```
+action=measures&project=RoomTemperature&last=2
+```
+Return:
+```
+{"labels":["Ref","Date","Temperature"],"values":[[1,"2021-03-08 15:45:00","18.5"]],"ret":"0"}
 ```
 
 ### 2.2.10 Delete a project
@@ -751,6 +772,11 @@ Ref&Date&Temperature
 Once you've finished collecting data for a project and want to free space in the database, you can delete the project and all the associated metrics and measurements as follow. 
 
 ```
+action=flush&project=RoomTemperature
+```
+Return:
+```
+{"ret":"0"}
 ```
 
 ## 2.3 From the command line, with Curl

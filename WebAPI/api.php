@@ -569,9 +569,13 @@ function DeleteMeasure(
 
 // Get the list measures for a project as CSV
 // Input:
-//        db: the database connection
-//   project: the project's name
-//       sep: the character used as a separator
+//          db: the database connection
+//     project: the project's name
+//         sep: the character used as a separator
+//   nbMeasure: maximum number of measures to be returned. If 0, returns
+//              all the measure in the order they were added. If >0 returns
+//              at maximum the last nbMeasure measures ordered from the
+//              most recent to the oldest.
 // Output:
 //   If successful returns the data in CSV format as (e.g. sep=&)
 //   metricA&metricB&...
@@ -582,15 +586,15 @@ function DeleteMeasure(
 function GetMeasuresAsCSV(
   $db,
   $project,
-  $sep) {
+  $sep,
+  $nbMeasure) {
 
   // Init the result dictionary
   $res = array();
 
   try {
 
-    // Get all the measures
-    $nbMeasure = 0;
+    // Get the measures
     $measures =
       GetMeasures(
         $db,
@@ -877,10 +881,14 @@ try {
 
       // If the user hasn't specified a separator, used & by default
       if (!isset($_POST["sep"])) $_POST["sep"] = '&';
+      // If the user hasn't specified a limit for the number of returned
+      // measure, set it by default to 0
+      if (!isset($_POST["last"])) $_POST["last"] = 0;
       $res =
         GetMeasuresAsCSV($db,
         $_POST["project"],
-        $_POST["sep"]);
+        $_POST["sep"],
+        $_POST["last"]);
       echo $res;
 
     // If the user requested to delete a project
@@ -904,7 +912,7 @@ try {
         'add_measure&project=...&...=...&..., ' .
         'delete_measure&measure=..., ' .
         'measures&project=...[&last=...(default: 0)], ' .
-        'csv&project=...[&sep=...(default: &)], ' .
+        'csv&project=...[&sep=...(default: &)&last=...(default: 0)], ' .
         'flush&project=..."}';
 
     // If the user requested an unknown or invalid action
