@@ -31,10 +31,6 @@
     if (T == NULL) Raise(TryCatchExc_MallocFailed); \
   } while(false)
 
-// ================== Static variables =========================
-
-
-
 // ================== CLI status =========================
 
 enum CLIStatus {
@@ -704,6 +700,7 @@ void ProcessInputMain(
               that->status = CLIStatus_addMeasure;
 
             }
+
             break;
 
           case 6:
@@ -771,7 +768,6 @@ void ProcessInputAddProject(
         PrintCaughtException(that);
 
       } EndTryWithDefault;
-
 
     // Else the input is invalid
     } else {
@@ -1172,6 +1168,7 @@ void ProcessInputDeleteMeasure(
         PrintCaughtException(that);
 
       } EndTryWithDefault;
+
     }
 
   }
