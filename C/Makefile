@@ -25,10 +25,7 @@ endif
 
 # Rules
 
-all: /usr/local/lib/libcurl.a \
-	/usr/local/lib/libtrycatchc.a \
-	/usr/local/lib/libsqlite3.a \
-	main runrecorder
+all: main runrecorder
 
 main: runrecorder.o main.o Makefile
 	$(COMPILER) main.o runrecorder.o $(LINK_ARG) -o main 
@@ -42,7 +39,10 @@ runrecorder: runrecorder.o cli.o Makefile
 cli.o: cli.c runrecorder.h Makefile
 	$(COMPILER) $(BUILD_ARG) -c cli.c 
 
-runrecorder.o: runrecorder.c runrecorder.h Makefile
+runrecorder.o: /usr/local/lib/libcurl.a \
+	/usr/local/lib/libtrycatchc.a \
+	/usr/local/lib/libsqlite3.a \
+	runrecorder.c runrecorder.h Makefile
 	$(COMPILER) $(BUILD_ARG) -c runrecorder.c
 
 /usr/local/lib/libtrycatchc.a:
@@ -83,11 +83,11 @@ clean:
 clean_all: clean
 	rm -rf sqlite* curl*
 
-valgrind :
+valgrind : main
 	valgrind -v --track-origins=yes --leak-check=full \
 	--gen-suppressions=yes --show-leak-kinds=all ./main
 
-valgrindB :
+valgrindCli : runrecorder
 	valgrind -v --track-origins=yes --leak-check=full \
 	--gen-suppressions=yes --show-leak-kinds=all ./runrecorder runrecorder.db
 
