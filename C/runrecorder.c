@@ -688,6 +688,11 @@ void RunRecorderInit(
   // ID collision
   TryCatchAddExcToStrFun(ExcToStr);
 
+#ifndef __STRICT_ANSI__
+  // Initialise the SIG_SEGV exception handling
+  TryCatchInitHandlerSigSegv();
+#endif
+
   // Ensure the error messages are freed to avoid confusion with
   // eventual previous messages
   FreeErrMsg(that);
