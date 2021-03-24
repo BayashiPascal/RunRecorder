@@ -176,9 +176,9 @@ td {
             if (this.status == 200) {
 
               // The request was successful, return the reply data
-              var returnedData = JSON.parse('{"err":""}');
+              var returnedData = {};
               try {
-                var returnedData = JSON.parse(this.responseText);
+                returnedData = JSON.parse(this.responseText);
               } catch(err) {
                 // Remove the displayed data
                 $("#divData").empty();
