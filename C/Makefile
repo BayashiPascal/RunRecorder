@@ -96,3 +96,4 @@ install: runrecorder.o
 	mkdir /usr/local/include/RunRecorder
 	cp runrecorder.h /usr/local/include/RunRecorder/runrecorder.h
 	ar -r /usr/local/lib/librunrecorder.a runrecorder.o
+	cp runrecorder /usr/local/bin/runrecorder

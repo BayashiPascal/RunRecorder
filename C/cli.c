@@ -592,7 +592,7 @@ void PrintMenuListMeasure(
   // Print the menu
   printf(
     "\n--- List measures ---\n"
-    "Input the number of last recent measures to display or leave blank for "
+    "Input the number of most recent measures to display or leave blank for "
     "all the measures\n");
 
 }
