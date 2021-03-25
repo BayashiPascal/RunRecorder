@@ -279,7 +279,7 @@ ref: 1 label: RoomTemperature
 
 After adding a new project you'll want to add the metrics that defines this project. In the example below there are two metrics: the date and time of the recording, and the recorded room temperature.
 
-*The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).*
+The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).
 
 ```
 #include <stdio.h>
@@ -665,7 +665,7 @@ Return:
 
 After adding a new project you'll want to add the metrics that defines this project. In the example below there are two metrics: the date and time of the recording, and the recorded room temperature.
 
-*The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).*
+The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).
 
 ```
 action=add_metric&project=RoomTemperature&label=Date&default=-
@@ -854,7 +854,7 @@ Return:
 
 After adding a new project you'll want to add the metrics that defines this project. In the example below there are two metrics: the date and time of the recording, and the recorded room temperature.
 
-*The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).*
+The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).
 
 ```
 curl -d "action=add_metric&project=RoomTemperature&label=Date&default=-" -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
@@ -1052,7 +1052,7 @@ Disconnected from the database
 
 After adding a new project you'll want to add the metrics that defines this project. In the example below there are two metrics: the date and time of the recording, and the recorded room temperature.
 
-*The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).*
+The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).
 
 ```
 Connecting to database runrecorder.db...
@@ -1539,7 +1539,7 @@ action.setAttribute("type", "text");
 action.setAttribute("name", "action");
 action.setAttribute("value","version");
 form.appendChild(action);
-HTTPPostRequest("./api.php", form, UpdateProjects);
+HTTPPostRequest("./api.php", form, Handler);
 ```
 Output from the handler:
 ```
@@ -1553,6 +1553,19 @@ In RunRecorder, data are grouped by projects. To start recording data, the first
 The project's name must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`.
 
 ```
+var form = document.createElement("form");
+form.setAttribute("method", "post");
+var action = document.createElement("input");
+action.setAttribute("type", "text");
+action.setAttribute("name", "action");
+action.setAttribute("value","add_project");
+form.appendChild(action);
+var label = document.createElement("input");
+label.setAttribute("type", "text");
+label.setAttribute("name", "label");
+label.setAttribute("value","RoomTemperature");
+form.appendChild(label);
+HTTPPostRequest("./api.php", form, Handler);
 ```
 Output from the handler:
 ```
@@ -1564,6 +1577,14 @@ Output from the handler:
 You can check the list of projects in the database as follow.
 
 ```
+var form = document.createElement("form");
+form.setAttribute("method", "post");
+var action = document.createElement("input");
+action.setAttribute("type", "text");
+action.setAttribute("name", "action");
+action.setAttribute("value","projects");
+form.appendChild(action);
+HTTPPostRequest("./api.php", form, Handler);
 ```
 Output from the handler:
 ```
@@ -1574,9 +1595,32 @@ Output from the handler:
 
 After adding a new project you'll want to add the metrics that defines this project. In the example below there are two metrics: the date and time of the recording, and the recorded room temperature.
 
-*The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).*
+The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).
 
 ```
+var form = document.createElement("form");
+form.setAttribute("method", "post");
+var action = document.createElement("input");
+action.setAttribute("type", "text");
+action.setAttribute("name", "action");
+action.setAttribute("value","add_metric");
+form.appendChild(action);
+var project = document.createElement("input");
+project.setAttribute("type", "text");
+project.setAttribute("name", "project");
+project.setAttribute("value","RoomTemperature");
+form.appendChild(project);
+var label = document.createElement("input");
+label.setAttribute("type", "text");
+label.setAttribute("name", "label");
+label.setAttribute("value","Date");
+form.appendChild(label);
+var defVal= document.createElement("input");
+defVal.setAttribute("type", "text");
+defVal.setAttribute("name", "default");
+defVal.setAttribute("value","-");
+form.appendChild(defVal);
+HTTPPostRequest("./api.php", form, Handler);
 ```
 Output from the handler:
 ```
@@ -1584,6 +1628,29 @@ Output from the handler:
 ```
 Second metric:
 ```
+var form = document.createElement("form");
+form.setAttribute("method", "post");
+var action = document.createElement("input");
+action.setAttribute("type", "text");
+action.setAttribute("name", "action");
+action.setAttribute("value","add_metric");
+form.appendChild(action);
+var project = document.createElement("input");
+project.setAttribute("type", "text");
+project.setAttribute("name", "project");
+project.setAttribute("value","RoomTemperature");
+form.appendChild(project);
+var label = document.createElement("input");
+label.setAttribute("type", "text");
+label.setAttribute("name", "label");
+label.setAttribute("value","Temperature");
+form.appendChild(label);
+var defVal= document.createElement("input");
+defVal.setAttribute("type", "text");
+defVal.setAttribute("name", "default");
+defVal.setAttribute("value","0.0");
+form.appendChild(defVal);
+HTTPPostRequest("./api.php", form, Handler);
 ```
 Output from the handler:
 ```
@@ -1597,6 +1664,19 @@ You can add more metrics even after having recorded some data. A measurement wit
 You can get the list of metrics for a project as follow.
 
 ```
+var form = document.createElement("form");
+form.setAttribute("method", "post");
+var action = document.createElement("input");
+action.setAttribute("type", "text");
+action.setAttribute("name", "action");
+action.setAttribute("value","metrics");
+form.appendChild(action);
+var project = document.createElement("input");
+project.setAttribute("type", "text");
+project.setAttribute("name", "project");
+project.setAttribute("value","RoomTemperature");
+form.appendChild(project);
+HTTPPostRequest("./api.php", form, Handler);
 ```
 Output from the handler:
 ```
@@ -1610,6 +1690,29 @@ Once you've created a project and set its metrics, you're ready to add measures!
 The values of the measure must respect the following pattern: `/^[^"=&]+$*/`. It is not mandatory to provide a value for all the metrics of the project (if missing, the default value is used instead).
 
 ```
+var form = document.createElement("form");
+form.setAttribute("method", "post");
+var action = document.createElement("input");
+action.setAttribute("type", "text");
+action.setAttribute("name", "action");
+action.setAttribute("value","add_measure");
+form.appendChild(action);
+var project = document.createElement("input");
+project.setAttribute("type", "text");
+project.setAttribute("name", "project");
+project.setAttribute("value","RoomTemperature");
+form.appendChild(project);
+var measureTemperature = document.createElement("input");
+measureTemperature.setAttribute("type", "text");
+measureTemperature.setAttribute("name", "Date");
+measureTemperature.setAttribute("value","2021-03-08 15:45:00");
+form.appendChild(measureTemperature);
+var measureTemperature = document.createElement("input");
+measureTemperature.setAttribute("type", "text");
+measureTemperature.setAttribute("name", "Temperature");
+measureTemperature.setAttribute("value","18.5");
+form.appendChild(measureTemperature);
+HTTPPostRequest("./api.php", form, Handler);
 ```
 Output from the handler:
 ```
@@ -1623,6 +1726,19 @@ If you've mistakenly added a measure, or if an error occured when addind a measu
 RunRecorder ensures as much as possible the database stays coherent even if there is an error, so you can use the partially saved data. In the other hand if you don't want to keep potentially incomplete measurement, you should always try to delete it.
 
 ```
+var form = document.createElement("form");
+form.setAttribute("method", "post");
+var action = document.createElement("input");
+action.setAttribute("type", "text");
+action.setAttribute("name", "action");
+action.setAttribute("value","delete_measure");
+form.appendChild(action);
+var refMeasure = document.createElement("input");
+refMeasure.setAttribute("type", "text");
+refMeasure.setAttribute("name", "measure");
+refMeasure.setAttribute("value","1");
+form.appendChild(refMeasure);
+HTTPPostRequest("./api.php", form, Handler);
 ```
 Output from the handler:
 ```
@@ -1634,6 +1750,19 @@ Output from the handler:
 After adding your measurements you'll want to retrieve them. You can do so as follow.
 
 ```
+var form = document.createElement("form");
+form.setAttribute("method", "post");
+var action = document.createElement("input");
+action.setAttribute("type", "text");
+action.setAttribute("name", "action");
+action.setAttribute("value","measures");
+form.appendChild(action);
+var project = document.createElement("input");
+project.setAttribute("type", "text");
+project.setAttribute("name", "project");
+project.setAttribute("value","RoomTemperature");
+form.appendChild(project);
+HTTPPostRequest("./api.php", form, Handler);
 ```
 Output from the handler:
 ```
@@ -1643,6 +1772,24 @@ Output from the handler:
 If you have a lot of data and want to retrieve only the most recent ones, it is possible to do so with the optional parameters `last` (for both `measures` and `csv` commands). In that case, rows are ordered from the most recent to the oldest.
 
 ```
+var form = document.createElement("form");
+form.setAttribute("method", "post");
+var action = document.createElement("input");
+action.setAttribute("type", "text");
+action.setAttribute("name", "action");
+action.setAttribute("value","measures");
+form.appendChild(action);
+var project = document.createElement("input");
+project.setAttribute("type", "text");
+project.setAttribute("name", "project");
+project.setAttribute("value","RoomTemperature");
+form.appendChild(project);
+var nbMeasure = document.createElement("input");
+nbMeasure.setAttribute("type", "text");
+nbMeasure.setAttribute("name", "last");
+nbMeasure.setAttribute("value","2");
+form.appendChild(nbMeasure);
+HTTPPostRequest("./api.php", form, Handler);
 ```
 Output from the handler:
 ```
@@ -1654,6 +1801,19 @@ Output from the handler:
 Once you've finished collecting data for a project and want to free space in the database, you can delete the project and all the associated metrics and measurements as follow. 
 
 ```
+var form = document.createElement("form");
+form.setAttribute("method", "post");
+var action = document.createElement("input");
+action.setAttribute("type", "text");
+action.setAttribute("name", "action");
+action.setAttribute("value","flush");
+form.appendChild(action);
+var project = document.createElement("input");
+project.setAttribute("type", "text");
+project.setAttribute("name", "project");
+project.setAttribute("value","RoomTemperature");
+form.appendChild(project);
+HTTPPostRequest("./api.php", form, Handler);
 ```
 Output from the handler:
 ```
@@ -1662,7 +1822,9 @@ Output from the handler:
 
 ## 3 Web viewer
 
+There is a basic online viewer with the Web API: `Repos/WebAPI/runrecorder.html`. It consists of a single web page with a combobox to select one of the projects in the database, and below the combobox, a table displaying the last 100 measures. The table is automatically refreshed every 30s, and the data are obtained via the API in the same directory.
 
+To use it, you just need to copy `runrecorder.html` in the same directory as `api.php` and access it with a Web browser.
 
 ## 4 License
 
