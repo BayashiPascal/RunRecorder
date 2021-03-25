@@ -22,63 +22,27 @@ RunRecorder is currently in beta version. It has been tested and dynamically ana
 
 ## Table Of Content
 
-1. Install
-1.1. C library
-1.2. Web API
-2. Usage
-2.1. Through the C library
-2.1.1. Get the version
-2.1.2. Create a new project
-2.1.3. Get the list of projects
-2.1.4. Create a new metric
-2.1.5. Get the list of metrics
-2.1.6. Add a measure
-2.1.7. Delete a measure
-2.1.8. Get the measures
-2.1.9. Delete a project
-2.2. Through the Web API
-2.2.1. Help
-2.2.2. Get the version
-2.2.3. Create a new project
-2.2.4. Get the list of projects
-2.2.5. Create a new metric
-2.2.6. Get the list of metrics
-2.2.7. Add a measure
-2.2.8. Delete a measure
-2.2.9. Get the measures
-2.2.10. Delete a project
-2.3. From the command line, with Curl
-2.3.1. Help
-2.3.2. Get the version
-2.3.3. Create a new project
-2.3.4. Get the list of projects
-2.3.5. Create a new metric
-2.3.6. Get the list of metrics
-2.3.7. Add a measure
-2.3.8. Delete a measure
-2.3.9. Get the measures
-2.3.10. Delete a project
-2.4. From the command line, with the RunRecorder CLI
-2.4.1. Create a new project
-2.4.2. Get the list of projects
-2.4.3. Create a new metric
-2.4.4. Get the list of metrics
-2.4.5. Add a measure
-2.4.6. Delete a measure
-2.4.7. Get the measures
-2.4.8. Delete a project
-2.5. From other languages, with HTTP request (e.g. JavaScript)
-2.5.1. Get the version
-2.5.2. Create a new project
-2.5.3. Get the list of projects
-2.5.4. Create a new metric
-2.5.5. Get the list of metrics
-2.5.6. Add a measure
-2.5.7. Delete a measure
-2.5.8. Get the measures
-2.5.9. Delete a project
-3. Web viewer
-4. License
+1 Install
+
+1.1 C library
+
+1.2 Web API
+
+2 Usage
+
+2.1 Through the C library
+
+2.2 Through the Web API
+
+2.3 From the command line, with Curl
+
+2.4 From the command line, with the RunRecorder CLI
+
+2.5 From other languages, with HTTP request (e.g. JavaScript)
+
+3 Web viewer
+
+4 License
 
 # 1 Install
 
