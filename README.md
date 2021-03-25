@@ -40,9 +40,9 @@ RunRecorder is currently in beta version. It has been tested and dynamically ana
 
 2.5 [From other languages, with HTTP request (e.g. JavaScript)](https://github.com/BayashiPascal/RunRecorder/tree/corr_readme#25-from-other-languages-with-http-request-eg-javascript)
 
-2.6 [Web viewer](https://github.com/BayashiPascal/RunRecorder/tree/corr_readme#26-web-viewer)
+2.6 [Web viewer](https://github.com/BayashiPascal/RunRecorder/tree/corr_readme#26-online-viewer)
 
-4 [License](https://github.com/BayashiPascal/RunRecorder/tree/corr_readme#4-license)
+3 [License](https://github.com/BayashiPascal/RunRecorder/tree/corr_readme#3-license)
 
 # 1 Install
 
@@ -566,12 +566,14 @@ int main() {
 
 ## 2.2 Through the Web API
 
-You can use the Web API to manipulate a remote database by sending HTTP requests to the copy of `Repos/RunRecorder/api.php` on your server. The parameters of the request must be sent with method `POST` and consist of at one parameter: `action=...` specifying the action to be performed on the database, and optionally several others arguments.
+You can use the Web API to manipulate a remote database by sending HTTP requests to the copy of `Repos/RunRecorder/api.php` on your server. The parameters of the request must be sent with method `POST` and consist of at least one parameter: `action=...` specifying the action to be performed on the database, and optionally several other arguments.
 
 The available actions and their parameters are explained in the following sections with their returned value. On success, the API returns JSON or raw data depending on the command. On failure, it returns an error as follow:
 ```
 {"ret":"1","errMsg":"..."}
 ```
+
+See the following sections if you need help on how to actually send the HTTP request.
 
 ### 2.2.1 Help
 
@@ -943,7 +945,7 @@ Return:
 
 ## 2.4 From the command line, with the RunRecorder CLI
 
-The CLI is compiled and install during installation of the C library. You can start it with the following command:
+The CLI is compiled and installed during installation of the C library. You can start it with the following command:
 ```
 runrecorder <path to database or api>
 ```
@@ -1485,7 +1487,13 @@ function HTTPPostRequest(url, form, handler) {
 Where `url` is the url to the Web API, `form` is the argument of the request as a `<form>` element (cf details below), and `handler` is the handler called on reception of the reply from the Web API. In the example, I'll use the following handler:
 ```
 function Handler(ret) {
-  console.log(ret);
+  if (ret["ret"] == "0")
+    // API request succeeded
+    console.log(ret);
+  } else {
+    // API request failed
+    console.log(ret);
+  }
 }
 ```
 
@@ -1784,13 +1792,13 @@ Output from the handler:
 {"ret":"0"}
 ```
 
-## 2.6 Web viewer
+## 2.6 Online viewer
 
 There is a basic online viewer with the Web API: `Repos/WebAPI/runrecorder.html`. It consists of a single web page with a combobox to select one of the projects in the database, and below the combobox, a table displaying the last 100 measures. The table is automatically refreshed every 30s, and the data are obtained via the API in the same directory.
 
 To use it, you just need to copy `runrecorder.html` in the same directory as `api.php` and access it with a Web browser.
 
-## 4 License
+## 3 License
 
 RunRecorder, a C library and a Web API helping to interface the acquisition of textual data and their recording in a remote or local SQLite database.
 Copyright (C) 2021  Pascal Baillehache
