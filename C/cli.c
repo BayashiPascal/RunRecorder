@@ -7,8 +7,8 @@
 // Polymorphic free
 #define PolyFree(P) _Generic(P, \
   struct RunRecorder**: RunRecorderFree, \
-  struct RunRecorderPairsRefVal**: RunRecorderPairsRefValFree, \
-  struct RunRecorderPairsRefValDef**: RunRecorderPairsRefValDefFree, \
+  struct RunRecorderRefVal**: RunRecorderRefValFree, \
+  struct RunRecorderRefValDef**: RunRecorderRefValDefFree, \
   struct RunRecorderMeasure**: RunRecorderMeasureFree, \
   struct RunRecorderMeasures**: RunRecorderMeasuresFree, \
   struct CLI**: CLIFree, \
@@ -69,13 +69,13 @@ struct CLI {
     char const* const);
 
   // List of the projects
-  struct RunRecorderPairsRefVal* projects;
+  struct RunRecorderRefVal* projects;
 
   // Currently selected project
   char* curProject;
 
   // List of the metrics for the current project
-  struct RunRecorderPairsRefValDef* metrics;
+  struct RunRecorderRefValDef* metrics;
 
   // Variable to memorise the measure to add
   struct RunRecorderMeasure* measure;

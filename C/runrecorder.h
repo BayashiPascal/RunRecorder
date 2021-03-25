@@ -80,7 +80,7 @@ struct RunRecorder {
 };
 
 // Structure to memorise pairs of ref/value
-struct RunRecorderPairsRefVal {
+struct RunRecorderRefVal {
 
   // Number of pairs
   long nb;
@@ -94,7 +94,7 @@ struct RunRecorderPairsRefVal {
 };
 
 // Structure to memorise pairs of ref/value with their default value
-struct RunRecorderPairsRefValDef {
+struct RunRecorderRefValDef {
 
   // Number of pairs
   long nb;
@@ -206,8 +206,8 @@ void RunRecorderAddProject(
 //   that: the struct RunRecorder
 // Output:
 //   Return the projects' reference/label as a new struct
-//   RunRecorderPairsRefVal
-struct RunRecorderPairsRefVal* RunRecorderGetProjects(
+//   RunRecorderRefVal
+struct RunRecorderRefVal* RunRecorderGetProjects(
   struct RunRecorder* const that);
 
 // Get the list of metrics for a project
@@ -216,8 +216,8 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjects(
 //   project: the project
 // Output:
 //   Return the metrics' reference/label/default value as a new struct
-//   RunRecorderPairsRefValDef
-struct RunRecorderPairsRefValDef* RunRecorderGetMetrics(
+//   RunRecorderRefValDef
+struct RunRecorderRefValDef* RunRecorderGetMetrics(
   struct RunRecorder* const that,
           char const* const project);
 
@@ -355,17 +355,17 @@ void RunRecorderFlushProject(
   struct RunRecorder* const that,
           char const* const project);
 
-// Free a struct RunRecorderPairsRefVal
+// Free a struct RunRecorderRefVal
 // Input:
-//   that: the struct RunRecorderPairsRefVal
-void RunRecorderPairsRefValFree(
-  struct RunRecorderPairsRefVal** const that);
+//   that: the struct RunRecorderRefVal
+void RunRecorderRefValFree(
+  struct RunRecorderRefVal** const that);
 
-// Free a struct RunRecorderPairsRefValDef
+// Free a struct RunRecorderRefValDef
 // Input:
-//   that: the struct RunRecorderPairsRefValDef
-void RunRecorderPairsRefValDefFree(
-  struct RunRecorderPairsRefValDef** const that);
+//   that: the struct RunRecorderRefValDef
+void RunRecorderRefValDefFree(
+  struct RunRecorderRefValDef** const that);
 
 // ================== Macros =========================
 

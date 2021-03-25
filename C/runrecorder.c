@@ -20,8 +20,8 @@
 // Polymorphic free
 #define PolyFree(P) _Generic(P, \
   struct RunRecorder**: RunRecorderFree, \
-  struct RunRecorderPairsRefVal**: RunRecorderPairsRefValFree, \
-  struct RunRecorderPairsRefValDef**: RunRecorderPairsRefValDefFree, \
+  struct RunRecorderRefVal**: RunRecorderRefValFree, \
+  struct RunRecorderRefValDef**: RunRecorderRefValDefFree, \
   struct RunRecorderMeasure**: RunRecorderMeasureFree, \
   struct RunRecorderMeasures**: RunRecorderMeasuresFree, \
   default: free)((void*)P)
@@ -264,45 +264,45 @@ static void AddProjectAPI(
 
 // Check if a value is present in pairs ref/val
 // Inputs:
-//   that: the struct RunRecorderPairsRefVal
+//   that: the struct RunRecorderRefVal
 //    val: the value to check
 // Output:
 //   Return true if the value is present in the pairs, else false
 static bool PairsRefValContainsVal(
-  struct RunRecorderPairsRefVal const* const that,
-                           char const* const val);
+  struct RunRecorderRefVal const* const that,
+                      char const* const val);
 
 // Check if a value is present in pairs ref/val with default value
 // Inputs:
-//   that: the struct RunRecorderPairsRefValDef
+//   that: the struct RunRecorderRefValDef
 //    val: the value to check
 // Output:
 //   Return true if the value is present in the pairs, else false
 static bool PairsRefValDefContainsVal(
-  struct RunRecorderPairsRefValDef const* const that,
-                              char const* const val);
+  struct RunRecorderRefValDef const* const that,
+                         char const* const val);
 
-// Add a new pair in a struct RunRecorderPairsRefVal
+// Add a new pair in a struct RunRecorderRefVal
 // Inputs:
-//   pairs: the struct RunRecorderPairsRefVal
+//   pairs: the struct RunRecorderRefVal
 //     ref: the reference of the pair
 //     val: the value of the pair
 static void PairsRefValAdd(
-  struct RunRecorderPairsRefVal* const pairs,
-                            long const ref,
-                     char const* const val);
+  struct RunRecorderRefVal* const pairs,
+                       long const ref,
+                char const* const val);
 
-// Add a new pair in a struct RunRecorderPairsRefValDef
+// Add a new pair in a struct RunRecorderRefValDef
 // Inputs:
-//        pairs: the struct RunRecorderPairsRefValDef
+//        pairs: the struct RunRecorderRefValDef
 //          ref: the reference of the pair
 //          val: the value of the pair
 //   defaultVal: the default value of the pair
 static void PairsRefValDefAdd(
-  struct RunRecorderPairsRefValDef* const pairs,
-                               long const ref,
-                        char const* const val,
-                        char const* const defaultVal);
+  struct RunRecorderRefValDef* const pairs,
+                          long const ref,
+                   char const* const val,
+                   char const* const defaultVal);
 
 // Callback to receive pairs of ref/value from sqlite3
 // Input:
@@ -342,28 +342,28 @@ static int GetPairsWithDefaultLocalCb(
 //   Return the projects' reference/label
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
-static struct RunRecorderPairsRefVal* GetProjectsLocal(
+static struct RunRecorderRefVal* GetProjectsLocal(
   struct RunRecorder* const that);
 
-// Extract a struct RunRecorderPairsRefVal from a JSON string
+// Extract a struct RunRecorderRefVal from a JSON string
 // Input:
 //   json: the JSON string, expected to be formatted as "1":"A","2":"B",...
 // Output:
-//   Return a new struct RunRecorderPairsRefVal
+//   Return a new struct RunRecorderRefVal
 // Raise:
 //   RunRecorderExc_InvalidJSON
-static struct RunRecorderPairsRefVal* GetPairsRefValFromJSON(
+static struct RunRecorderRefVal* GetPairsRefValFromJSON(
   char const* const json);
 
-// Extract a struct RunRecorderPairsRefValDef from a JSON string
+// Extract a struct RunRecorderRefValDef from a JSON string
 // Input:
 //   json: the JSON string for the metricss, expected to be formatted
 //         as "1":["Label":"A","DefaultValue":"B"],...
 // Output:
-//   Return a new struct RunRecorderPairsRefValDef
+//   Return a new struct RunRecorderRefValDef
 // Raise:
 //   RunRecorderExc_InvalidJSON
-static struct RunRecorderPairsRefValDef* GetPairsRefValDefFromJSON(
+static struct RunRecorderRefValDef* GetPairsRefValDefFromJSON(
   char const* const json);
 
 // Get the list of projects through the Web API
@@ -371,19 +371,19 @@ static struct RunRecorderPairsRefValDef* GetPairsRefValDefFromJSON(
 //   that: the struct RunRecorder
 // Output:
 //   Return the projects' reference/label
-static struct RunRecorderPairsRefVal* GetProjectsAPI(
+static struct RunRecorderRefVal* GetProjectsAPI(
   struct RunRecorder* const that);
 
-// Create a struct RunRecorderPairsRefVal
+// Create a struct RunRecorderRefVal
 // Output:
-//   Return the new struct RunRecorderPairsRefVal
-static struct RunRecorderPairsRefVal* RunRecorderPairsRefValCreate(
+//   Return the new struct RunRecorderRefVal
+static struct RunRecorderRefVal* RunRecorderRefValCreate(
   void);
 
-// Create a struct RunRecorderPairsRefValDef
+// Create a struct RunRecorderRefValDef
 // Output:
-//   Return the new struct RunRecorderPairsRefValDef
-static struct RunRecorderPairsRefValDef* RunRecorderPairsRefValDefCreate(
+//   Return the new struct RunRecorderRefValDef
+static struct RunRecorderRefValDef* RunRecorderRefValDefCreate(
   void);
 
 // Get the list of metrics for a project from a local database
@@ -394,7 +394,7 @@ static struct RunRecorderPairsRefValDef* RunRecorderPairsRefValDefCreate(
 //   Return the metrics' reference/label/default value
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
-static struct RunRecorderPairsRefValDef* GetMetricsLocal(
+static struct RunRecorderRefValDef* GetMetricsLocal(
   struct RunRecorder* const that,
           char const* const project);
 
@@ -406,7 +406,7 @@ static struct RunRecorderPairsRefValDef* GetMetricsLocal(
 //   Return the metrics' reference/label/default value
 // Raise:
 //   RunRecorderExc_ApiRequestFailed
-static struct RunRecorderPairsRefValDef* GetMetricsAPI(
+static struct RunRecorderRefValDef* GetMetricsAPI(
   struct RunRecorder* const that,
           char const* const project);
 
@@ -689,6 +689,7 @@ void RunRecorderInit(
   TryCatchAddExcToStrFun(ExcToStr);
 
 #ifndef __STRICT_ANSI__
+
   // Initialise the SIG_SEGV exception handling
   TryCatchInitHandlerSigSegv();
 #endif
@@ -863,7 +864,7 @@ void RunRecorderAddProject(
   if (isValidName == false) Raise(RunRecorderExc_InvalidProjectName);
 
   // Check if there is no other project with same name
-  struct RunRecorderPairsRefVal* projects = RunRecorderGetProjects(that);
+  struct RunRecorderRefVal* projects = RunRecorderGetProjects(that);
   bool alreadyUsed =
     PairsRefValContainsVal(
       projects,
@@ -894,8 +895,8 @@ void RunRecorderAddProject(
 //   that: the struct RunRecorder
 // Output:
 //   Return the projects' reference/label as a new struct
-//   RunRecorderPairsRefVal
-struct RunRecorderPairsRefVal* RunRecorderGetProjects(
+//   RunRecorderRefVal
+struct RunRecorderRefVal* RunRecorderGetProjects(
   struct RunRecorder* const that) {
 
   // Ensure the error messages are freed to avoid confusion with
@@ -922,8 +923,8 @@ struct RunRecorderPairsRefVal* RunRecorderGetProjects(
 //   project: the project
 // Output:
 //   Return the metrics' reference/label/default value as a new struct
-//   RunRecorderPairsRefValDef
-struct RunRecorderPairsRefValDef* RunRecorderGetMetrics(
+//   RunRecorderRefValDef
+struct RunRecorderRefValDef* RunRecorderGetMetrics(
   struct RunRecorder* const that,
           char const* const project) {
 
@@ -991,7 +992,7 @@ void RunRecorderAddMetric(
   if (retCmp == 0) Raise(RunRecorderExc_InvalidMetricLabel);
 
   // Check if there is no other metric with same label for this project
-  struct RunRecorderPairsRefValDef* metrics =
+  struct RunRecorderRefValDef* metrics =
     RunRecorderGetMetrics(
       that,
       project);
@@ -1523,11 +1524,11 @@ void RunRecorderFlushProject(
 
 }
 
-// Free a struct RunRecorderPairsRefVal
+// Free a struct RunRecorderRefVal
 // Input:
-//   that: the struct RunRecorderPairsRefVal
-void RunRecorderPairsRefValFree(
-  struct RunRecorderPairsRefVal** const that) {
+//   that: the struct RunRecorderRefVal
+void RunRecorderRefValFree(
+  struct RunRecorderRefVal** const that) {
 
   // If it's already freed, nothing to do
   if (that == NULL || *that == NULL) return;
@@ -1544,11 +1545,11 @@ void RunRecorderPairsRefValFree(
 
 }
 
-// Free a struct RunRecorderPairsRefValDef
+// Free a struct RunRecorderRefValDef
 // Input:
-//   that: the struct RunRecorderPairsRefValDef
-void RunRecorderPairsRefValDefFree(
-  struct RunRecorderPairsRefValDef** const that) {
+//   that: the struct RunRecorderRefValDef
+void RunRecorderRefValDefFree(
+  struct RunRecorderRefValDef** const that) {
 
   // If it's already freed, nothing to do
   if (that == NULL || *that == NULL) return;
@@ -2326,13 +2327,13 @@ static void AddProjectAPI(
 
 // Check if a value is present in pairs ref/val
 // Inputs:
-//   that: the struct RunRecorderPairsRefVal
+//   that: the struct RunRecorderRefVal
 //    val: the value to check
 // Output:
 //   Return true if the value is present in the pairs, else false
 static bool PairsRefValContainsVal(
-  struct RunRecorderPairsRefVal const* const that,
-                           char const* const val) {
+  struct RunRecorderRefVal const* const that,
+                      char const* const val) {
 
   // Loop on the pairs
   ForZeroTo(iPair, that->nb) {
@@ -2353,13 +2354,13 @@ static bool PairsRefValContainsVal(
 
 // Check if a value is present in pairs ref/val with default value
 // Inputs:
-//   that: the struct RunRecorderPairsRefValDef
+//   that: the struct RunRecorderRefValDef
 //    val: the value to check
 // Output:
 //   Return true if the value is present in the pairs, else false
 static bool PairsRefValDefContainsVal(
-  struct RunRecorderPairsRefValDef const* const that,
-                              char const* const val) {
+  struct RunRecorderRefValDef const* const that,
+                         char const* const val) {
 
   // Loop on the pairs
   ForZeroTo(iPair, that->nb) {
@@ -2378,15 +2379,15 @@ static bool PairsRefValDefContainsVal(
 
 }
 
-// Add a new pair in a struct RunRecorderPairsRefVal
+// Add a new pair in a struct RunRecorderRefVal
 // Inputs:
-//   pairs: the struct RunRecorderPairsRefVal
+//   pairs: the struct RunRecorderRefVal
 //     ref: the reference of the pair
 //     val: the val of the pair
 static void PairsRefValAdd(
-  struct RunRecorderPairsRefVal* const pairs,
-                            long const ref,
-                     char const* const val) {
+  struct RunRecorderRefVal* const pairs,
+                       long const ref,
+                char const* const val) {
 
   // Allocate memory for the new value
   SafeRealloc(
@@ -2408,17 +2409,17 @@ static void PairsRefValAdd(
 
 }
 
-// Add a new pair in a struct RunRecorderPairsRefValDef
+// Add a new pair in a struct RunRecorderRefValDef
 // Inputs:
-//        pairs: the struct RunRecorderPairsRefValDef
+//        pairs: the struct RunRecorderRefValDef
 //          ref: the reference of the pair
 //          val: the value of the pair
 //   defaultVal: the default value of the pair
 static void PairsRefValDefAdd(
-  struct RunRecorderPairsRefValDef* const pairs,
-                               long const ref,
-                        char const* const val,
-                        char const* const defaultVal) {
+  struct RunRecorderRefValDef* const pairs,
+                          long const ref,
+                   char const* const val,
+                   char const* const defaultVal) {
 
   // Allocate memory for the new value
   SafeRealloc(
@@ -2471,8 +2472,8 @@ static int GetPairsLocalCb(
       colVal[0] == NULL || colVal[1] == NULL) return 1;
 
   // Cast the data
-  struct RunRecorderPairsRefVal* pairs =
-    (struct RunRecorderPairsRefVal*)data;
+  struct RunRecorderRefVal* pairs =
+    (struct RunRecorderRefVal*)data;
 
   // Convert the reference contained in the first column from char* to long
   errno = 0;
@@ -2531,8 +2532,8 @@ static int GetPairsWithDefaultLocalCb(
     colVal[1] == NULL || colVal[2] == NULL) return 1;
 
   // Cast the data
-  struct RunRecorderPairsRefValDef* pairs =
-    (struct RunRecorderPairsRefValDef*)data;
+  struct RunRecorderRefValDef* pairs =
+    (struct RunRecorderRefValDef*)data;
 
   // Convert the reference contained in the first column from char* to long
   errno = 0;
@@ -2573,11 +2574,11 @@ static int GetPairsWithDefaultLocalCb(
 //   Return the projects' reference/label
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
-static struct RunRecorderPairsRefVal* GetProjectsLocal(
+static struct RunRecorderRefVal* GetProjectsLocal(
   struct RunRecorder* const that) {
 
   // Declare a variable to memorise the projects
-  struct RunRecorderPairsRefVal* projects = RunRecorderPairsRefValCreate();
+  struct RunRecorderRefVal* projects = RunRecorderRefValCreate();
 
   // Execute the command to get the version
   char* sqlCmd = "SELECT Ref, Label FROM _Project";
@@ -2600,18 +2601,18 @@ static struct RunRecorderPairsRefVal* GetProjectsLocal(
 
 }
 
-// Extract a struct RunRecorderPairsRefVal from a JSON string
+// Extract a struct RunRecorderRefVal from a JSON string
 // Input:
 //   json: the JSON string, expected to be formatted as "1":"A","2":"B",...
 // Output:
-//   Return a new struct RunRecorderPairsRefVal
+//   Return a new struct RunRecorderRefVal
 // Raise:
 //   RunRecorderExc_InvalidJSON
-static struct RunRecorderPairsRefVal* GetPairsRefValFromJSON(
+static struct RunRecorderRefVal* GetPairsRefValFromJSON(
   char const* const json) {
 
   // Create the pairs
-  struct RunRecorderPairsRefVal* pairs = RunRecorderPairsRefValCreate();
+  struct RunRecorderRefVal* pairs = RunRecorderRefValCreate();
 
   // Declare a pointer to loop on the json string
   char const* ptr = json;
@@ -2703,20 +2704,20 @@ static struct RunRecorderPairsRefVal* GetPairsRefValFromJSON(
 
 }
 
-// Extract a struct RunRecorderPairsRefValDef from a JSON string
+// Extract a struct RunRecorderRefValDef from a JSON string
 // Input:
 //   json: the JSON string for the metricss, expected to be formatted
 //         as "1":["Label":"A","DefaultValue":"B"],...
 // Output:
-//   Return a new struct RunRecorderPairsRefValDef
+//   Return a new struct RunRecorderRefValDef
 // Raise:
 //   RunRecorderExc_InvalidJSON
-static struct RunRecorderPairsRefValDef* GetPairsRefValDefFromJSON(
+static struct RunRecorderRefValDef* GetPairsRefValDefFromJSON(
   char const* const json) {
 
   // Create the pairs
-  struct RunRecorderPairsRefValDef* pairs =
-    RunRecorderPairsRefValDefCreate();
+  struct RunRecorderRefValDef* pairs =
+    RunRecorderRefValDefCreate();
 
   // Declare a pointer to loop on the json string
   char const* ptr = json;
@@ -2816,7 +2817,7 @@ static struct RunRecorderPairsRefValDef* GetPairsRefValDefFromJSON(
 //   that: the struct RunRecorder
 // Output:
 //   Return the projects' reference/label
-static struct RunRecorderPairsRefVal* GetProjectsAPI(
+static struct RunRecorderRefVal* GetProjectsAPI(
   struct RunRecorder* const that) {
 
   // Create the request to the Web API
@@ -2834,7 +2835,7 @@ static struct RunRecorderPairsRefVal* GetProjectsAPI(
   char* json = NULL;
 
   // Variable to memorise the projects
-  struct RunRecorderPairsRefVal* projects = NULL;
+  struct RunRecorderRefVal* projects = NULL;
   Try {
 
     // Get the projects list in the JSON reply
@@ -2862,39 +2863,39 @@ static struct RunRecorderPairsRefVal* GetProjectsAPI(
 
 }
 
-// Create a struct RunRecorderPairsRefVal
+// Create a struct RunRecorderRefVal
 // Output:
-//   Return the new struct RunRecorderPairsRefVal
-static struct RunRecorderPairsRefVal* RunRecorderPairsRefValCreate(
+//   Return the new struct RunRecorderRefVal
+static struct RunRecorderRefVal* RunRecorderRefValCreate(
   void) {
 
-  // Declare the new struct RunRecorderPairsRefVal
-  struct RunRecorderPairsRefVal* pairs = NULL;
+  // Declare the new struct RunRecorderRefVal
+  struct RunRecorderRefVal* pairs = NULL;
   SafeMalloc(
     pairs,
-    sizeof(struct RunRecorderPairsRefVal));
+    sizeof(struct RunRecorderRefVal));
 
   // Initialise properties
   pairs->nb = 0;
   pairs->refs = NULL;
   pairs->values = NULL;
 
-  // Return the new struct RunRecorderPairsRefVal
+  // Return the new struct RunRecorderRefVal
   return pairs;
 
 }
 
-// Create a struct RunRecorderPairsRefValDef
+// Create a struct RunRecorderRefValDef
 // Output:
-//   Return the new struct RunRecorderPairsRefValDef
-static struct RunRecorderPairsRefValDef* RunRecorderPairsRefValDefCreate(
+//   Return the new struct RunRecorderRefValDef
+static struct RunRecorderRefValDef* RunRecorderRefValDefCreate(
   void) {
 
-  // Declare the new struct RunRecorderPairsRefValDef
-  struct RunRecorderPairsRefValDef* pairs = NULL;
+  // Declare the new struct RunRecorderRefValDef
+  struct RunRecorderRefValDef* pairs = NULL;
   SafeMalloc(
     pairs,
-    sizeof(struct RunRecorderPairsRefValDef));
+    sizeof(struct RunRecorderRefValDef));
 
   // Initialise properties
   pairs->nb = 0;
@@ -2902,7 +2903,7 @@ static struct RunRecorderPairsRefValDef* RunRecorderPairsRefValDefCreate(
   pairs->values = NULL;
   pairs->defaultValues = NULL;
 
-  // Return the new struct RunRecorderPairsRefValDef
+  // Return the new struct RunRecorderRefValDef
   return pairs;
 
 }
@@ -2915,7 +2916,7 @@ static struct RunRecorderPairsRefValDef* RunRecorderPairsRefValDefCreate(
 //   Return the metrics' reference/label/default value
 // Raise:
 //   RunRecorderExc_SQLRequestFailed
-static struct RunRecorderPairsRefValDef* GetMetricsLocal(
+static struct RunRecorderRefValDef* GetMetricsLocal(
   struct RunRecorder* const that,
           char const* const project) {
 
@@ -2934,11 +2935,11 @@ static struct RunRecorderPairsRefValDef* GetMetricsLocal(
     project);
 
   // Declare a variable to memorise the metrics
-  struct RunRecorderPairsRefValDef* metrics = NULL;
+  struct RunRecorderRefValDef* metrics = NULL;
   Try {
 
-    // Create the struct RunRecorderPairsRefValDef to memorise the metrics
-    metrics = RunRecorderPairsRefValDefCreate();
+    // Create the struct RunRecorderRefValDef to memorise the metrics
+    metrics = RunRecorderRefValDefCreate();
 
     // Execute the request
     int retExec =
@@ -2970,7 +2971,7 @@ static struct RunRecorderPairsRefValDef* GetMetricsLocal(
 //   Return the metrics' reference/label/default value
 // Raise:
 //   RunRecorderExc_ApiRequestFailed
-static struct RunRecorderPairsRefValDef* GetMetricsAPI(
+static struct RunRecorderRefValDef* GetMetricsAPI(
   struct RunRecorder* const that,
           char const* const project) {
 
@@ -2997,7 +2998,7 @@ static struct RunRecorderPairsRefValDef* GetMetricsAPI(
   char* json = NULL;
 
   // Variable to memorise the metrics
-  struct RunRecorderPairsRefValDef* metrics = NULL;
+  struct RunRecorderRefValDef* metrics = NULL;
   Try {
 
     // Get the labels and default values in the JSON reply
@@ -3057,7 +3058,7 @@ static void UpdateViewProject(
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_UpdateViewFailed);
 
   // Get the list of metrics for the project
-  struct RunRecorderPairsRefValDef* metrics =
+  struct RunRecorderRefValDef* metrics =
     RunRecorderGetMetrics(
       that,
       project);
@@ -3636,7 +3637,7 @@ static void SetCmdToGetMeasuresLocal(
                  long const nbMeasure) {
 
   // Get the list of metrics for the project
-  struct RunRecorderPairsRefValDef* metrics =
+  struct RunRecorderRefValDef* metrics =
     RunRecorderGetMetrics(
       that,
       project);

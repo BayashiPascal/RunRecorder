@@ -16,7 +16,7 @@ In the SQLite database, data are organised according to a meta-model of the reco
 
 RunRecorder provides a simple functionality to retrieve the recorded data in CSV or JSON format, but it focus on the recording of data so the use of the recorded data is mainly left to the user. A basic Web viewer using the Web API to display the recorded data in a Web browser is also available, and a CLI for the C library allows to interact with local and remote databases from the terminal.
 
-In the examples above, I use a fictional project where the user wants to record the temperature of a room. The temperature acquisition is not detailed here, but it could be a sensor on a Raspberry Pi. Then, RunRecorder would make very simple to save the temperature into a database, with some C code, shell script, or any language supporting Curl.
+In the examples above, I use a fictional project where the user wants to record the temperature of a room. The temperature acquisition is not detailed here, but it could be a sensor on a Raspberry Pi. Then, RunRecorder would make very simple to save the temperature into a database, with some C code, shell script, or any language supporting Curl (see below sections).
 
 RunRecorder is currently in beta version. It has been tested and dynamically analysed with [Valgrind](https://valgrind.org/). It is currently used on a few private projects to assess its stability and qualification.
 
@@ -133,7 +133,7 @@ main.o: main.c
 
 A first simple test to check if everything is working fine is to request the version of the database.
 
-The database version is automatically checked each a RunRecorder instance is created and the database is automatically upgraded if needed.
+The database version is automatically checked each time a RunRecorder instance is created and the database is automatically upgraded if needed.
 
 ```
 #include <stdio.h>
@@ -213,7 +213,7 @@ int main() {
   RunRecorderInit(recorder);
 
   // Get the projects
-  struct RunRecorderPairsRefVal* projects = RunRecorderGetProjects(recorder);
+  struct RunRecorderRefVal* projects = RunRecorderGetProjects(recorder);
   for (
     long iProject = 0;
     iProject < projects->nb;
@@ -227,7 +227,7 @@ int main() {
   }
 
   // Free memory
-  RunRecorderPairsRefValFree(&projects);
+  RunRecorderRefValFree(&projects);
   RunRecorderFree(&recorder);
 
   return EXIT_SUCCESS;
@@ -243,7 +243,7 @@ ref: 1 label: RoomTemperature
 
 After adding a new project you'll want to add the metrics that defines this project. In the example below there are two metrics: the date and time of the recording, and the recorded room temperature.
 
-The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).
+The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' and 'Project' are fine).
 
 ```
 #include <stdio.h>
@@ -296,7 +296,7 @@ int main() {
   RunRecorderInit(recorder);
 
   // Get the metrics
-  struct RunRecorderPairsRefValDef* metrics =
+  struct RunRecorderRefValDef* metrics =
     RunRecorderGetMetrics(
       recorder,
       "RoomTemperature");
@@ -314,7 +314,7 @@ int main() {
   }
 
   // Free memory
-  RunRecorderPairsRefValDefFree(&metrics);
+  RunRecorderRefValDefFree(&metrics);
   RunRecorderFree(&recorder);
 
   return EXIT_SUCCESS;
@@ -589,7 +589,7 @@ Return:
 
 A first simple test to check if everything is working fine is to request the version of the database.
 
-The database version is automatically checked each a RunRecorder instance is created and the database is automatically upgraded if needed.
+The database version is automatically checked each time a RunRecorder instance is created and the database is automatically upgraded if needed.
 
 ```
 action=version
@@ -629,7 +629,7 @@ Return:
 
 After adding a new project you'll want to add the metrics that defines this project. In the example below there are two metrics: the date and time of the recording, and the recorded room temperature.
 
-The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).
+The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' and 'Project' are fine).
 
 ```
 action=add_metric&project=RoomTemperature&label=Date&default=-
@@ -778,7 +778,7 @@ Return:
 
 A first simple test to check if everything is working fine is to request the version of the database.
 
-The database version is automatically checked each a RunRecorder instance is created and the database is automatically upgraded if needed.
+The database version is automatically checked each time a RunRecorder instance is created and the database is automatically upgraded if needed.
 
 ```
 curl -d "action=version" -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
@@ -818,7 +818,7 @@ Return:
 
 After adding a new project you'll want to add the metrics that defines this project. In the example below there are two metrics: the date and time of the recording, and the recorded room temperature.
 
-The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).
+The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' and 'Project' are fine).
 
 ```
 curl -d "action=add_metric&project=RoomTemperature&label=Date&default=-" -H "Content-Type: application/x-www-form-urlencoded" -X POST https://localhost/RunRecorder/api.php
@@ -1016,7 +1016,7 @@ Disconnected from the database
 
 After adding a new project you'll want to add the metrics that defines this project. In the example below there are two metrics: the date and time of the recording, and the recorded room temperature.
 
-The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).
+The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' and 'Project' are fine).
 
 ```
 Connecting to database runrecorder.db...
@@ -1493,7 +1493,7 @@ function Handler(ret) {
 
 A first simple test to check if everything is working fine is to request the version of the database.
 
-The database version is automatically checked each a RunRecorder instance is created and the database is automatically upgraded if needed.
+The database version is automatically checked each time a RunRecorder instance is created and the database is automatically upgraded if needed.
 
 ```
 var form = document.createElement("form");
@@ -1559,7 +1559,7 @@ Output from the handler:
 
 After adding a new project you'll want to add the metrics that defines this project. In the example below there are two metrics: the date and time of the recording, and the recorded room temperature.
 
-The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' is fine).
+The metric's label must respect the following pattern: `/^[a-zA-Z][a-zA-Z0-9_]*$/`. The default value of the metric must respect the following pattern: `/^[^"=&]+$*/`. There cannot be two metrics with the same label for the same project. A metric's label can't be 'action' or 'project' (case sensitive, so 'Action' and 'Project' are fine).
 
 ```
 var form = document.createElement("form");

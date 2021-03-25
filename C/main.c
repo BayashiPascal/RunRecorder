@@ -112,7 +112,7 @@ int main(
   } EndTryWithDefault;
 
   // Get the list of projects
-  struct RunRecorderPairsRefVal* projects = NULL;
+  struct RunRecorderRefVal* projects = NULL;
   Try {
 
     projects = RunRecorderGetProjects(recorder);
@@ -130,14 +130,14 @@ int main(
     }
 
     // Free memory
-    RunRecorderPairsRefValFree(&projects);
+    RunRecorderRefValFree(&projects);
 
   } CatchDefault {
 
     PrintCaughtException(
       "RunRecorderGetProjects",
       recorder);
-    RunRecorderPairsRefValFree(&projects);
+    RunRecorderRefValFree(&projects);
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
@@ -185,7 +185,7 @@ int main(
   } EndTryWithDefault;
 
   // Get the list of metrics
-  struct RunRecorderPairsRefValDef* metrics = NULL;
+  struct RunRecorderRefValDef* metrics = NULL;
   Try {
 
     metrics =
@@ -207,14 +207,14 @@ int main(
     }
 
     // Free memory
-    RunRecorderPairsRefValDefFree(&metrics);
+    RunRecorderRefValDefFree(&metrics);
 
   } CatchDefault {
 
     PrintCaughtException(
       "RunRecorderGetMetrics",
       recorder);
-    RunRecorderPairsRefValDefFree(&metrics);
+    RunRecorderRefValDefFree(&metrics);
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
