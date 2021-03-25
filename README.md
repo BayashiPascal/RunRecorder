@@ -40,7 +40,7 @@ RunRecorder is currently in beta version. It has been tested and dynamically ana
 
 2.5 From other languages, with HTTP request (e.g. JavaScript)
 
-3 Web viewer
+2.6 Web viewer
 
 4 License
 
@@ -1784,7 +1784,7 @@ Output from the handler:
 {"ret":"0"}
 ```
 
-## 3 Web viewer
+## 2.6 Web viewer
 
 There is a basic online viewer with the Web API: `Repos/WebAPI/runrecorder.html`. It consists of a single web page with a combobox to select one of the projects in the database, and below the combobox, a table displaying the last 100 measures. The table is automatically refreshed every 30s, and the data are obtained via the API in the same directory.
 
