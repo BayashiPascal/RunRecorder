@@ -14,7 +14,7 @@
 // Default CSV separator
 #define CSV_SEP '&'
 
-// Loop from 0 to n
+// Loop from 0 to (n - 1)
 #define ForZeroTo(I, N) for (long I = 0; I < N; ++I)
 
 // Polymorphic free
