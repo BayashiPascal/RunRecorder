@@ -17,7 +17,8 @@
 // malloc freeing the assigned variable and raising exception if it fails
 #define SafeMalloc(T, S)  \
   do { \
-    PolyFree(T); T = malloc(S); \
+    PolyFree(T); \
+    T = malloc(S); \
     if (T == NULL) Raise(TryCatchExc_MallocFailed); \
   } while(false)
 
@@ -27,7 +28,8 @@
 // strdup freeing the assigned variable and raising exception if it fails
 #define SafeStrDup(T, S)  \
   do { \
-    PolyFree(T); T = strdup(S); \
+    PolyFree(T); \
+    T = strdup(S); \
     if (T == NULL) Raise(TryCatchExc_MallocFailed); \
   } while(false)
 
