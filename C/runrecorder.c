@@ -17,10 +17,14 @@
 // Loop from 0 to (n - 1)
 #define ForZeroTo(I, N) for (long I = 0; I < N; ++I)
 
-// Polymorphic free
+// Function to free strings for PolyFree
 static void FreeNullStrPtr(char** s) {free(*s);*s=NULL;}
+
 static void FreeNullStrPtrPtr(char*** s) {free(*s);*s=NULL;}
+
 static void FreeNullStrPtrPtrPtr(char**** s) {free(*s);*s=NULL;}
+
+// Polymorphic free
 #define PolyFree(P) _Generic(P, \
   struct RunRecorder**: RunRecorderFree, \
   struct RunRecorderRefVal**: RunRecorderRefValFree, \
@@ -56,10 +60,11 @@ static void FreeNullStrPtrPtrPtr(char**** s) {free(*s);*s=NULL;}
   } while(false)
 
 // sprintf at the end of a string
-#define SPrintfAtEnd(S, F, ...) \
+#define StringAppend(S, F, ...) \
   do { \
-    char* ptrEnd = strchr(S, '\0'); \
-    sprintf(ptrEnd, F, __VA_ARGS__); \
+    char* oldStr = strdup(*(S)); \
+    StringCreate(S, "%s" F, oldStr, __VA_ARGS__); \
+    free(oldStr); \
   } while(false)
 
 // Number of exceptions in RunRecorderException
@@ -96,42 +101,14 @@ static char* exceptionStr[NbExceptions] = {
 // ================== Private functions declaration =========================
 
 // Clone of asprintf
+// Inputs:
+//   str: pointer to the string to be created
+//   fmt: format as in sprintf
+//   ...: arguments as in sprintf
 void StringCreate(
   char** str,
-  char* fmt,
-  ...) {
-
-  // Get the length of the string
-  char c[1];
-  va_list argp;
-  va_start(
-    argp,
-    fmt);
-  int len =
-    vsnprintf(
-      c,
-      1,
-      fmt,
-      argp) + 1;
-  va_end(argp);
-
-  // Allocate memory
-  SafeMalloc(
-    *str,
-    len);
-
-  // Create the string
-  va_start(
-    argp,
-    fmt);
-  vsnprintf(
-    *str,
-    len,
-    fmt,
-    argp);
-  va_end(argp);
-
-}
+   char* fmt,
+         ...);
 
 // Init a struct RunRecorder using a local SQLite database
 // Input:
@@ -1618,6 +1595,48 @@ void RunRecorderRefValDefFree(
 
 // ================== Private functions definition =========================
 
+// Clone of asprintf
+// Inputs:
+//   str: pointer to the string to be created
+//   fmt: format as in sprintf
+//   ...: arguments as in sprintf
+void StringCreate(
+  char** str,
+   char* fmt,
+         ...) {
+
+  // Get the length of the string
+  char c[1];
+  va_list argp;
+  va_start(
+    argp,
+    fmt);
+  int len =
+    vsnprintf(
+      c,
+      1,
+      fmt,
+      argp) + 1;
+  va_end(argp);
+
+  // Allocate memory
+  SafeMalloc(
+    *str,
+    len);
+
+  // Create the string
+  va_start(
+    argp,
+    fmt);
+  vsnprintf(
+    *str,
+    len,
+    fmt,
+    argp);
+  va_end(argp);
+
+}
+
 // Init a struct RunRecorder using a local SQLite database
 // Input:
 //   that: the struct RunRecorder
@@ -3080,65 +3099,35 @@ static void UpdateViewProject(
       project);
   Try {
 
-    // Declare the format strings to create the SQL command to add the view
-    char* cmdAddFormatBody = ") AS SELECT _Measure.Ref ";
-    char* cmdAddFormatVal =
-      ",IFNULL((SELECT Value FROM _Value "
-      "WHERE RefMeasure=_Measure.Ref AND RefMetric=%ld),"
-      "(SELECT DefaultValue FROM _Metric WHERE Ref=%ld)) ";
-
     // Create the head of the command
     StringCreate(
       &(that->cmd),
       "CREATE VIEW \"%s\" (Ref",
       project);
 
-    // Loop on the metrics
-    ForZeroTo(iMetric, metrics->nb) {
-
-      // Extend the command with the metric label
-      SafeRealloc(
-        that->cmd,
-        strlen(that->cmd) + 3 + strlen(metrics->values[iMetric]) + 1);
-      SPrintfAtEnd(
-        that->cmd,
+    // For each metrics, extend the command with the metric label
+    ForZeroTo(iMetric, metrics->nb)
+      StringAppend(
+        &(that->cmd),
         ",\"%s\"",
         metrics->values[iMetric]);
 
-    }
-
     // Extend the command with the body
-    SafeRealloc(
-      that->cmd,
-      strlen(that->cmd) + strlen(cmdAddFormatBody) + 1);
-    SPrintfAtEnd(
-      that->cmd,
+    StringAppend(
+      &(that->cmd),
       "%s",
-      cmdAddFormatBody);
+      ") AS SELECT _Measure.Ref ");
 
-    // Loop on the metrics
-    ForZeroTo(iMetric, metrics->nb) {
-
-      // Get the length of the metric reference as a string
-      size_t lenRefMetricStr =
-        snprintf(
-          NULL,
-          0,
-          "%ld",
-          metrics->refs[iMetric]);
-
-      // Extend the command with the metric related body part
-      SafeRealloc(
-        that->cmd,
-        strlen(that->cmd) + strlen(cmdAddFormatVal) - 3 +
-        lenRefMetricStr - 3 + lenRefMetricStr + 1);
-      SPrintfAtEnd(
-        that->cmd,
-        cmdAddFormatVal,
+    // For each metrics, extend the command with the metric related
+    // body part
+    ForZeroTo(iMetric, metrics->nb)
+      StringAppend(
+        &(that->cmd),
+        ",IFNULL((SELECT Value FROM _Value "
+        "WHERE RefMeasure=_Measure.Ref AND RefMetric=%ld),"
+        "(SELECT DefaultValue FROM _Metric WHERE Ref=%ld)) ",
         metrics->refs[iMetric],
         metrics->refs[iMetric]);
-
-    }
 
     // Free memory
     PolyFree(&metrics);
@@ -3151,15 +3140,10 @@ static void UpdateViewProject(
   } EndTryWithDefault;
 
   // Extend the command with the tail
-  char* cmdAddFormatTail =
+  StringAppend(
+    &(that->cmd),
     "FROM _Measure, _Project WHERE _Measure.RefProject = _Project.Ref AND "
-    "_Project.Label = \"%s\" ORDER BY _Measure.DateMeasure, _Measure.Ref";
-  SafeRealloc(
-    that->cmd,
-    strlen(that->cmd) + strlen(cmdAddFormatTail) - 2 + strlen(project) + 1);
-  SPrintfAtEnd(
-    that->cmd,
-    cmdAddFormatTail,
+    "_Project.Label = \"%s\" ORDER BY _Measure.DateMeasure, _Measure.Ref",
     project);
 
   // Execute the command to add the view
@@ -3363,32 +3347,15 @@ static void AddMeasureAPI(
   // Reset the reference of the last added measure
   that->refLastAddedMeasure = 0;
 
-  // Format of the command for one value
-  char* cmdFormatVal = "&%s=%s";
-
-  // Variable to memorise the size of the values in the command string
-  size_t lenStrValues = 0;
-
-  // Loop on the values and add the size necessary for each value and its
-  // header
-  ForZeroTo(iVal, measure->nbMetric)
-    lenStrValues += strlen(cmdFormatVal) - 2 +
-      strlen(measure->metrics[iVal]) - 2 +
-      strlen(measure->values[iVal]);
-
   // Create the request to the Web API
-  char* cmdFormat = "action=add_measure&project=%s";
-  SafeMalloc(
-    that->cmd,
-    strlen(cmdFormat) - 2 + strlen(project) + lenStrValues + 1);
-  sprintf(
-    that->cmd,
-    cmdFormat,
+  StringCreate(
+    &(that->cmd),
+    "action=add_measure&project=%s",
     project);
   ForZeroTo(iVal, measure->nbMetric)
-    SPrintfAtEnd(
-      that->cmd,
-      cmdFormatVal,
+    StringAppend(
+      &(that->cmd),
+      "&%s=%s",
       measure->metrics[iVal],
       measure->values[iVal]);
   SetAPIReqPostVal(
@@ -3606,15 +3573,10 @@ static void SetCmdToGetMeasuresLocal(
     ForZeroTo(iMetric, metrics->nb) {
 
       // Append the metric label to the command
-      size_t len =
-        strlen(that->cmd) + strlen(metrics->values[iMetric]) + 3 + 1;
-      SafeRealloc(
-        that->cmd,
-        len);
       char sep = ',';
       if (iMetric == metrics->nb - 1) sep = ' ';
-      SPrintfAtEnd(
-        that->cmd,
+      StringAppend(
+        &(that->cmd),
         "\"%s\"%c",
         metrics->values[iMetric],
         sep);
@@ -3625,36 +3587,18 @@ static void SetCmdToGetMeasuresLocal(
     PolyFree(&metrics);
 
     // Append the tail of the command
-    char* cmdFormatTail = "FROM \"%s\"";
-    SafeRealloc(
-      that->cmd,
-      strlen(that->cmd) +
-      strlen(cmdFormatTail) + strlen(project) - 2 + 1);
-    SPrintfAtEnd(
-      that->cmd,
-      cmdFormatTail,
+    StringAppend(
+      &(that->cmd),
+      "FROM \"%s\"",
       project);
 
     // If there is a limit on the number of measures to be returned
     if (nbMeasure > 0) {
 
-      // Get the length of nbMeasure converted as a string
-      size_t lenNbMeasureStr =
-        snprintf(
-          NULL,
-          0,
-          "%ld",
-          nbMeasure);
-
       // Append the limit at the end of the command
-      char* cmdLimit = " ORDER BY Ref DESC LIMIT %ld";
-      SafeRealloc(
-        that->cmd,
-        strlen(that->cmd) +
-        strlen(cmdLimit) + lenNbMeasureStr - 3 + 1);
-      SPrintfAtEnd(
-        that->cmd,
-        cmdLimit,
+      StringAppend(
+        &(that->cmd),
+        " ORDER BY Ref DESC LIMIT %ld",
         nbMeasure);
 
     }

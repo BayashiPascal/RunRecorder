@@ -12,7 +12,7 @@ CURL_VERSION=7.75.0
 CURL_URL=https://curl.se/download/curl-$(CURL_VERSION).zip
 
 # Build mode 0:dev, 1:prod
-BUILD_MODE=0
+BUILD_MODE=1
 
 # Compiler arguments depending on BUILD_MODE
 ifeq ($(BUILD_MODE), 0)

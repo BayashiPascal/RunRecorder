@@ -4,8 +4,10 @@
 
 // ================== Macros =========================
 
-// Polymorphic free
+// Function to free strings for PolyFree
 static void FreeNullStrPtr(char** s) {free(*s);*s=NULL;}
+
+// Polymorphic free
 #define PolyFree(P) _Generic(P, \
   struct RunRecorder**: RunRecorderFree, \
   struct RunRecorderRefVal**: RunRecorderRefValFree, \
