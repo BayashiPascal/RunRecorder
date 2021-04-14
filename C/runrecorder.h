@@ -5,6 +5,7 @@
 #define RUNRECORDER_H
 
 // Include external modules header
+#include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>

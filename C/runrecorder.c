@@ -95,6 +95,44 @@ static char* exceptionStr[NbExceptions] = {
 
 // ================== Private functions declaration =========================
 
+// Clone of asprintf
+void StringCreate(
+  char** str,
+  char* fmt,
+  ...) {
+
+  // Get the length of the string
+  char c[1];
+  va_list argp;
+  va_start(
+    argp,
+    fmt);
+  int len =
+    vsnprintf(
+      c,
+      1,
+      fmt,
+      argp) + 1;
+  va_end(argp);
+
+  // Allocate memory
+  SafeMalloc(
+    *str,
+    len);
+
+  // Create the string
+  va_start(
+    argp,
+    fmt);
+  vsnprintf(
+    *str,
+    len,
+    fmt,
+    argp);
+  va_end(argp);
+
+}
+
 // Init a struct RunRecorder using a local SQLite database
 // Input:
 //   that: the struct RunRecorder
@@ -1990,14 +2028,9 @@ static char* GetJSONValOfKey(
   Try {
 
     // Create the key decorated with it's syntax
-    char* keyFormat = "\"%s\":";
-    size_t lenKeyDecorated = strlen(keyFormat) - 2 + strlen(key) + 1;
-    SafeMalloc(
-      keyDecorated,
-      lenKeyDecorated);
-    sprintf(
-      keyDecorated,
-      keyFormat,
+    StringCreate(
+      &keyDecorated,
+      "\"%s\":",
       key);
 
     // If the key can be find in the JSON encoded string
@@ -2275,15 +2308,9 @@ static void AddProjectLocal(
           char const* const name) {
 
   // Create the SQL command
-  char* cmdFormat =
-    "INSERT INTO _Project (Ref, Label) VALUES (NULL, \"%s\")";
-  size_t lenCmd = strlen(cmdFormat) - 2 + strlen(name) + 1;
-  SafeMalloc(
-    that->cmd,
-    lenCmd);
-  sprintf(
-    that->cmd,
-    cmdFormat,
+  StringCreate(
+    &(that->cmd),
+    "INSERT INTO _Project (Ref, Label) VALUES (NULL, \"%s\")",
     name);
 
   // Execute the command to add the project
@@ -2311,14 +2338,9 @@ static void AddProjectAPI(
           char const* const name) {
 
   // Create the request to the Web API
-  char* cmdFormat = "action=add_project&label=%s";
-  size_t lenCmd = strlen(cmdFormat) - 2 + strlen(name) + 1;
-  SafeMalloc(
-    that->cmd,
-    lenCmd);
-  sprintf(
-    that->cmd,
-    cmdFormat,
+  StringCreate(
+    &(that->cmd),
+    "action=add_project&label=%s",
     name);
   SetAPIReqPostVal(
     that,
@@ -2928,17 +2950,12 @@ static struct RunRecorderRefValDef* GetMetricsLocal(
           char const* const project) {
 
   // Create the request
-  char* cmdFormat =
+  StringCreate(
+    &(that->cmd),
     "SELECT _Metric.Ref, _Metric.Label, _Metric.DefaultValue "
     "FROM _Metric, _Project "
     "WHERE _Metric.RefProject = _Project.Ref AND "
-    "_Project.Label = \"%s\" ORDER BY _Metric.Label";
-  SafeMalloc(
-    that->cmd,
-    strlen(cmdFormat) - 2 + strlen(project) + 1);
-  sprintf(
-    that->cmd,
-    cmdFormat,
+    "_Project.Label = \"%s\" ORDER BY _Metric.Label",
     project);
 
   // Declare a variable to memorise the metrics
@@ -2983,13 +3000,9 @@ static struct RunRecorderRefValDef* GetMetricsAPI(
           char const* const project) {
 
   // Create the request to the Web API
-  char* cmdFormat = "action=metrics&project=%s";
-  SafeMalloc(
-    that->cmd,
-    strlen(cmdFormat) - 2 + strlen(project) + 1);
-  sprintf(
-    that->cmd,
-    cmdFormat,
+  StringCreate(
+    &(that->cmd),
+    "action=metrics&project=%s",
     project);
   SetAPIReqPostVal(
     that,
@@ -3045,13 +3058,9 @@ static void UpdateViewProject(
           char const* const project) {
 
   // Create the SQL command to delete the view
-  char* cmdDelFormat = "DROP VIEW IF EXISTS \"%s\"";
-  SafeMalloc(
-    that->cmd,
-    strlen(cmdDelFormat) - 2 + strlen(project) + 1);
   sprintf(
     that->cmd,
-    cmdDelFormat,
+    "DROP VIEW IF EXISTS \"%s\"",
     project);
 
   // Execute the command to delete the view
@@ -3072,7 +3081,6 @@ static void UpdateViewProject(
   Try {
 
     // Declare the format strings to create the SQL command to add the view
-    char* cmdAddFormatHead = "CREATE VIEW \"%s\" (Ref";
     char* cmdAddFormatBody = ") AS SELECT _Measure.Ref ";
     char* cmdAddFormatVal =
       ",IFNULL((SELECT Value FROM _Value "
@@ -3080,13 +3088,9 @@ static void UpdateViewProject(
       "(SELECT DefaultValue FROM _Metric WHERE Ref=%ld)) ";
 
     // Create the head of the command
-    SafeMalloc(
-      that->cmd,
-      strlen(cmdAddFormatHead) - 2 + strlen(project) +
-      strlen(cmdAddFormatBody) + 1);
-    sprintf(
-      that->cmd,
-      cmdAddFormatHead,
+    StringCreate(
+      &(that->cmd),
+      "CREATE VIEW \"%s\" (Ref",
       project);
 
     // Loop on the metrics
@@ -3191,17 +3195,11 @@ static void AddMetricLocal(
           char const* const defaultVal) {
 
   // Create the SQL command
-  char* cmdFormat =
+  StringCreate(
+    &(that->cmd),
     "INSERT INTO _Metric (Ref, RefProject, Label, DefaultValue) "
     "SELECT NULL, _Project.Ref, \"%s\", \"%s\" FROM _Project "
-    "WHERE _Project.Label = \"%s\"";
-  SafeMalloc(
-    that->cmd,
-    strlen(cmdFormat) - 2 + strlen(label) - 2 +
-    strlen(defaultVal) - 2 + strlen(project) + 1);
-  sprintf(
-    that->cmd,
-    cmdFormat,
+    "WHERE _Project.Label = \"%s\"",
     label,
     defaultVal,
     project);
@@ -3244,14 +3242,9 @@ static void AddMetricAPI(
           char const* const defaultVal) {
 
   // Create the request to the Web API
-  char* cmdFormat = "action=add_metric&project=%s&label=%s&default=%s";
-  SafeMalloc(
-    that->cmd,
-    strlen(cmdFormat) - 2 + strlen(label) - 2 +
-    strlen(project) - 2 + strlen(defaultVal) + 1);
-  sprintf(
-    that->cmd,
-    cmdFormat,
+  StringCreate(
+    &(that->cmd),
+    "action=add_metric&project=%s&label=%s&default=%s",
     project,
     label,
     defaultVal);
@@ -3290,16 +3283,11 @@ static void AddMeasureLocal(
   dateStr[strlen(dateStr) - 1] = '\0';
 
   // Create the SQL command
-  char* cmdFormat =
+  StringCreate(
+    &(that->cmd),
     "INSERT INTO _Measure (RefProject, DateMeasure) "
     "SELECT _Project.Ref, \"%s\" FROM _Project "
-    "WHERE _Project.Label = \"%s\"";
-  SafeMalloc(
-    that->cmd,
-    strlen(cmdFormat) - 2 + strlen(dateStr) - 2 + strlen(project) + 1);
-  sprintf(
-    that->cmd,
-    cmdFormat,
+    "WHERE _Project.Label = \"%s\"",
     dateStr,
     project);
 
@@ -3315,12 +3303,6 @@ static void AddMeasureLocal(
 
   // Get the reference of the measure
   that->refLastAddedMeasure = sqlite3_last_insert_rowid(that->db);
-  int lenRefMeasureStr =
-    snprintf(
-    NULL,
-    0,
-    "%ld",
-    that->refLastAddedMeasure);
 
   // Declare a variable to memorise an eventual failure
   // The policy here is to try to save has much data has possible
@@ -3331,30 +3313,14 @@ static void AddMeasureLocal(
   // Loop on the values in the measure
   ForZeroTo(iVal, measure->nbMetric) {
 
-    // Create the SQL command
-    char* cmdValBase =
-      "INSERT INTO _Value (RefMeasure, RefMetric, Value) "
-      "SELECT %ld, _Metric.Ref, \"%s\" FROM _Metric "
-      "WHERE _Metric.Label = \"%s\"";
     Try {
 
-      SafeMalloc(
-        that->cmd,
-        strlen(cmdValBase) + lenRefMeasureStr - 3 +
-        strlen(measure->values[iVal]) - 2 +
-        strlen(measure->metrics[iVal]) - 2 + 1);
-
-    } CatchDefault {
-
-      hasFailed = true;
-
-    } EndTryWithDefault;
-
-    if (that->cmd != NULL) {
-
-      sprintf(
-        that->cmd,
-        cmdValBase,
+      // Create the SQL command
+      StringCreate(
+        &(that->cmd),
+        "INSERT INTO _Value (RefMeasure, RefMetric, Value) "
+        "SELECT %ld, _Metric.Ref, \"%s\" FROM _Metric "
+        "WHERE _Metric.Label = \"%s\"",
         that->refLastAddedMeasure,
         measure->values[iVal],
         measure->metrics[iVal]);
@@ -3369,7 +3335,11 @@ static void AddMeasureLocal(
           &(that->sqliteErrMsg));
       if (retExec != SQLITE_OK) hasFailed = true;
 
-    }
+    } CatchDefault {
+
+      hasFailed = true;
+
+    } EndTryWithDefault;
 
   }
 
@@ -3459,19 +3429,9 @@ static void DeleteMeasureLocal(
                  long const refMeasure) {
 
   // Create the SQL command to delete the measure's values
-  size_t lenMeasureStr =
-    snprintf(
-      NULL,
-      0,
-      "%ld",
-      refMeasure);
-  char* cmdFormatVal = "DELETE FROM _Value WHERE RefMeasure = %ld";
-  SafeMalloc(
-    that->cmd,
-    strlen(cmdFormatVal) - 3 + lenMeasureStr + 1);
-  sprintf(
-    that->cmd,
-    cmdFormatVal,
+  StringCreate(
+    &(that->cmd),
+    "DELETE FROM _Value WHERE RefMeasure = %ld",
     refMeasure);
 
   // Execute the command to delete the measure's values
@@ -3485,13 +3445,9 @@ static void DeleteMeasureLocal(
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_DeleteMeasureFailed);
 
   // Create the SQL command to delete the measure
-  char* cmdFormat = "DELETE FROM _Measure WHERE Ref = %ld ; VACUUM";
-  SafeMalloc(
-    that->cmd,
-    strlen(cmdFormat) - 3 + lenMeasureStr + 1);
-  sprintf(
-    that->cmd,
-    cmdFormat,
+  StringCreate(
+    &(that->cmd),
+    "DELETE FROM _Measure WHERE Ref = %ld ; VACUUM",
     refMeasure);
 
   // Execute the command to delete the measure
@@ -3515,19 +3471,9 @@ static void DeleteMeasureAPI(
                  long const refMeasure) {
 
   // Create the request to the Web API
-  size_t lenMeasureStr =
-    snprintf(
-      NULL,
-      0,
-      "%ld",
-      refMeasure);
-  char* cmdFormat = "action=delete_measure&measure=%ld";
-  SafeMalloc(
-    that->cmd,
-    strlen(cmdFormat) - 3 + lenMeasureStr + 1);
-  sprintf(
-    that->cmd,
-    cmdFormat,
+  StringCreate(
+    &(that->cmd),
+    "action=delete_measure&measure=%ld",
     refMeasure);
   SetAPIReqPostVal(
     that,
@@ -3652,14 +3598,9 @@ static void SetCmdToGetMeasuresLocal(
   Try {
 
     // Create the head of the command
-    char* cmdFormatHead = "SELECT Ref,";
-    SafeMalloc(
-      that->cmd,
-      strlen(cmdFormatHead) + 1);
-    sprintf(
-      that->cmd,
-      "%s",
-      cmdFormatHead);
+    StringCreate(
+      &(that->cmd),
+      "SELECT Ref,");
 
     // For each metric
     ForZeroTo(iMetric, metrics->nb) {
@@ -3968,13 +3909,9 @@ static struct RunRecorderMeasures* GetMeasuresAPI(
           char const* const project) {
 
   // Create the request to the Web API
-  char* cmdFormat = "action=csv&project=%s";
-  SafeMalloc(
-    that->cmd,
-    strlen(cmdFormat) - 2 + strlen(project) + 1);
-  sprintf(
-    that->cmd,
-    cmdFormat,
+  StringCreate(
+    &(that->cmd),
+    "action=csv&project=%s",
     project);
   SetAPIReqPostVal(
     that,
@@ -4053,22 +3990,10 @@ static struct RunRecorderMeasures* GetLastMeasuresAPI(
           char const* const project,
                  long const nbMeasure) {
 
-  // Get the length of nbMeasure converted as a string
-  size_t lenNbMeasureStr =
-    snprintf(
-      NULL,
-      0,
-      "%ld",
-      nbMeasure);
-
   // Create the request to the Web API
-  char* cmdFormat = "action=csv&project=%s&last=%ld";
-  SafeMalloc(
-    that->cmd,
-    strlen(cmdFormat) - 2 + strlen(project) - 3 + lenNbMeasureStr + 1);
-  sprintf(
-    that->cmd,
-    cmdFormat,
+  StringCreate(
+    &(that->cmd),
+    "action=csv&project=%s&last=%ld",
     project,
     nbMeasure);
   SetAPIReqPostVal(
@@ -4126,17 +4051,12 @@ static void FlushProjectLocal(
           char const* const project) {
 
   // Create the SQL command to delete values
-  char* cmdFormatValue =
+  StringCreate(
+    &(that->cmd),
     "DELETE FROM _Value WHERE RefMeasure IN "
     "(SELECT _Measure.Ref FROM _Measure, _Project "
     "WHERE _Measure.RefProject = _Project.Ref "
-    "AND _Project.Label = \"%s\")";
-  SafeMalloc(
-    that->cmd,
-    strlen(cmdFormatValue) - 2 + strlen(project) + 1);
-  sprintf(
-    that->cmd,
-    cmdFormatValue,
+    "AND _Project.Label = \"%s\")",
     project);
 
   // Execute the command to delete values
@@ -4150,17 +4070,12 @@ static void FlushProjectLocal(
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_FlushProjectFailed);
 
   // Create the SQL command to delete measures
-  char* cmdFormatMeasure =
+  StringCreate(
+    &(that->cmd),
     "DELETE FROM _Measure WHERE Ref IN "
     "(SELECT _Measure.Ref FROM _Measure, _Project "
     "WHERE _Measure.RefProject = _Project.Ref "
-    "AND _Project.Label = \"%s\")";
-  SafeMalloc(
-    that->cmd,
-    strlen(cmdFormatMeasure) - 2 + strlen(project) + 1);
-  sprintf(
-    that->cmd,
-    cmdFormatMeasure,
+    "AND _Project.Label = \"%s\")",
     project);
 
   // Execute the command to delete measures
@@ -4174,16 +4089,11 @@ static void FlushProjectLocal(
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_FlushProjectFailed);
 
   // Create the SQL command to delete metrics
-  char* cmdFormatMetric =
+  StringCreate(
+    &(that->cmd),
     "DELETE FROM _Metric WHERE RefProject = "
     "(SELECT Ref FROM _Project "
-    "WHERE _Project.Label = \"%s\")";
-  SafeMalloc(
-    that->cmd,
-    strlen(cmdFormatMetric) - 2 + strlen(project) + 1);
-  sprintf(
-    that->cmd,
-    cmdFormatMetric,
+    "WHERE _Project.Label = \"%s\")",
     project);
 
   // Execute the command to delete metrics
@@ -4197,15 +4107,10 @@ static void FlushProjectLocal(
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_FlushProjectFailed);
 
   // Create the SQL command to delete the project
-  char* cmdFormatProject =
+  StringCreate(
+    &(that->cmd),
     "DELETE FROM _Project "
-    "WHERE _Project.Label = \"%s\"";
-  SafeMalloc(
-    that->cmd,
-    strlen(cmdFormatProject) - 2 + strlen(project) + 1);
-  sprintf(
-    that->cmd,
-    cmdFormatProject,
+    "WHERE _Project.Label = \"%s\"",
     project);
 
   // Execute the command to delete the project
@@ -4229,13 +4134,9 @@ static void FlushProjectAPI(
           char const* const project) {
 
   // Create the request to the Web API
-  char* cmdFormat = "action=flush&project=%s";
-  SafeMalloc(
-    that->cmd,
-    strlen(cmdFormat) - 2 + strlen(project) + 1);
-  sprintf(
-    that->cmd,
-    cmdFormat,
+  StringCreate(
+    &(that->cmd),
+    "action=flush&project=%s",
     project);
   SetAPIReqPostVal(
     that,
