@@ -5,6 +5,7 @@
 // ================== Macros =========================
 
 // Polymorphic free
+static void FreeNullStrPtr(char** s) {free(*s);*s=NULL;}
 #define PolyFree(P) _Generic(P, \
   struct RunRecorder**: RunRecorderFree, \
   struct RunRecorderRefVal**: RunRecorderRefValFree, \
@@ -12,12 +13,12 @@
   struct RunRecorderMeasure**: RunRecorderMeasureFree, \
   struct RunRecorderMeasures**: RunRecorderMeasuresFree, \
   struct CLI**: CLIFree, \
-  default: free)((void*)P)
+  char**: FreeNullStrPtr)((void*)P)
 
 // malloc freeing the assigned variable and raising exception if it fails
 #define SafeMalloc(T, S)  \
   do { \
-    PolyFree(T); \
+    PolyFree(&(T)); \
     T = malloc(S); \
     if (T == NULL) Raise(TryCatchExc_MallocFailed); \
   } while(false)
@@ -28,7 +29,7 @@
 // strdup freeing the assigned variable and raising exception if it fails
 #define SafeStrDup(T, S)  \
   do { \
-    PolyFree(T); \
+    free(T); \
     T = strdup(S); \
     if (T == NULL) Raise(TryCatchExc_MallocFailed); \
   } while(false)
@@ -345,11 +346,11 @@ void CLIFree(
   // Free memory
   PolyFree(&((*that)->measure));
   PolyFree(&((*that)->metrics));
-  PolyFree((*that)->curProject);
+  free((*that)->curProject);
   PolyFree(&((*that)->projects));
   PolyFree(&((*that)->runRecorder));
   printf("Disconnected from the database\n");
-  PolyFree(*that);
+  free(*that);
   *that = NULL;
 
 }
@@ -445,7 +446,7 @@ void Run(
     } EndTryWithDefault;
 
     // Free memory
-    PolyFree(input);
+    free(input);
 
   }
 
@@ -849,7 +850,7 @@ void ProcessInputAddMetric(
         }
 
         // Free memory
-        PolyFree(defaultVal);
+        free(defaultVal);
 
       }
 
@@ -1028,7 +1029,7 @@ void ProcessInputAddMeasure(
             }
 
             // Free memory
-            PolyFree(val);
+            free(val);
 
           }
 
@@ -1204,7 +1205,7 @@ void ProcessInputDeleteProject(
       // Refresh the list of projects
       PolyFree(&(that->projects));
       PolyFree(&(that->metrics));
-      PolyFree(that->curProject);
+      free(that->curProject);
       that->curProject = NULL;
       that->projects = RunRecorderGetProjects(that->runRecorder);
 

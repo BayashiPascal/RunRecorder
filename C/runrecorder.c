@@ -18,18 +18,18 @@
 #define ForZeroTo(I, N) for (long I = 0; I < N; ++I)
 
 // Polymorphic free
-static void FreeNullChar(char** s) {free(*s);*s=NULL;}
-static void FreeNullCharPtr(char*** s) {free(*s);*s=NULL;}
-static void FreeNullCharPtrPtr(char**** s) {free(*s);*s=NULL;}
+static void FreeNullStrPtr(char** s) {free(*s);*s=NULL;}
+static void FreeNullStrPtrPtr(char*** s) {free(*s);*s=NULL;}
+static void FreeNullStrPtrPtrPtr(char**** s) {free(*s);*s=NULL;}
 #define PolyFree(P) _Generic(P, \
   struct RunRecorder**: RunRecorderFree, \
   struct RunRecorderRefVal**: RunRecorderRefValFree, \
   struct RunRecorderRefValDef**: RunRecorderRefValDefFree, \
   struct RunRecorderMeasure**: RunRecorderMeasureFree, \
   struct RunRecorderMeasures**: RunRecorderMeasuresFree, \
-  char**: FreeNullChar, \
-  char***: FreeNullCharPtr, \
-  char****: FreeNullCharPtrPtr)(P)
+  char**: FreeNullStrPtr, \
+  char***: FreeNullStrPtrPtr, \
+  char****: FreeNullStrPtrPtrPtr)(P)
 
 // Strdup freeing the assigned variable and raising exception if it fails
 #define SafeStrDup(T, S)  \
@@ -1420,7 +1420,7 @@ void RunRecorderMeasuresFree(
           free((*that)->values[iMeasure][iMetric]);
 
         // Free the measure
-        PolyFree((*that)->values[iMeasure]);
+        free((*that)->values[iMeasure]);
 
       }
 
