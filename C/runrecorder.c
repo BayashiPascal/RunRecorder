@@ -105,7 +105,7 @@ static char* exceptionStr[NbExceptions] = {
 //   str: pointer to the string to be created
 //   fmt: format as in sprintf
 //   ...: arguments as in sprintf
-void StringCreate(
+static void StringCreate(
   char** str,
    char* fmt,
          ...);
@@ -1600,7 +1600,7 @@ void RunRecorderRefValDefFree(
 //   str: pointer to the string to be created
 //   fmt: format as in sprintf
 //   ...: arguments as in sprintf
-void StringCreate(
+static void StringCreate(
   char** str,
    char* fmt,
          ...) {
