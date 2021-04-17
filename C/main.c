@@ -302,6 +302,19 @@ int main(
     RunRecorderMeasuresPrintCSV(
       measures,
       stdout);
+    int idxDate =
+      RunRecorderMeasuresGetIdxMetric(
+        measures,
+        "Date");
+    int idxTemperature =
+      RunRecorderMeasuresGetIdxMetric(
+        measures,
+        "Temperature");
+    printf(
+      "index of Date: %d\n"
+      "index of Temperature: %d\n",
+      idxDate,
+      idxTemperature);
     RunRecorderMeasuresFree(&measures);
 
   } CatchDefault {

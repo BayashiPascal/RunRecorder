@@ -368,6 +368,16 @@ void RunRecorderRefValFree(
 void RunRecorderRefValDefFree(
   struct RunRecorderRefValDef** const that);
 
+// Get the index of a metric in a RunRecorderMeasures
+// Inputs:
+//     that: the struct RunRecorderMeasures
+//   metric: the metric's label
+// Output:
+//   Return the index of the metric
+int RunRecorderMeasuresGetIdxMetric(
+  struct RunRecorderMeasures const* const that,
+                        char const* const metric);
+
 // ================== Macros =========================
 
 // Polymorphic RunRecorderMeasureAddValue

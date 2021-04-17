@@ -475,6 +475,21 @@ int main() {
     measures,
     stdout);
 
+  // Print the indices of the metrics
+  int idxDate =
+    RunRecorderMeasuresGetIdxMetric(
+      measures,
+      "Date");
+  int idxTemperature =
+    RunRecorderMeasuresGetIdxMetric(
+      measures,
+      "Temperature");
+  printf(
+    "index of Date: %d\n"
+    "index of Temperature: %d\n",
+    idxDate,
+    idxTemperature);
+
   // Free memory
   RunRecorderMeasuresFree(&measures);
   RunRecorderFree(&recorder);
@@ -489,6 +504,8 @@ Ref&Date&Temperature
 1&2021-03-08 15:45:00&18.500000
 2&2021-03-09 15:45:00&19.500000
 3&2021-03-10 15:45:00&20.500000
+index of Date: 1
+index of Temperature: 2
 ```
 
 Metrics (columns) are ordered alphabetically (except for the first column which is always the reference of the measure), measures (rows) are ordered by time of creation in the database. The delimiter of columns for the CSV conversion is ampersand `&`, and the first line contains the label of metrics. All metrics of the project are present, and their default value is used in rows containing missing values.

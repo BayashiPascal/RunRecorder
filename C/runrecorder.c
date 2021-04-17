@@ -1593,6 +1593,47 @@ void RunRecorderRefValDefFree(
 
 }
 
+// Get the index of a metric in a RunRecorderMeasures
+// Inputs:
+//     that: the struct RunRecorderMeasures
+//   metric: the metric's label
+// Output:
+//   Return the index of the metric
+int RunRecorderMeasuresGetIdxMetric(
+  struct RunRecorderMeasures const* const that,
+                        char const* const metric) {
+
+  // Variables to memorise the index of the metric
+  int idx = -1;
+
+  Try {
+
+    // Loop on the metrics
+    ForZeroTo(iMetric, that->nbMetric) {
+
+      // If it's the metric, memorise the index
+      int retStrCmp =
+        strcmp(
+          that->metrics[iMetric],
+          metric);
+      if (retStrCmp == 0) idx = iMetric;
+
+    }
+
+    // If we couldn't find the indices, raise an exception
+    if (idx == -1 ) Raise(RunRecorderExc_InvalidMetricLabel);
+
+  } CatchDefault {
+
+    // Forward the exception
+    Raise(TryCatchGetLastExc());
+
+  } EndTryWithDefault;
+
+  return idx;
+
+}
+
 // ================== Private functions definition =========================
 
 // Clone of asprintf
