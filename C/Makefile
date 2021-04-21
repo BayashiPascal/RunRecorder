@@ -51,7 +51,6 @@ runrecorder.o: /usr/local/lib/libcurl.a \
 	rm -rf TryCatchC
 	mv TryCatchC-main TryCatchC
 	rm main.zip
-	cd TryCatchC && sed -i 's/^#define TryCatchMaxExcLvl.*$$/#define TryCatchMaxExcLvl 256/' trycatch.c
 	cd TryCatchC && make && sudo make install
 	rm -rf TryCatchC
 
