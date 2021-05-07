@@ -4091,6 +4091,22 @@ static void FlushProjectLocal(
       &(that->sqliteErrMsg));
   if (retExec != SQLITE_OK) Raise(RunRecorderExc_FlushProjectFailed);
 
+  // Create the SQL command to delete the view
+  StringCreate(
+    &(that->cmd),
+    "DROP VIEW \"%s\"",
+    project);
+
+  // Execute the command to delete the view
+  retExec =
+    sqlite3_exec(
+      that->db,
+      that->cmd,
+      NULL,
+      NULL,
+      &(that->sqliteErrMsg));
+  if (retExec != SQLITE_OK) Raise(RunRecorderExc_FlushProjectFailed);
+
   // Create the SQL command to delete the project
   StringCreate(
     &(that->cmd),

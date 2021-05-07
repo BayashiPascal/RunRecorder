@@ -744,6 +744,11 @@ function FlushProject(
     $success = $db->exec($cmd);
     if ($success === false) throw new Exception("exec() failed for " . $cmd);
 
+    // Delete the view
+    $cmd = 'DROP VIEW ' . $project;
+    $success = $db->exec($cmd);
+    if ($success === false) throw new Exception("exec() failed for " . $cmd);
+
     // Delete the project
     $cmd = 'DELETE FROM _Project WHERE Ref = ' . $refProject;
     $success = $db->exec($cmd);
