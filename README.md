@@ -22,27 +22,27 @@ RunRecorder is currently in beta version. It has been tested and dynamically ana
 
 ## Table Of Content
 
-1 [Install](https://github.com/BayashiPascal/RunRecorder/tree/corr_readme#1-install)
+1 [Install](https://github.com/BayashiPascal/RunRecorder/tree/main#1-install)
 
-1.1 [C library](https://github.com/BayashiPascal/RunRecorder/tree/corr_readme#11-c-library)
+1.1 [C library](https://github.com/BayashiPascal/RunRecorder/tree/main#11-c-library)
 
-1.2 [Web API](https://github.com/BayashiPascal/RunRecorder/tree/corr_readme#12-web-api)
+1.2 [Web API](https://github.com/BayashiPascal/RunRecorder/tree/main#12-web-api)
 
-2 [Usage](https://github.com/BayashiPascal/RunRecorder/tree/corr_readme#2-usage)
+2 [Usage](https://github.com/BayashiPascal/RunRecorder/tree/main#2-usage)
 
-2.1 [Through the C library](https://github.com/BayashiPascal/RunRecorder/tree/corr_readme#21-through-the-c-library)
+2.1 [Through the C library](https://github.com/BayashiPascal/RunRecorder/tree/main#21-through-the-c-library)
 
-2.2 [Through the Web API](https://github.com/BayashiPascal/RunRecorder/tree/corr_readme#22-through-the-web-api)
+2.2 [Through the Web API](https://github.com/BayashiPascal/RunRecorder/tree/main#22-through-the-web-api)
 
-2.3 [From the command line, with Curl](https://github.com/BayashiPascal/RunRecorder/tree/corr_readme#23-from-the-command-line-with-curl)
+2.3 [From the command line, with Curl](https://github.com/BayashiPascal/RunRecorder/tree/main#23-from-the-command-line-with-curl)
 
-2.4 [From the command line, with the RunRecorder CLI](https://github.com/BayashiPascal/RunRecorder/tree/corr_readme#24-from-the-command-line-with-the-runrecorder-cli)
+2.4 [From the command line, with the RunRecorder CLI](https://github.com/BayashiPascal/RunRecorder/tree/main#24-from-the-command-line-with-the-runrecorder-cli)
 
-2.5 [From other languages, with HTTP request (e.g. JavaScript)](https://github.com/BayashiPascal/RunRecorder/tree/corr_readme#25-from-other-languages-with-http-request-eg-javascript)
+2.5 [From other languages, with HTTP request (e.g. JavaScript)](https://github.com/BayashiPascal/RunRecorder/tree/main#25-from-other-languages-with-http-request-eg-javascript)
 
-2.6 [Web viewer](https://github.com/BayashiPascal/RunRecorder/tree/corr_readme#26-online-viewer)
+2.6 [Web viewer](https://github.com/BayashiPascal/RunRecorder/tree/main#26-online-viewer)
 
-3 [License](https://github.com/BayashiPascal/RunRecorder/tree/corr_readme#3-license)
+3 [License](https://github.com/BayashiPascal/RunRecorder/tree/main#3-license)
 
 # 1 Install
 
