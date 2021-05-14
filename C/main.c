@@ -53,9 +53,9 @@ int main(
 
     // Create the RunRecorder instance
 #if TEST_REMOTE==0
-    recorder = RunRecorderCreate(pathDb);
+    recorder = RunRecorderAlloc(pathDb);
 #else
-    recorder = RunRecorderCreate(pathApi);
+    recorder = RunRecorderAlloc(pathApi);
 #endif
 
     // Initialise the struct RunRecorder

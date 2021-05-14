@@ -146,12 +146,20 @@ struct RunRecorderMeasures {
 
 // ================== Public functions declarations =========================
 
-// Constructor for a struct RunRecorder
+// Create a struct RunRecorder
 // Input:
 //   url: Path to the SQLite database or Web API
 // Output:
 //  Return a new struct RunRecorder
-struct RunRecorder* RunRecorderCreate(
+struct RunRecorder RunRecorderCreate(
+  char const* const url);
+
+// Allocate memory for a struct RunRecorder
+// Input:
+//   url: Path to the SQLite database or Web API
+// Output:
+//  Return a new struct RunRecorder
+struct RunRecorder* RunRecorderAlloc(
   char const* const url);
 
 // Initialise a struct RunRecorder

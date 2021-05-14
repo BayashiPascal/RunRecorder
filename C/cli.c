@@ -317,7 +317,7 @@ struct CLI* CLICreate(
   printf(
    "Connecting to database %s...\n",
    url);
-  cli->runRecorder = RunRecorderCreate(url);
+  cli->runRecorder = RunRecorderAlloc(url);
   RunRecorderInit(cli->runRecorder);
   printf("Connection established\n");
 

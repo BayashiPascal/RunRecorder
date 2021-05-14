@@ -665,12 +665,43 @@ static char const* ExcToStr(
 
 // ================== Public functions definition =========================
 
-// Constructor for a struct RunRecorder
+// Create a struct RunRecorder
 // Input:
 //   url: Path to the SQLite database or Web API
 // Output:
 //  Return a new struct RunRecorder
-struct RunRecorder* RunRecorderCreate(
+struct RunRecorder RunRecorderCreate(
+  char const* const url) {
+
+  // Variable to memorise the new struct RunRecorder
+  struct RunRecorder that;
+
+  // Initialise the properties
+  that.errMsg = NULL;
+  that.db = NULL;
+  that.url = NULL;
+  that.curl = NULL;
+  that.curlReply = NULL;
+  that.cmd = NULL;
+  that.sqliteErrMsg = NULL;
+  that.refLastAddedMeasure = 0;
+
+  // Copy the url
+  SafeStrDup(
+    that.url,
+    url);
+
+  // Return the struct RunRecorder
+  return that;
+
+}
+
+// Allocate memory for a struct RunRecorder
+// Input:
+//   url: Path to the SQLite database or Web API
+// Output:
+//  Return a new struct RunRecorder
+struct RunRecorder* RunRecorderAlloc(
   char const* const url) {
 
   // Allocate the struct RunRecorder
@@ -679,20 +710,8 @@ struct RunRecorder* RunRecorderCreate(
     that,
     sizeof(struct RunRecorder));
 
-  // Initialise the properties
-  that->errMsg = NULL;
-  that->db = NULL;
-  that->url = NULL;
-  that->curl = NULL;
-  that->curlReply = NULL;
-  that->cmd = NULL;
-  that->sqliteErrMsg = NULL;
-  that->refLastAddedMeasure = 0;
-
-  // Copy the url
-  SafeStrDup(
-    that->url,
-    url);
+  // Create the RunRecorder
+  *that = RunRecorderCreate(url);
 
   // Return the struct RunRecorder
   return that;

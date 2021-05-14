@@ -93,7 +93,7 @@ int main() {
   // Create the RunRecorder instance
   // Give pathApi in argument if you want to use the Web API instead
   // of a local database
-  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  struct RunRecorder* recorder = RunRecorderAlloc(pathDb);
 
   // Initialise the RunRecorder instance
   Try {
@@ -144,7 +144,7 @@ int main() {
   char const* pathDb = "./runrecorder.db";
 
   // Create the RunRecorder instance
-  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  struct RunRecorder* recorder = RunRecorderAlloc(pathDb);
   RunRecorderInit(recorder);
 
   // Get the version of the database
@@ -180,7 +180,7 @@ int main() {
   char const* pathDb = "./runrecorder.db";
 
   // Create the RunRecorder instance
-  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  struct RunRecorder* recorder = RunRecorderAlloc(pathDb);
   RunRecorderInit(recorder);
 
   // Create a new project
@@ -209,7 +209,7 @@ int main() {
   char const* pathDb = "./runrecorder.db";
 
   // Create the RunRecorder instance
-  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  struct RunRecorder* recorder = RunRecorderAlloc(pathDb);
   RunRecorderInit(recorder);
 
   // Get the projects
@@ -254,7 +254,7 @@ int main() {
   char const* pathDb = "./runrecorder.db";
 
   // Create the RunRecorder instance
-  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  struct RunRecorder* recorder = RunRecorderAlloc(pathDb);
   RunRecorderInit(recorder);
 
   // Add metrics to the project
@@ -292,7 +292,7 @@ int main() {
   char const* pathDb = "./runrecorder.db";
 
   // Create the RunRecorder instance
-  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  struct RunRecorder* recorder = RunRecorderAlloc(pathDb);
   RunRecorderInit(recorder);
 
   // Get the metrics
@@ -342,7 +342,7 @@ int main() {
   char const* pathDb = "./runrecorder.db";
 
   // Create the RunRecorder instance
-  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  struct RunRecorder* recorder = RunRecorderAlloc(pathDb);
   RunRecorderInit(recorder);
 
   // Create the measure
@@ -393,7 +393,7 @@ int main() {
   char const* pathDb = "./runrecorder.db";
 
   // Create the RunRecorder instance
-  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  struct RunRecorder* recorder = RunRecorderAlloc(pathDb);
   RunRecorderInit(recorder);
 
   // Create the measure
@@ -461,7 +461,7 @@ int main() {
   char const* pathDb = "./runrecorder.db";
 
   // Create the RunRecorder instance
-  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  struct RunRecorder* recorder = RunRecorderAlloc(pathDb);
   RunRecorderInit(recorder);
 
   // Get the measures
@@ -521,7 +521,7 @@ int main() {
   char const* pathDb = "./runrecorder.db";
 
   // Create the RunRecorder instance
-  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  struct RunRecorder* recorder = RunRecorderAlloc(pathDb);
   RunRecorderInit(recorder);
 
   // Get the last 2 measures
@@ -565,7 +565,7 @@ int main() {
   char const* pathDb = "./runrecorder.db";
 
   // Create the RunRecorder instance
-  struct RunRecorder* recorder = RunRecorderCreate(pathDb);
+  struct RunRecorder* recorder = RunRecorderAlloc(pathDb);
   RunRecorderInit(recorder);
 
   // Delete the project
