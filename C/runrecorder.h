@@ -392,6 +392,7 @@ int RunRecorderMeasuresGetIdxMetric(
 #define RunRecorderMeasureAddValue(T, M, V) _Generic(V, \
   char*: RunRecorderMeasureAddValueStr, \
   char const*: RunRecorderMeasureAddValueStr, \
+  bool: RunRecorderMeasureAddValueInt, \
   int: RunRecorderMeasureAddValueInt, \
   unsigned int: RunRecorderMeasureAddValueInt, \
   long: RunRecorderMeasureAddValueInt, \
