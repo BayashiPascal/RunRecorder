@@ -104,7 +104,7 @@ int main() {
 
     exit(EXIT_FAILURE);
 
-  } EndTryWithDefault;
+  } EndCatchDefault;
 
   // Your code using RunRecorder here (see below for details)
   // ...
@@ -430,7 +430,7 @@ int main() {
       recorder,
       recorder->refLastAddedMeasure);
 
-  } EndTryCatchWithDefault;
+  } EndCatchDefault;
 
   // Free memory
   RunRecorderMeasureFree(&measure);

@@ -445,7 +445,7 @@ void Run(
 
       PrintCaughtException(that);
 
-    } EndTryWithDefault;
+    } EndCatchDefault;
 
     // Free memory
     free(input);
@@ -772,7 +772,7 @@ void ProcessInputAddProject(
 
         PrintCaughtException(that);
 
-      } EndTryWithDefault;
+      } EndCatchDefault;
 
     // Else the input is invalid
     } else {
@@ -842,7 +842,7 @@ void ProcessInputAddMetric(
 
             PrintCaughtException(that);
 
-          } EndTryWithDefault;
+          } EndCatchDefault;
 
         // Else, the default value is invalid
         } else {
@@ -1021,7 +1021,7 @@ void ProcessInputAddMeasure(
 
                 PrintCaughtException(that);
 
-              } EndTryWithDefault;
+              } EndCatchDefault;
 
             // Else, the value is invalid
             } else {
@@ -1120,7 +1120,7 @@ void ProcessInputListMeasure(
         PrintCaughtException(that);
         RunRecorderMeasuresFree(&measures);
 
-      } EndTryWithDefault;
+      } EndCatchDefault;
 
     }
 
@@ -1172,7 +1172,7 @@ void ProcessInputDeleteMeasure(
 
         PrintCaughtException(that);
 
-      } EndTryWithDefault;
+      } EndCatchDefault;
 
     }
 
@@ -1215,7 +1215,7 @@ void ProcessInputDeleteProject(
 
       PrintCaughtException(that);
 
-    } EndTryWithDefault;
+    } EndCatchDefault;
 
   }
 
@@ -1331,7 +1331,7 @@ void SaveMeasure(
 
     PrintCaughtException(that);
 
-  } EndTryWithDefault;
+  } EndCatchDefault;
 
 }
 
@@ -1368,7 +1368,7 @@ int main(
 
     PrintCaughtException(cli);
 
-  } EndTryWithDefault;
+  } EndCatchDefault;
 
   // Free memory
   CLIFree(&cli);

@@ -69,7 +69,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTryWithDefault;
+  } EndCatchDefault;
 
   // Get the version of the database
   Try {
@@ -88,7 +88,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTryWithDefault;
+  } EndCatchDefault;
 
   // Create a new project
   Try {
@@ -109,7 +109,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTryWithDefault;
+  } EndCatchDefault;
 
   // Get the list of projects
   struct RunRecorderRefVal* projects = NULL;
@@ -141,7 +141,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTryWithDefault;
+  } EndCatchDefault;
 
   // Create new metrics
   Try {
@@ -158,7 +158,7 @@ int main(
 
       printf("Metric Date already exists in RoomTemperature\n");
 
-    } EndTry;
+    } EndCatch;
 
     Try {
 
@@ -172,7 +172,7 @@ int main(
 
       printf("Metric Temperature already exists in RoomTemperature\n");
 
-    } EndTry;
+    } EndCatch;
 
   } CatchDefault {
 
@@ -182,7 +182,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTryWithDefault;
+  } EndCatchDefault;
 
   // Get the list of metrics
   struct RunRecorderRefValDef* metrics = NULL;
@@ -218,7 +218,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTryWithDefault;
+  } EndCatchDefault;
 
   // Add measurements
   struct RunRecorderMeasure* measure = NULL;
@@ -269,7 +269,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTryWithDefault;
+  } EndCatchDefault;
 
   // Delete measurement
   Try {
@@ -289,7 +289,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTryWithDefault;
+  } EndCatchDefault;
 
   // Get the measures
   struct RunRecorderMeasures* measures = NULL;
@@ -326,7 +326,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTryWithDefault;
+  } EndCatchDefault;
 
   // Delete the project
   Try {
@@ -344,7 +344,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndTryWithDefault;
+  } EndCatchDefault;
 
   // Free memory
   RunRecorderFree(&recorder);
