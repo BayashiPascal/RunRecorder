@@ -36,6 +36,18 @@ static void FreeNullStrPtrPtrPtr(char**** s) {free(*s);*s=NULL;}
   char****: FreeNullStrPtrPtrPtr)(P)
 
 // Strdup freeing the assigned variable and raising exception if it fails
+#ifndef strdup
+static void StringCreate(
+  char** str,
+   char* fmt,
+         ...);
+char* strdup(char const* in) {
+  if (in == NULL) return NULL;
+  char* out = NULL;
+  StringCreate(&out, "%s", in);
+  return out;
+}
+#endif
 #define SafeStrDup(T, S)  \
   do { \
     free(T); \
@@ -1051,22 +1063,20 @@ void RunRecorderAddMetric(
   // If the RunRecorder uses a local database
   if (UsesAPI(that) == false) {
 
-    return
-      AddMetricLocal(
-        that,
-        project,
-        label,
-        defaultVal);
+    AddMetricLocal(
+      that,
+      project,
+      label,
+      defaultVal);
 
   // Else, the RunRecorder uses the Web API
   } else {
 
-    return
-      AddMetricAPI(
-        that,
-        project,
-        label,
-        defaultVal);
+    AddMetricAPI(
+      that,
+      project,
+      label,
+      defaultVal);
 
   }
 

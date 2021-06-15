@@ -29,6 +29,18 @@ static void FreeNullStrPtr(char** s) {free(*s);*s=NULL;}
 #define ForZeroTo(I, N) for (long I = 0; I < N; ++I)
 
 // strdup freeing the assigned variable and raising exception if it fails
+#ifndef strdup
+static void StringCreate(
+  char** str,
+   char* fmt,
+         ...);
+char* strdup(char const* in) {
+  if (in == NULL) return NULL;
+  char* out = NULL;
+  StringCreate(&out, "%s", in);
+  return out;
+}
+#endif
 #define SafeStrDup(T, S)  \
   do { \
     free(T); \
@@ -88,6 +100,16 @@ struct CLI {
 };
 
 // ================== Functions declaration =========================
+
+// Clone of asprintf
+// Inputs:
+//   str: pointer to the string to be created
+//   fmt: format as in sprintf
+//   ...: arguments as in sprintf
+static void StringCreate(
+  char** str,
+   char* fmt,
+         ...);
 
 // Create a new struct CLI
 // Inputs:
@@ -270,6 +292,48 @@ void SaveMeasure(
   struct CLI* const that);
 
 // ================== Functions definition =========================
+
+// Clone of asprintf
+// Inputs:
+//   str: pointer to the string to be created
+//   fmt: format as in sprintf
+//   ...: arguments as in sprintf
+static void StringCreate(
+  char** str,
+   char* fmt,
+         ...) {
+
+  // Get the length of the string
+  char c[1];
+  va_list argp;
+  va_start(
+    argp,
+    fmt);
+  int len =
+    vsnprintf(
+      c,
+      1,
+      fmt,
+      argp) + 1;
+  va_end(argp);
+
+  // Allocate memory
+  SafeMalloc(
+    *str,
+    len);
+
+  // Create the string
+  va_start(
+    argp,
+    fmt);
+  vsnprintf(
+    *str,
+    len,
+    fmt,
+    argp);
+  va_end(argp);
+
+}
 
 // Create a new struct CLI
 // Inputs:
