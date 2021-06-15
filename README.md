@@ -18,7 +18,7 @@ RunRecorder provides a simple functionality to retrieve the recorded data in CSV
 
 In the examples above, I use a fictional project where the user wants to record the temperature of a room. The temperature acquisition is not detailed here, but it could be a sensor on a Raspberry Pi. Then, RunRecorder would make very simple to save the temperature into a database, with some C code, shell script, or any language supporting Curl (see below sections).
 
-RunRecorder is currently in beta version. It has been tested and dynamically analysed with [Valgrind](https://valgrind.org/). It is currently used on a few private projects to assess its stability and qualification.
+RunRecorder is currently in beta version. It is conform to Ansi C and compile without warning with options `-std=c17 -pedantic -Wall -Wextra -Wno-clobbered `. It has been tested and dynamically analysed with [Valgrind](https://valgrind.org/). It is currently used on a few private projects to assess its stability and qualification.
 
 ## Table Of Content
 
