@@ -41,7 +41,7 @@ static void StringCreate(
   char** str,
    char* fmt,
          ...);
-char* strdup(char const* in) {
+static char* strdup(char const* in) {
   if (in == NULL) return NULL;
   char* out = NULL;
   StringCreate(&out, "%s", in);

@@ -449,6 +449,31 @@ void PrintCaughtException(
 
 }
 
+#ifndef getline
+ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
+
+  size_t nbRead = 0;
+  size_t const allocSize = 1024;
+  do {
+
+    if (nbRead + 1 >= *n) {
+
+      *n += allocSize;
+      *lineptr = realloc(*lineptr, sizeof(char) * (*n));
+
+    }
+    (*lineptr)[nbRead] = fgetc(stream);
+    if ((*lineptr)[nbRead] == EOF) return -1;
+    ++nbRead;
+
+  } while ((*lineptr)[nbRead - 1] != '\n');
+
+  (*lineptr)[nbRead] =  '\0';
+  return (ssize_t)nbRead;
+
+}
+#endif
+
 // Get the user input for stdin
 // Output:
 //   Return the user input (without the line return) or NULL if the user
