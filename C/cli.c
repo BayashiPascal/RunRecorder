@@ -534,7 +534,7 @@ void Run(
 
       PrintCaughtException(that);
 
-    } EndCatchDefault;
+    } EndCatch;
 
     // Free memory
     free(input);
@@ -861,7 +861,7 @@ void ProcessInputAddProject(
 
         PrintCaughtException(that);
 
-      } EndCatchDefault;
+      } EndCatch;
 
     // Else the input is invalid
     } else {
@@ -931,7 +931,7 @@ void ProcessInputAddMetric(
 
             PrintCaughtException(that);
 
-          } EndCatchDefault;
+          } EndCatch;
 
         // Else, the default value is invalid
         } else {
@@ -1110,7 +1110,7 @@ void ProcessInputAddMeasure(
 
                 PrintCaughtException(that);
 
-              } EndCatchDefault;
+              } EndCatch;
 
             // Else, the value is invalid
             } else {
@@ -1209,7 +1209,7 @@ void ProcessInputListMeasure(
         PrintCaughtException(that);
         RunRecorderMeasuresFree(&measures);
 
-      } EndCatchDefault;
+      } EndCatch;
 
     }
 
@@ -1261,7 +1261,7 @@ void ProcessInputDeleteMeasure(
 
         PrintCaughtException(that);
 
-      } EndCatchDefault;
+      } EndCatch;
 
     }
 
@@ -1304,7 +1304,7 @@ void ProcessInputDeleteProject(
 
       PrintCaughtException(that);
 
-    } EndCatchDefault;
+    } EndCatch;
 
   }
 
@@ -1420,7 +1420,7 @@ void SaveMeasure(
 
     PrintCaughtException(that);
 
-  } EndCatchDefault;
+  } EndCatch;
 
 }
 
@@ -1428,6 +1428,8 @@ void SaveMeasure(
 int main(
      int argc,
   char** argv) {
+
+  TryCatchSetRaiseStream(stdout);
 
   // Declare the variable to memorise the CLI instance
   struct CLI* cli = NULL;
@@ -1457,7 +1459,7 @@ int main(
 
     PrintCaughtException(cli);
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Free memory
   CLIFree(&cli);

@@ -5,10 +5,10 @@
 session_start();
 
 // Switch the display of errors
-//ini_set('display_errors', 1);
-//ini_set('display_startup_errors', 1);
-//error_reporting(E_ALL);
-error_reporting(E_NONE);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+//error_reporting(E_NONE);
 
 // Path to the SQLite3 database
 $pathDB = "./runrecorder.db";

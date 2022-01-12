@@ -69,7 +69,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Get the version of the database
   Try {
@@ -88,7 +88,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Create a new project
   Try {
@@ -109,7 +109,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Get the list of projects
   struct RunRecorderRefVal* projects = NULL;
@@ -141,7 +141,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Create new metrics
   Try {
@@ -182,7 +182,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Get the list of metrics
   struct RunRecorderRefValDef* metrics = NULL;
@@ -218,7 +218,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Add measurements
   struct RunRecorderMeasure* measure = NULL;
@@ -269,7 +269,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Delete measurement
   Try {
@@ -289,7 +289,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Get the measures
   struct RunRecorderMeasures* measures = NULL;
@@ -326,7 +326,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Delete the project
   Try {
@@ -344,7 +344,7 @@ int main(
     RunRecorderFree(&recorder);
     exit(EXIT_FAILURE);
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Free memory
   RunRecorderFree(&recorder);

@@ -1242,7 +1242,7 @@ void RunRecorderMeasureAddValueInt(
     free(str);
     Raise(TryCatchGetLastExc());
 
-  } EndCatchDefault;
+  } EndCatch;
 
 }
 
@@ -1289,7 +1289,7 @@ void RunRecorderMeasureAddValueDouble(
     free(str);
     Raise(TryCatchGetLastExc());
 
-  } EndCatchDefault;
+  } EndCatch;
 
 }
 
@@ -1657,7 +1657,7 @@ int RunRecorderMeasuresGetIdxMetric(
     // Forward the exception
     Raise(TryCatchGetLastExc());
 
-  } EndCatchDefault;
+  } EndCatch;
 
   return idx;
 
@@ -2003,7 +2003,7 @@ static int GetVersionLocalCb(
     // Return non zero to trigger SQLITE_ABORT in the calling function
     return 1;
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Return success code
   return 0;
@@ -2239,7 +2239,7 @@ static char* GetJSONValOfKey(
     free(val);
     Raise(TryCatchGetLastExc());
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Return the value
   return val;
@@ -2617,7 +2617,7 @@ static int GetPairsLocalCb(
 
     return 1;
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Return success code
   return 0;
@@ -2678,7 +2678,7 @@ static int GetPairsWithDefaultLocalCb(
 
     return 1;
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Return success code
   return 0;
@@ -2811,7 +2811,7 @@ static struct RunRecorderRefVal* GetPairsRefValFromJSON(
         free(val);
         Raise(TryCatchGetLastExc());
 
-      } EndCatchDefault;
+      } EndCatch;
 
     }
 
@@ -2913,7 +2913,7 @@ static struct RunRecorderRefValDef* GetPairsRefValDefFromJSON(
         free(defaultVal);
         Raise(TryCatchGetLastExc());
 
-      } EndCatchDefault;
+      } EndCatch;
 
       // Go to the closing curly brace for the metric
       while (*ptr != '\0' && *ptr != '}') ++ptr;
@@ -2974,7 +2974,7 @@ static struct RunRecorderRefVal* GetProjectsAPI(
     free(json);
     Raise(TryCatchGetLastExc());
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Return the projects
   return projects;
@@ -3069,7 +3069,7 @@ static struct RunRecorderRefValDef* GetMetricsLocal(
       PolyFree(&metrics);
       Raise(TryCatchGetLastExc());
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Return the metrics
   return metrics;
@@ -3129,7 +3129,7 @@ static struct RunRecorderRefValDef* GetMetricsAPI(
     PolyFree(&metrics);
     Raise(TryCatchGetLastExc());
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Return the metrics
   return metrics;
@@ -3207,7 +3207,7 @@ static void UpdateViewProject(
     PolyFree(&metrics);
     Raise(TryCatchGetLastExc());
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Extend the command with the tail
   StringAppend(
@@ -3393,7 +3393,7 @@ static void AddMeasureLocal(
 
       hasFailed = true;
 
-    } EndCatchDefault;
+    } EndCatch;
 
   }
 
@@ -3604,7 +3604,7 @@ static int GetMeasuresLocalCb(
 
     return 1;
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Return success code
   return 0;
@@ -3678,7 +3678,7 @@ static void SetCmdToGetMeasuresLocal(
     PolyFree(&metrics);
     Raise(TryCatchGetLastExc());
 
-  } EndCatchDefault;
+  } EndCatch;
 
 }
 
@@ -3905,7 +3905,7 @@ static struct RunRecorderMeasures* CSVToData(
     PolyFree(&measures);
     Raise(TryCatchGetLastExc());
 
-  } EndCatchDefault;
+  } EndCatch;
 
   // Return the result struct RunRecorderMeasures
   return measures;
