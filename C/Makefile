@@ -91,8 +91,9 @@ valgrindCli : runrecorder
 	--gen-suppressions=yes --show-leak-kinds=all ./runrecorder runrecorder.db
 
 install: runrecorder.o
-	rm -rf /usr/local/include/RunRecorder
-	mkdir /usr/local/include/RunRecorder
-	cp runrecorder.h /usr/local/include/RunRecorder/runrecorder.h
-	ar -r /usr/local/lib/librunrecorder.a runrecorder.o
-	cp runrecorder /usr/local/bin/runrecorder
+	sudo rm -rf /usr/local/include/RunRecorder
+	sudo mkdir /usr/local/include/RunRecorder
+	sudo cp runrecorder.h /usr/local/include/RunRecorder/runrecorder.h
+	sudo ar -r /usr/local/lib/librunrecorder.a runrecorder.o
+	mkdir -p ~/Tools
+	cp runrecorder ~/Tools/runrecorder
